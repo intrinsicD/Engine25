@@ -6,6 +6,7 @@
 #define ENGINE25_GUIMODULE_H
 
 #include "Module.h"
+#include "Command.h"
 
 namespace Bcg {
     class GuiModule : public Module {
@@ -14,13 +15,41 @@ namespace Bcg {
 
         ~GuiModule() override = default;
 
-        void on_initialize(const Events::Initialize &event) override;
+        void OnInitialize(const Events::Initialize &event) override;
 
-        void on_startup(const Events::Startup &event) override;
+        void OnStartup(const Events::Startup &event) override;
 
-        void on_synchronize(const Events::Synchronize &event) override;
+        void OnSynchronize(const Events::Synchronize &event) override;
 
-        void on_shutdown(const Events::Shutdown &event) override;
+        void OnShutdown(const Events::Shutdown &event) override;
+
+        static void LoadFonts(std::string font_path, float font_size);
+    };
+
+    class InitializeImGui : public AbstractCommand {
+    public:
+        InitializeImGui() : AbstractCommand() {
+        }
+
+        void Execute() const override;
+    };
+
+    //TODO add these commands via synchronize to the main loop
+
+    class BeginGui : public AbstractCommand {
+    public:
+        BeginGui() : AbstractCommand() {
+        }
+
+        void Execute() const override;
+    };
+
+    class EndGui : public AbstractCommand {
+    public:
+        EndGui() : AbstractCommand() {
+        }
+
+        void Execute() const override;
     };
 }
 

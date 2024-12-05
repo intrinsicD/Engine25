@@ -1,0 +1,11 @@
+{
+  "font": {
+    "path": "ThirdParty/imgui/misc/fonts/",
+    "default_font": "ProggyClean.ttf",
+    "size": 16.0
+  },
+  "window": {
+    "width": 1280,
+    "height": 720
+  }
+}

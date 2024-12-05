@@ -9,6 +9,8 @@
 #include "RenderingModule.h"
 #include "GLFWModule.h"
 #include "GuiModule.h"
+#include "ConfigFile.h"
+#include "ConfigFile.h"
 
 namespace Bcg {
     static Scene scene;
@@ -20,6 +22,9 @@ namespace Bcg {
         Logger::GetInstance().SetLogLevel(Logger::Level::Info);
         Logger::GetInstance().EnableConsoleLogger(true);
 
+        // Retrieve font path and size from config
+        Config::LoadConfig(std::string(SOURCE_DIR_PATH) + "/config.json");
+
         LOG_INFO(fmt::format("Init {} version {}", name, version));
         auto &loop = GetContext().emplace<MainLoop>();
         auto &renderer = GetContext().emplace<RenderingModule>();
@@ -28,9 +33,9 @@ namespace Bcg {
 
         renderer.SetBackend({RenderingModule::Backend::Type::OpenGL, "OpenGL", "4.6"});
 
-        renderer.connect_events();
-        glfw.connect_events();
-        gui.connect_events();
+        renderer.ConnectEvents();
+        glfw.ConnectEvents();
+        gui.ConnectEvents();
 
         dispatcher.trigger<Events::Initialize>();
 

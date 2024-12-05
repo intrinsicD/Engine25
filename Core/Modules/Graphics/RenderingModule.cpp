@@ -15,42 +15,42 @@ namespace Bcg {
 
     }
 
-    void RenderingModule::connect_events() {
-        Engine::GetDispatcher().sink<Events::Initialize>().connect<&RenderingModule::on_initialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().connect<&RenderingModule::on_startup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&RenderingModule::on_synchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&RenderingModule::on_shutdown>(*this);
-        Module::connect_events();
+    void RenderingModule::ConnectEvents() {
+        Engine::GetDispatcher().sink<Events::Initialize>().connect<&RenderingModule::OnInitialize>(*this);
+        Engine::GetDispatcher().sink<Events::Startup>().connect<&RenderingModule::OnStartup>(*this);
+        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&RenderingModule::OnSynchronize>(*this);
+        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&RenderingModule::OnShutdown>(*this);
+        Module::ConnectEvents();
     }
 
-    void RenderingModule::disconnect_events() {
-        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&RenderingModule::on_initialize>(this);
-        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&RenderingModule::on_startup>(this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&RenderingModule::on_synchronize>(this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&RenderingModule::on_shutdown>(this);
-        Module::disconnect_events();
+    void RenderingModule::DisconnectEvents() {
+        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&RenderingModule::OnInitialize>(this);
+        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&RenderingModule::OnStartup>(this);
+        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&RenderingModule::OnSynchronize>(this);
+        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&RenderingModule::OnShutdown>(this);
+        Module::DisconnectEvents();
     }
 
-    void RenderingModule::on_initialize(const Events::Initialize &event) {
-        Module::on_initialize(event);
+    void RenderingModule::OnInitialize(const Events::Initialize &event) {
+        Module::OnInitialize(event);
         prepare_render.AddCommand(std::make_shared<ClearFrameBufferColorDepth>());
         auto &loop = Engine::GetContext().get<MainLoop>();
         loop.begin.Next().AddCommand(std::make_shared<InitializeOpenGL>());
         loop.begin.Next().AddCommand(std::make_shared<SetClearColor>(0.3f, 0.5f, 0.7f));
     }
 
-    void RenderingModule::on_startup(const Events::Startup &event) {
-        Module::on_startup(event);
+    void RenderingModule::OnStartup(const Events::Startup &event) {
+        Module::OnStartup(event);
     }
 
-    void RenderingModule::on_synchronize(const Events::Synchronize &event) {
+    void RenderingModule::OnSynchronize(const Events::Synchronize &event) {
         auto &loop = Engine::GetContext().get<MainLoop>();
         loop.prepare_render.Next().AddCommands(prepare_render.Commands());
         loop.end_render.Next().AddCommands(end_render.Commands());
     }
 
-    void RenderingModule::on_shutdown(const Events::Shutdown &event) {
-        Module::on_shutdown(event);
+    void RenderingModule::OnShutdown(const Events::Shutdown &event) {
+        Module::OnShutdown(event);
     }
 
     //------------------------------------------------------------------------------------------------------------------

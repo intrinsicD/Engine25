@@ -13,7 +13,7 @@ namespace Bcg {
         int width = 0;
         int height = 0;
         const char *title = nullptr;
-        float clear_color[3];
+        float clear_color[3]{};
     };
 }
 

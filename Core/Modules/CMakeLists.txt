@@ -1,10 +1,6 @@
 target_include_directories(Engine25 PUBLIC .)
 target_sources(Engine25 PRIVATE
-        CommandBuffer.cpp
-        CommandDoubleBuffer.cpp
         Module.cpp
-        Logger.cpp
-        MainLoop.cpp
 )
 
 add_subdirectory(Graphics)

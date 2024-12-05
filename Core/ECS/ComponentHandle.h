@@ -1,8 +1,0 @@
-//
-// Created by alex on 04.12.24.
-//
-
-#ifndef ENGINE25_COMPONENTHANDLE_H
-#define ENGINE25_COMPONENTHANDLE_H
-
-#endif //ENGINE25_COMPONENTHANDLE_H

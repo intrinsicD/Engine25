@@ -15,17 +15,17 @@ namespace Bcg {
 
         ~RenderingModule() override = default;
 
-        void connect_events() override;
+        void ConnectEvents() override;
 
-        void disconnect_events() override;
+        void DisconnectEvents() override;
 
-        void on_initialize(const Events::Initialize &event) override;
+        void OnInitialize(const Events::Initialize &event) override;
 
-        void on_startup(const Events::Startup &event) override;
+        void OnStartup(const Events::Startup &event) override;
 
-        void on_synchronize(const Events::Synchronize &event) override;
+        void OnSynchronize(const Events::Synchronize &event) override;
 
-        void on_shutdown(const Events::Shutdown &event) override;
+        void OnShutdown(const Events::Shutdown &event) override;
 
         struct Backend {
             enum class Type {
@@ -33,8 +33,9 @@ namespace Bcg {
                 OpenGL,
                 Vulkan,
             } type;
-            const char *name = nullptr;
-            const char *version = nullptr;
+
+            std::string name;
+            std::string version;
 
             operator bool() const { return type != Type::Unknown; }
         };
@@ -45,18 +46,21 @@ namespace Bcg {
 
         CommandBuffer prepare_render;
         CommandBuffer end_render;
+
     private:
         Backend m_backend;
     };
 
     struct InitializeOpenGL : public AbstractCommand {
-        InitializeOpenGL() : AbstractCommand() {}
+        InitializeOpenGL() : AbstractCommand() {
+        }
 
         void Execute() const override;
     };
 
     struct SetClearColor : public AbstractCommand {
-        SetClearColor(float r, float g, float b) : AbstractCommand(), color{r, g, b} {}
+        SetClearColor(float r, float g, float b) : AbstractCommand(), color{r, g, b} {
+        }
 
         void Execute() const override;
 
@@ -64,7 +68,8 @@ namespace Bcg {
     };
 
     struct ClearFrameBuffer : public AbstractCommand {
-        explicit ClearFrameBuffer(int component_mask) : AbstractCommand(), component_mask(component_mask) {}
+        explicit ClearFrameBuffer(int component_mask) : AbstractCommand(), component_mask(component_mask) {
+        }
 
         void Execute() const override;
 
@@ -72,13 +77,15 @@ namespace Bcg {
     };
 
     struct ClearFrameBufferColor : public AbstractCommand {
-        ClearFrameBufferColor() : AbstractCommand() {}
+        ClearFrameBufferColor() : AbstractCommand() {
+        }
 
         void Execute() const override;
     };
 
     struct ClearFrameBufferColorDepth : public AbstractCommand {
-        ClearFrameBufferColorDepth() : AbstractCommand() {}
+        ClearFrameBufferColorDepth() : AbstractCommand() {
+        }
 
         void Execute() const override;
     };

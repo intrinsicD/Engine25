@@ -13,22 +13,23 @@
 #include "WindowComponent.h"
 
 namespace Bcg {
-    GLFWModule::GLFWModule() : Module("GLFWModule", "0.1") {}
-
-    void GLFWModule::connect_events() {
-        Engine::GetDispatcher().sink<Events::Initialize>().connect<&GLFWModule::on_initialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().connect<&GLFWModule::on_startup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&GLFWModule::on_synchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&GLFWModule::on_shutdown>(*this);
-        Module::connect_events();
+    GLFWModule::GLFWModule() : Module("GLFWModule", "0.1") {
     }
 
-    void GLFWModule::disconnect_events() {
-        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&GLFWModule::on_initialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&GLFWModule::on_startup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&GLFWModule::on_synchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&GLFWModule::on_shutdown>(*this);
-        Module::disconnect_events();
+    void GLFWModule::ConnectEvents() {
+        Engine::GetDispatcher().sink<Events::Initialize>().connect<&GLFWModule::OnInitialize>(*this);
+        Engine::GetDispatcher().sink<Events::Startup>().connect<&GLFWModule::OnStartup>(*this);
+        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&GLFWModule::OnSynchronize>(*this);
+        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&GLFWModule::OnShutdown>(*this);
+        Module::ConnectEvents();
+    }
+
+    void GLFWModule::DisconnectEvents() {
+        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&GLFWModule::OnInitialize>(*this);
+        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&GLFWModule::OnStartup>(*this);
+        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&GLFWModule::OnSynchronize>(*this);
+        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&GLFWModule::OnShutdown>(*this);
+        Module::DisconnectEvents();
     }
 
     static void glfw_error_callback(int error, const char *description) {
@@ -41,8 +42,8 @@ namespace Bcg {
         Engine::GetContext().get<MainLoop>().Stop();
     }
 
-    void GLFWModule::on_initialize(const Events::Initialize &event) {
-        Module::on_initialize(event);
+    void GLFWModule::OnInitialize(const Events::Initialize &event) {
+        Module::OnInitialize(event);
         glfwSetErrorCallback(glfw_error_callback);
         if (!glfwInit()) {
             LOG_FATAL("Failed to initialize GLFW");
@@ -68,14 +69,14 @@ namespace Bcg {
                 LOG_FATAL("Unknown backend type");
         }
 
-        Engine::GetContext().emplace<Pool<Window>>("window_pool");
+        Engine::GetContext().emplace<Pool<Window> >("window_pool");
     }
 
-    void GLFWModule::on_startup(const Events::Startup &event) {
-        Module::on_startup(event);
+    void GLFWModule::OnStartup(const Events::Startup &event) {
+        Module::OnStartup(event);
 
         if (!Engine::GetContext().find<WindowComponent>()) {
-            auto &window_pool = Engine::GetContext().get<Pool<Window>>();
+            auto &window_pool = Engine::GetContext().get<Pool<Window> >();
             auto window_handle = window_pool.Create();
             Window window;
             if (!Engine::GetContext().find<Window>()) {
@@ -105,15 +106,22 @@ namespace Bcg {
         }
     }
 
-    void GLFWModule::on_synchronize(const Events::Synchronize &event) {
+    void GLFWModule::OnSynchronize(const Events::Synchronize &event) {
         auto &loop = Engine::GetContext().get<MainLoop>();
         loop.end.Next().AddCommand(std::make_shared<PollEvents>());
         loop.end.Next().AddCommand(std::make_shared<SwapBuffers>());
     }
 
-    void GLFWModule::on_shutdown(const Events::Shutdown &event) {
-        Module::on_shutdown(event);
+    void GLFWModule::OnShutdown(const Events::Shutdown &event) {
+        Module::OnShutdown(event);
         glfwTerminate();
+    }
+
+    float GLFWModule::GetDpiScaling() {
+        auto &window_handle = Engine::GetContext().get<WindowComponent>();
+        float dpi_scaling_factor;
+        glfwGetWindowContentScale(window_handle->handle, &dpi_scaling_factor, &dpi_scaling_factor);
+        return dpi_scaling_factor;
     }
 
     //------------------------------------------------------------------------------------------------------------------

@@ -45,13 +45,13 @@ namespace Bcg {
     };
 
     template<typename S, typename Enable = void>
-    size_t GetDimensions(const S &) {
+    size_t get_dimensions(const S &) {
         return 1;
     }
 
     template<typename S>
     std::enable_if_t<std::is_member_function_pointer_v<decltype(&S::size)>, size_t>
-    GetDimensions(const S &s) {
+    get_dimensions(const S &s) {
         return s.size();
     }
 
@@ -114,7 +114,7 @@ namespace Bcg {
         }
 
         [[nodiscard]] size_t dims() const override {
-            return GetDimensions(value_);
+            return get_dimensions(value_);
         }
 
     private:
@@ -206,10 +206,9 @@ namespace Bcg {
         PropertyContainer &operator=(const PropertyContainer &rhs) {
             if (this != &rhs) {
                 clear();
-                parrays_.resize(rhs.n_properties());
-                size_ = rhs.size();
-                for (size_t i = 0; i < parrays_.size(); ++i) {
-                    parrays_[i] = rhs.parrays_[i]->clone();
+                size_ = rhs.size_;
+                for(const auto &pair: rhs.parrays_) {
+                    parrays_[pair.first] = pair.second->clone();
                 }
             }
             return *this;
@@ -228,15 +227,15 @@ namespace Bcg {
             //TODO figure out filtering by type, float, int, other custom types ...
             std::vector<std::string> names;
             names.reserve(parrays_.size());
-            for (const auto *array: parrays_) {
+            for (const auto &parray: parrays_) {
                 if (filter_dims.size() > 0) {
                     for (const auto &dim: filter_dims) {
-                        if (array->dims() == dim) {
-                            names.emplace_back(array->name());
+                        if (parray.second->dims() == dim) {
+                            names.emplace_back(parray.first);
                         }
                     }
                 } else {
-                    names.emplace_back(array->name());
+                    names.emplace_back(parray.first);
                 }
             }
             return names;
@@ -246,41 +245,37 @@ namespace Bcg {
         template<class T>
         Property<T> add(const std::string &name, const T t = T()) {
             // throw exception if a property with this name already exists
-            for (const auto *parray: parrays_) {
-                if (parray->name() == name) {
-                    LOG_WARN(fmt::format("[PropertyContainer] A property with name \"{}\" already exists.", name));
-                    return Property<T>();
-                }
+            if (parrays_.contains(name)) {
+                LOG_WARN(fmt::format("[PropertyContainer] A property with name \"{}\" already exists.", name));
+                return Property<T>();
             }
 
             // otherwise add the property
             auto *p = new PropertyArray<T>(name, t);
             p->resize(size_);
-            parrays_.push_back(p);
+            parrays_[name] = p;
             return Property<T>(p);
         }
 
         // do we have a property with a given name?
         [[nodiscard]] bool exists(const std::string &name) const {
-            return std::ranges::any_of(parrays_, [&name](auto *p) { return (*p).name() == name; });
+            return parrays_.contains(name);
         }
 
         // get a property by its name. returns invalid property if it does not exist.
         template<class T>
         Property<T> get(const std::string &name) const {
-            for (auto parray: parrays_) {
-                if (parray->name() == name) {
-                    return Property<T>(dynamic_cast<PropertyArray<T> *>(parray));
-                }
+            auto iter = parrays_.find(name);
+            if (iter != parrays_.end()) {
+                return Property<T>(dynamic_cast<PropertyArray<T> *>(iter->second));
             }
             return Property<T>();
         }
 
         [[nodiscard]] BasePropertyArray *get_base(const std::string &name) const {
-            for (auto parray: parrays_) {
-                if (parray->name() == name) {
-                    return parray;
-                }
+            auto iter = parrays_.find(name);
+            if (iter != parrays_.end()) {
+                return iter->second;
             }
             return nullptr;
         }
@@ -301,7 +296,7 @@ namespace Bcg {
             const auto end = parrays_.end();
             for (auto it = parrays_.begin(); it != end; ++it) {
                 if (*it == h.parray_) {
-                    delete *it;
+                    delete it->second;
                     parrays_.erase(it);
                     h.reset();
                     break;
@@ -312,7 +307,7 @@ namespace Bcg {
         // delete all properties
         void clear() {
             for (auto &parray: parrays_) {
-                delete parray;
+                delete parray.second;
             }
             parrays_.clear();
             size_ = 0;
@@ -320,47 +315,48 @@ namespace Bcg {
 
         // reserve memory for n entries in all arrays
         void reserve(size_t n) const {
-            for (auto parray: parrays_) {
-                parray->reserve(n);
+            for (auto &parray: parrays_) {
+                parray.second->reserve(n);
             }
         }
 
         // resize all arrays to size n
         void resize(size_t n) {
             for (auto &parray: parrays_) {
-                parray->resize(n);
+                parray.second->resize(n);
             }
             size_ = n;
         }
 
         // free unused space in all arrays
         void free_memory() const {
-            for (auto parray: parrays_) {
-                parray->free_memory();
+            for (auto &parray: parrays_) {
+                parray.second->free_memory();
             }
         }
 
         // add a new element to each vector
         void push_back() {
             for (auto &parray: parrays_) {
-                parray->push_back();
+                parray.second->push_back();
             }
             ++size_;
         }
 
         // swap elements i0 and i1 in all arrays
         void swap(size_t i0, size_t i1) const {
-            for (auto parray: parrays_) {
-                parray->swap(i0, i1);
+            for (auto &parray: parrays_) {
+                parray.second->swap(i0, i1);
             }
         }
 
-        [[nodiscard]] const std::vector<BasePropertyArray *> &get_parray() const {
+        [[nodiscard]] const std::unordered_map<std::string, BasePropertyArray *> &get_parray() const {
             return parrays_;
         }
 
     private:
-        std::vector<BasePropertyArray *> parrays_;
+        std::unordered_map<std::string, BasePropertyArray *> parrays_;
+        //std::vector<BasePropertyArray *> parrays_;
         size_t size_{0};
     };
 }

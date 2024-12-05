@@ -7,6 +7,7 @@
 
 #include "Properties.h"
 #include <queue>
+#include <mutex>
 
 namespace Bcg {
     template<typename T>
@@ -16,18 +17,16 @@ namespace Bcg {
     template<typename T>
     class Pool {
     public:
-        Pool(const char *name);
+        explicit Pool(const char *name);
 
         virtual ~Pool() = default;
 
-        const char *GetName() const { return name; }
+        [[nodiscard]] const char *GetName() const { return name; }
 
         PoolHandle<T> Create();
 
         template<typename U>
         PoolHandle<T> Create(U &&obj);
-
-        void Destroy(const PoolHandle<T> &handle);
 
         PropertyContainer &GetProperties() { return properties; }
 
@@ -36,12 +35,18 @@ namespace Bcg {
         Property<T> &GetObjects() { return objects; }
 
     protected:
-        friend struct PoolHandle<T>;
+
+        void IncrementRefCount(size_t idx);
+
+        void DecrementRefCount(size_t idx);
+
+        friend class PoolHandle<T>;
         const char *name;
         PropertyContainer properties;
         Property<size_t> ref_count;
         Property<T> objects;
         std::queue<size_t> free_list;
+        std::mutex mutex;
     };
 
     template<typename T>
@@ -66,20 +71,33 @@ namespace Bcg {
     template<typename U>
     PoolHandle<T> Pool<T>::Create(U &&obj) {
         PoolHandle<T> handle = Create();
-        properties.get<T>("objects")[handle.idx] = std::forward<U>(obj);
+        objects[handle.idx] = std::forward<U>(obj);
         return handle;
     }
 
     template<typename T>
-    void Pool<T>::Destroy(const PoolHandle<T> &handle) {
-        if (handle.pool && handle.idx < handle.pool->properties.Size()) {
-            size_t &ref_count = handle.pool->ref_count[handle.idx];
-            if (ref_count > 0) {
-                --ref_count;
+    void Pool<T>::IncrementRefCount(size_t idx) {
+        std::scoped_lock lock(mutex);
+        assert(idx < properties.size());
+        assert(ref_count);
+
+        ++ref_count[idx];
+    }
+
+    template<typename T>
+    void Pool<T>::DecrementRefCount(size_t idx) {
+        std::scoped_lock lock(mutex);
+        assert(idx < properties.size());
+        assert(ref_count);
+
+        size_t &ref = ref_count[idx];
+        if (ref > 0) {
+            --ref;
+            if (ref == 0) {
+                free_list.push(idx);
             }
-            if (ref_count == 0) {
-                free_list.push(handle.idx);
-            }
+        } else {
+            assert(false && "Reference count underflow!");
         }
     }
 }
