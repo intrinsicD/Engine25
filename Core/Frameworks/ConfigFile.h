@@ -22,7 +22,7 @@ namespace Bcg {
                 return false;
             }
 
-            LOG_INFO(fmt::format("Loaded {}", filepath));
+            LOG_INFO(fmt::format("Config::LoadConfig: {}", filepath));
             // Parse the JSON
             json config_json;
             ifs >> config_json;

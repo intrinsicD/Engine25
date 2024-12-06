@@ -6,7 +6,7 @@
 #define ENGINE25_GUIMODULE_H
 
 #include "Module.h"
-#include "Command.h"
+#include "CommandBuffer.h"
 
 namespace Bcg {
     class GuiModule : public Module {
@@ -14,6 +14,10 @@ namespace Bcg {
         GuiModule();
 
         ~GuiModule() override = default;
+
+        void ConnectEvents() override;
+
+        void DisconnectEvents() override;
 
         void OnInitialize(const Events::Initialize &event) override;
 
@@ -23,7 +27,13 @@ namespace Bcg {
 
         void OnShutdown(const Events::Shutdown &event) override;
 
-        static void LoadFonts(std::string font_path, float font_size);
+        static bool WantCaptureKeyboard();
+
+        static bool WantCaptureMouse();
+
+        static void LoadFonts(const std::string& font_path, float font_size);
+
+        CommandBuffer active_gui_commands;
     };
 
     class InitializeImGui : public AbstractCommand {
@@ -34,11 +44,29 @@ namespace Bcg {
         void Execute() const override;
     };
 
-    //TODO add these commands via synchronize to the main loop
-
     class BeginGui : public AbstractCommand {
     public:
         BeginGui() : AbstractCommand() {
+        }
+
+        void Execute() const override;
+    };
+
+    class ShowPopup : public AbstractCommand {
+    public:
+        ShowPopup(std::string popupName, double duration, std::function<void()> contentFunc) : AbstractCommand() {
+        }
+
+        void Execute() const override;
+
+        std::string popupName;
+        double duration;
+        std::function<void()> contentFunc;
+    };
+
+    class MockMenu : public AbstractCommand {
+    public:
+        MockMenu() : AbstractCommand() {
         }
 
         void Execute() const override;

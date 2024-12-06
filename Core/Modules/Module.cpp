@@ -10,26 +10,26 @@ namespace Bcg {
     }
 
     void Module::ConnectEvents() {
-        LOG_INFO(fmt::format("Connected to events: {} {}", name, version));
+        LOG_INFO(fmt::format("{}::ConnectEvents", name));
     }
 
     void Module::DisconnectEvents() {
-        LOG_INFO(fmt::format("Disconnected from events: {} {}", name, version));
+        LOG_INFO(fmt::format("{}::DisconnectEvents", name));
     }
 
     void Module::OnInitialize(const Events::Initialize &event) {
-        LOG_INFO(fmt::format("Initialize {} {}", name, version));
+        LOG_INFO(fmt::format("{}::OnInitialize: version {}", name, version));
     }
 
     void Module::OnStartup(const Events::Startup &event) {
-        LOG_INFO(fmt::format("Startup {} {}", name, version));
+        LOG_INFO(fmt::format("{}::OnStartup", name));
     }
 
     void Module::OnSynchronize(const Events::Synchronize &event) {
-        //don't log this event since it is called every frame
+        LOG_FRAME(fmt::format("{}::OnSynchronize", name));
     }
 
     void Module::OnShutdown(const Events::Shutdown &event) {
-        LOG_INFO(fmt::format("Shutdown {} {}", name, version));
+        LOG_INFO(fmt::format("{}::OnShutdown", name));
     }
 }

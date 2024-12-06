@@ -3,6 +3,8 @@
 //
 
 #include "Logger.h"
+#include "fmt/color.h"
+#include "fmt/core.h"
 
 namespace Bcg {
     Logger &Logger::GetInstance() {
@@ -71,16 +73,18 @@ namespace Bcg {
 
     std::string Logger::ToString(Level level) const {
         switch (level) {
+            case Level::TODO:
+                return fmt::format("{}", fmt::styled(" TODO", fmt::fg(fmt::color::yellow)));
             case Level::Info:
-                return " INFO";
+                return fmt::format("{}", fmt::styled(" INFO", fmt::fg(fmt::color::green)));
             case Level::Warn:
-                return " WARN";
+                return fmt::format("{}", fmt::styled(" WARN", fmt::fg(fmt::color::orange)));
             case Level::Error:
-                return "ERROR";
+                return fmt::format("{}", fmt::styled("ERROR", fmt::fg(fmt::color::red)));
             case Level::Fatal:
-                return "FATAL";
+                return fmt::format("{}", fmt::styled("FATAL", fmt::fg(fmt::color::blue)));
             default:
-                return "UNKNOWN";
+                return fmt::format("{}", fmt::styled("UNKNOWN", fmt::fg(fmt::color::pink)));
         }
     }
 }

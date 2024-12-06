@@ -14,6 +14,9 @@ target_sources(Engine25 PRIVATE glad/src/gl.c)
 add_subdirectory(json)
 target_link_libraries(Engine25 PUBLIC nlohmann_json::nlohmann_json)
 
+add_subdirectory(glm)
+target_link_libraries(Engine25 PUBLIC glm)
+
 target_include_directories(Engine25 SYSTEM PUBLIC imgui)
 target_sources(Engine25 PRIVATE
         imgui/imgui.cpp

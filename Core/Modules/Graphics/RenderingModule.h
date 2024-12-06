@@ -58,13 +58,32 @@ namespace Bcg {
         void Execute() const override;
     };
 
+    struct LogThisFrame : public AbstractCommand {
+        LogThisFrame() : AbstractCommand() {
+        }
+
+        void Execute() const override;
+    };
+
     struct SetClearColor : public AbstractCommand {
+        SetClearColor(float clear_color[3]) : AbstractCommand(), color{clear_color[0], clear_color[1], clear_color[2]} {
+        }
+
         SetClearColor(float r, float g, float b) : AbstractCommand(), color{r, g, b} {
         }
 
         void Execute() const override;
 
         float color[3];
+    };
+
+    struct SetViewport : public AbstractCommand {
+        SetViewport(int x, int y, int width, int height) : AbstractCommand(), viewport{x, y, width, height} {
+        }
+
+        void Execute() const override;
+
+        int viewport[4];
     };
 
     struct ClearFrameBuffer : public AbstractCommand {

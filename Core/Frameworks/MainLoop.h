@@ -20,6 +20,7 @@ namespace Bcg {
         DoubleCommandBuffer prepare_render; // Combines begin_render + render_scene
         DoubleCommandBuffer end_render;     // Render cleanup
         DoubleCommandBuffer render_gui;     // Combines begin_gui, render_gui, end_gui
+        DoubleCommandBuffer end_gui;     // Combines begin_gui, render_gui, end_gui
         DoubleCommandBuffer end;       // Final loop tasks
     };
 }

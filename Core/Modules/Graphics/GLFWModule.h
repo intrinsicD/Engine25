@@ -7,6 +7,7 @@
 
 #include "Module.h"
 #include "Command.h"
+#include "glm/glm.hpp"
 
 namespace Bcg {
     class GLFWModule : public Module {
@@ -26,6 +27,10 @@ namespace Bcg {
         void OnSynchronize(const Events::Synchronize &event) override;
 
         void OnShutdown(const Events::Shutdown &event) override;
+
+        static GLFWwindow *GetCurrentWindow();
+
+        static glm::vec2 GetCursorPosition(GLFWwindow *window);
 
         static float GetDpiScaling();
     };

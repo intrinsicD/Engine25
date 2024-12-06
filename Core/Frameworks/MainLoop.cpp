@@ -25,6 +25,7 @@ namespace Bcg {
             prepare_render.Handle();
             end_render.Handle();
             render_gui.Handle();
+            end_gui.Handle();
             end.Handle();
         }
     }

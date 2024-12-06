@@ -9,7 +9,7 @@
 #include "RenderingModule.h"
 #include "GLFWModule.h"
 #include "GuiModule.h"
-#include "ConfigFile.h"
+#include "InputModule.h"
 #include "ConfigFile.h"
 
 namespace Bcg {
@@ -19,48 +19,47 @@ namespace Bcg {
     void Engine::Init() {
         //TODO
         Logger::GetInstance().SetLogFile("engine.log");
-        Logger::GetInstance().SetLogLevel(Logger::Level::Info);
+        Logger::GetInstance().SetLogLevel(Logger::Level::TODO);
         Logger::GetInstance().EnableConsoleLogger(true);
 
         // Retrieve font path and size from config
         Config::LoadConfig(std::string(SOURCE_DIR_PATH) + "/config.json");
 
-        LOG_INFO(fmt::format("Init {} version {}", name, version));
+        LOG_INFO(fmt::format("{}::Init: version {}", name, version));
+
         auto &loop = GetContext().emplace<MainLoop>();
         auto &renderer = GetContext().emplace<RenderingModule>();
         auto &glfw = GetContext().emplace<GLFWModule>();
         auto &gui = GetContext().emplace<GuiModule>();
+        auto &input = GetContext().emplace<InputModule>();
 
         renderer.SetBackend({RenderingModule::Backend::Type::OpenGL, "OpenGL", "4.6"});
 
         renderer.ConnectEvents();
         glfw.ConnectEvents();
         gui.ConnectEvents();
+        input.ConnectEvents();
 
         dispatcher.trigger<Events::Initialize>();
-
- /*       loop.end.Next().AddCommand(std::make_shared<Task>([&loop]() {
-            loop.Stop();
-            LOG_INFO("MainLoop stopped from end command");
-        }));*/
+        LogThisFrame().Execute();
     }
 
     void Engine::Startup() {
         //TODO
+        LOG_INFO(fmt::format("{}::Startup", name));
         dispatcher.trigger<Events::Startup>();
-        LOG_INFO(fmt::format("Startup {} version {}", name, version));
     }
 
     void Engine::Run() {
         //TODO
-        LOG_INFO(fmt::format("Run {} version {}", name, version));
+        LOG_INFO(fmt::format("{}::Run", name));
         GetContext().get<MainLoop>().Run();
     }
 
     void Engine::Shutdown() {
         //TODO
+        LOG_INFO(fmt::format("{}::Shutdown", name));
         dispatcher.trigger<Events::Shutdown>();
-        LOG_INFO(fmt::format("Shutdown {} version {}", name, version));
     }
 
     Scene &Engine::GetScene() {

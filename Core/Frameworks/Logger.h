@@ -18,10 +18,11 @@ namespace Bcg {
     class Logger {
     public:
         enum class Level {
+            TODO,
             Info,
             Warn,
             Error,
-            Fatal
+            Fatal,
         };
         
         static Logger &GetInstance();
