@@ -5,4 +5,5 @@ target_sources(Engine25 PRIVATE
         ConfigFile.cpp
         Logger.cpp
         MainLoop.cpp
+        Keyboard.cpp
 )

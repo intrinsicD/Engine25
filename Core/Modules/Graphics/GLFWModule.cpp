@@ -16,6 +16,9 @@
 #include "imgui.h"
 
 namespace Bcg {
+    static std::unordered_map<Key, std::function<void()>> press_keymap;
+    static std::unordered_map<Key, std::function<void()>> release_keymap;
+
     GLFWModule::GLFWModule() : Module("GLFWModule", "0.1") {
     }
 
@@ -56,39 +59,20 @@ namespace Bcg {
         if (!GuiModule::WantCaptureKeyboard()) {
             Engine::GetDispatcher().trigger(event);
 
-            if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-                close_callback(window);
-            }
-            if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-                LogThisFrame().Execute();
-            }
-            if (key == GLFW_KEY_M) {
-                if (action == GLFW_PRESS) {
-                    if (!mouse_logging) {
-                        mouse_logging = true;
-                        InputModule::EnableMouseLogging();
-                    } else {
-                        mouse_logging = false;
-                        InputModule::DisableMouseLogging();
-                    }
+            auto &keyboard = Engine::GetContext().get<Keyboard>();
+            auto bcg_key = MapGlfwKey(key);
+            if (action == GLFW_PRESS) {
+                keyboard.PressKey(bcg_key);
+                auto iter = press_keymap.find(bcg_key);
+                if (iter != press_keymap.end()) {
+                    iter->second();
                 }
             }
-            if (key == GLFW_KEY_K) {
-                if (action == GLFW_PRESS) {
-                    if (!key_logging) {
-                        key_logging = true;
-                        InputModule::EnableKeyLogging();
-                    } else {
-                        key_logging = false;
-                        InputModule::DisableKeyLogging();
-                    }
-                }
-            }
-            if(key == GLFW_KEY_H){
-                if(action == GLFW_PRESS){
-                    ShowPopup("popup", 5.0, [](){
-                        ImGui::Text("Hello, I'm a popup");
-                    }).Execute();
+            if (action == GLFW_RELEASE) {
+                keyboard.ReleaseKey(bcg_key);
+                auto iter = release_keymap.find(bcg_key);
+                if (iter != release_keymap.end()) {
+                    iter->second();
                 }
             }
         }
@@ -176,6 +160,40 @@ namespace Bcg {
         }
 
         Engine::GetContext().emplace<Pool<Window> >("window_pool");
+        Engine::GetContext().emplace<Keyboard>();
+
+        SetPressKeymapCallback(Key::Escape, []() {
+            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                close_callback(Engine::GetContext().get<WindowComponent>()->handle);
+            }
+        });
+        SetPressKeymapCallback(Key::C, []() {
+            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                LogThisFrame().Execute();
+            }
+        });
+        SetPressKeymapCallback(Key::M, []() {
+            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                if (!mouse_logging) {
+                    mouse_logging = true;
+                    InputModule::EnableMouseLogging();
+                } else {
+                    mouse_logging = false;
+                    InputModule::DisableMouseLogging();
+                }
+            }
+        });
+        SetPressKeymapCallback(Key::K, []() {
+            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                if (!key_logging) {
+                    key_logging = true;
+                    InputModule::EnableKeyLogging();
+                } else {
+                    key_logging = false;
+                    InputModule::DisableKeyLogging();
+                }
+            }
+        });
     }
 
     void GLFWModule::OnStartup(const Events::Startup &event) {
@@ -231,6 +249,14 @@ namespace Bcg {
     void GLFWModule::OnShutdown(const Events::Shutdown &event) {
         Module::OnShutdown(event);
         glfwTerminate();
+    }
+
+    void GLFWModule::SetPressKeymapCallback(Key key, std::function<void()> callback) {
+        press_keymap[key] = std::move(callback);
+    }
+
+    void GLFWModule::SetReleaseKeymapCallback(Key key, std::function<void()> callback) {
+        release_keymap[key] = std::move(callback);
     }
 
     float GLFWModule::GetDpiScaling() {

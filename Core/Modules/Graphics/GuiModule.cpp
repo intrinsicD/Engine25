@@ -121,37 +121,6 @@ namespace Bcg {
         LOG_FRAME("Command::BeginGui");
     }
 
-    struct PopupData {
-        bool active = false;
-        std::string name;
-        double start_time = 0.0;
-        double duration = 0.0;
-        std::function<void()> contentFunc;
-    };
-
-    void ShowPopup::Execute() const {
-        // Static variables hold the popup state between frames
-        if (!Engine::GetContext().contains<Cache<std::string, PopupData>>()) {
-            Engine::GetContext().emplace<Cache<std::string, PopupData>>();
-        }
-        auto &popup_cache = Engine::GetContext().get<Cache<std::string, PopupData>>();
-        //Check if the popup is already being shown
-        auto iter = popup_cache.find(popupName);
-        if (iter != popup_cache.end()) { return; }
-
-        PopupData &popup = popup_cache[popupName];
-        if (!popup.active) {
-            popup.name = popupName;
-            popup.start_time = ImGui::GetTime();
-            popup.duration = duration;
-            popup.contentFunc = contentFunc;
-            popup.active = true;
-            LOG_INFO(fmt::format("Popup {} opened", popup.name));
-        }
-        LOG_TODO("ShowPopup::Execute: Figure out how to close the popup and to render it");
-        // If we are currently showing the popup, decide whether to keep showing it.
-    }
-
     void MockMenu::Execute() const {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New")) {

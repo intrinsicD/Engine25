@@ -52,18 +52,6 @@ namespace Bcg {
         void Execute() const override;
     };
 
-    class ShowPopup : public AbstractCommand {
-    public:
-        ShowPopup(std::string popupName, double duration, std::function<void()> contentFunc) : AbstractCommand() {
-        }
-
-        void Execute() const override;
-
-        std::string popupName;
-        double duration;
-        std::function<void()> contentFunc;
-    };
-
     class MockMenu : public AbstractCommand {
     public:
         MockMenu() : AbstractCommand() {

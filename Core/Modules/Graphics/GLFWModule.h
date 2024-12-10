@@ -8,6 +8,7 @@
 #include "Module.h"
 #include "Command.h"
 #include "glm/glm.hpp"
+#include "Keyboard.h"
 
 namespace Bcg {
     class GLFWModule : public Module {
@@ -27,6 +28,10 @@ namespace Bcg {
         void OnSynchronize(const Events::Synchronize &event) override;
 
         void OnShutdown(const Events::Shutdown &event) override;
+
+        void SetPressKeymapCallback(Key key, std::function<void()> callback);
+
+        void SetReleaseKeymapCallback(Key key, std::function<void()> callback);
 
         static GLFWwindow *GetCurrentWindow();
 
