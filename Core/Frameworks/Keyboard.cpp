@@ -7,6 +7,40 @@
 
 namespace Bcg {
 
+    void Keyboard::PressKey(Key key) {
+        pressed_keys.insert(key);
+    }
+
+    void Keyboard::ReleaseKey(Key key) {
+        pressed_keys.erase(key);
+    }
+
+    bool Keyboard::IsPressed(Key key) {
+        return pressed_keys.find(key) != pressed_keys.end();
+    }
+
+    void KeyboardCallbacks::SetPressKeymapCallback(Key key, std::function<void()> callback) {
+        press_key_callbacks[key] = std::move(callback);
+    }
+
+    void KeyboardCallbacks::SetReleaseKeymapCallback(Key key, std::function<void()> callback) {
+        release_key_callbacks[key] = std::move(callback);
+    }
+
+    void KeyboardCallbacks::TriggerPressKeyCallback(Key key) const {
+        auto iter = press_key_callbacks.find(key);
+        if (iter != press_key_callbacks.end()) {
+            iter->second();
+        }
+    }
+
+    void KeyboardCallbacks::TriggerReleaseKeyCallback(Key key) const {
+        auto iter = release_key_callbacks.find(key);
+        if (iter != release_key_callbacks.end()) {
+            iter->second();
+        }
+    }
+
     Key MapGlfwKey(int key) {
         switch (key) {
             case GLFW_KEY_A:

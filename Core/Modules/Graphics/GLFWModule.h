@@ -29,10 +29,6 @@ namespace Bcg {
 
         void OnShutdown(const Events::Shutdown &event) override;
 
-        void SetPressKeymapCallback(Key key, std::function<void()> callback);
-
-        void SetReleaseKeymapCallback(Key key, std::function<void()> callback);
-
         static GLFWwindow *GetCurrentWindow();
 
         static glm::vec2 GetCursorPosition(GLFWwindow *window);

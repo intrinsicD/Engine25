@@ -23,18 +23,18 @@ namespace Bcg {
     }
 
     void GuiModule::ConnectEvents() {
-        Engine::GetDispatcher().sink<Events::Initialize>().connect<&GuiModule::OnInitialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().connect<&GuiModule::OnStartup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&GuiModule::OnSynchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&GuiModule::OnShutdown>(*this);
+        Engine::GetDispatcher().sink<Events::Initialize>().connect<&GuiModule::OnInitialize>(this);
+        Engine::GetDispatcher().sink<Events::Startup>().connect<&GuiModule::OnStartup>(this);
+        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&GuiModule::OnSynchronize>(this);
+        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&GuiModule::OnShutdown>(this);
         Module::ConnectEvents();
     }
 
     void GuiModule::DisconnectEvents() {
-        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&GuiModule::OnInitialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&GuiModule::OnStartup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&GuiModule::OnSynchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&GuiModule::OnShutdown>(*this);
+        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&GuiModule::OnInitialize>(this);
+        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&GuiModule::OnStartup>(this);
+        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&GuiModule::OnSynchronize>(this);
+        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&GuiModule::OnShutdown>(this);
         Module::DisconnectEvents();
     }
 
@@ -53,6 +53,8 @@ namespace Bcg {
         auto &loop = Engine::GetContext().get<MainLoop>();
         loop.end_render.Next().AddCommand(std::make_shared<BeginGui>());
         loop.render_gui.Next().AddCommand(std::make_shared<MockMenu>());
+        loop.render_gui.Next().AddCommand(std::make_shared<RenderMenu>());
+        loop.render_gui.Next().AddCommand(std::make_shared<RenderGui>());
         loop.end_gui.Next().AddCommand(std::make_shared<EndGui>());
     }
 
@@ -121,6 +123,16 @@ namespace Bcg {
         LOG_FRAME("Command::BeginGui");
     }
 
+    void RenderMenu::Execute() const {
+        Engine::GetDispatcher().trigger<Events::Gui::RenderMenu>();
+        LOG_FRAME("Command::RenderMenu: trigger event");
+    }
+
+    void RenderGui::Execute() const {
+        Engine::GetDispatcher().trigger<Events::Gui::RenderGui>();
+        LOG_FRAME("Command::RenderGui: trigger event");
+    }
+
     void MockMenu::Execute() const {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New")) {
@@ -163,5 +175,4 @@ namespace Bcg {
         }
         LOG_FRAME("Command::EndGui");
     }
-
 }

@@ -24,6 +24,18 @@ namespace Bcg::Events {
 
     };
 
+    namespace Gui {
+        struct RenderMenu {
+
+        };
+
+        struct RenderGui {
+
+        };
+    }
+
+
+
     struct Key {
         GLFWwindow *window;
         int key, scancode, action, mode;

@@ -31,7 +31,7 @@ namespace Bcg {
 
         static bool WantCaptureMouse();
 
-        static void LoadFonts(const std::string& font_path, float font_size);
+        static void LoadFonts(const std::string &font_path, float font_size);
 
         CommandBuffer active_gui_commands;
     };
@@ -47,6 +47,22 @@ namespace Bcg {
     class BeginGui : public AbstractCommand {
     public:
         BeginGui() : AbstractCommand() {
+        }
+
+        void Execute() const override;
+    };
+
+    class RenderMenu : public AbstractCommand {
+    public:
+        RenderMenu() : AbstractCommand() {
+        }
+
+        void Execute() const override;
+    };
+
+    class RenderGui : public AbstractCommand {
+    public:
+        RenderGui() : AbstractCommand() {
         }
 
         void Execute() const override;

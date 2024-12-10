@@ -16,9 +16,6 @@
 #include "imgui.h"
 
 namespace Bcg {
-    static std::unordered_map<Key, std::function<void()>> press_keymap;
-    static std::unordered_map<Key, std::function<void()>> release_keymap;
-
     GLFWModule::GLFWModule() : Module("GLFWModule", "0.1") {
     }
 
@@ -59,21 +56,12 @@ namespace Bcg {
         if (!GuiModule::WantCaptureKeyboard()) {
             Engine::GetDispatcher().trigger(event);
 
-            auto &keyboard = Engine::GetContext().get<Keyboard>();
+            auto &k_callbacks = Engine::GetContext().get<KeyboardCallbacks>();
             auto bcg_key = MapGlfwKey(key);
             if (action == GLFW_PRESS) {
-                keyboard.PressKey(bcg_key);
-                auto iter = press_keymap.find(bcg_key);
-                if (iter != press_keymap.end()) {
-                    iter->second();
-                }
-            }
-            if (action == GLFW_RELEASE) {
-                keyboard.ReleaseKey(bcg_key);
-                auto iter = release_keymap.find(bcg_key);
-                if (iter != release_keymap.end()) {
-                    iter->second();
-                }
+                k_callbacks.TriggerPressKeyCallback(bcg_key);
+            } else if (action == GLFW_RELEASE) {
+                k_callbacks.TriggerReleaseKeyCallback(bcg_key);
             }
         }
     }
@@ -160,40 +148,6 @@ namespace Bcg {
         }
 
         Engine::GetContext().emplace<Pool<Window> >("window_pool");
-        Engine::GetContext().emplace<Keyboard>();
-
-        SetPressKeymapCallback(Key::Escape, []() {
-            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-                close_callback(Engine::GetContext().get<WindowComponent>()->handle);
-            }
-        });
-        SetPressKeymapCallback(Key::C, []() {
-            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-                LogThisFrame().Execute();
-            }
-        });
-        SetPressKeymapCallback(Key::M, []() {
-            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-                if (!mouse_logging) {
-                    mouse_logging = true;
-                    InputModule::EnableMouseLogging();
-                } else {
-                    mouse_logging = false;
-                    InputModule::DisableMouseLogging();
-                }
-            }
-        });
-        SetPressKeymapCallback(Key::K, []() {
-            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-                if (!key_logging) {
-                    key_logging = true;
-                    InputModule::EnableKeyLogging();
-                } else {
-                    key_logging = false;
-                    InputModule::DisableKeyLogging();
-                }
-            }
-        });
     }
 
     void GLFWModule::OnStartup(const Events::Startup &event) {
@@ -237,6 +191,41 @@ namespace Bcg {
             glfwSetDropCallback(window_handle->handle, drop_callback);
             Engine::GetContext().emplace<WindowComponent>(window_handle);
         }
+
+        auto &k_callbacks = Engine::GetContext().get<KeyboardCallbacks>();
+
+        k_callbacks.SetPressKeymapCallback(Key::Escape, []() {
+            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                close_callback(Engine::GetContext().get<WindowComponent>()->handle);
+            }
+        });
+        k_callbacks.SetPressKeymapCallback(Key::C, []() {
+            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                LogThisFrame().Execute();
+            }
+        });
+        k_callbacks.SetPressKeymapCallback(Key::M, []() {
+            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                if (!mouse_logging) {
+                    mouse_logging = true;
+                    InputModule::EnableMouseLogging();
+                } else {
+                    mouse_logging = false;
+                    InputModule::DisableMouseLogging();
+                }
+            }
+        });
+        k_callbacks.SetPressKeymapCallback(Key::K, []() {
+            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                if (!key_logging) {
+                    key_logging = true;
+                    InputModule::EnableKeyLogging();
+                } else {
+                    key_logging = false;
+                    InputModule::DisableKeyLogging();
+                }
+            }
+        });
     }
 
     void GLFWModule::OnSynchronize(const Events::Synchronize &event) {
@@ -249,14 +238,6 @@ namespace Bcg {
     void GLFWModule::OnShutdown(const Events::Shutdown &event) {
         Module::OnShutdown(event);
         glfwTerminate();
-    }
-
-    void GLFWModule::SetPressKeymapCallback(Key key, std::function<void()> callback) {
-        press_keymap[key] = std::move(callback);
-    }
-
-    void GLFWModule::SetReleaseKeymapCallback(Key key, std::function<void()> callback) {
-        release_keymap[key] = std::move(callback);
     }
 
     float GLFWModule::GetDpiScaling() {

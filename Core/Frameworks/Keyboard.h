@@ -6,6 +6,8 @@
 #define ENGINE25_KEYBOARD_H
 
 #include <set>
+#include <unordered_map>
+#include <functional>
 
 namespace Bcg {
     enum class Key {
@@ -41,21 +43,29 @@ namespace Bcg {
 
     class Keyboard {
     public:
+        void PressKey(Key key);
 
+        void ReleaseKey(Key key);
 
+        bool IsPressed(Key key);
+    protected:
         std::set<Key> pressed_keys;
+    };
 
-        void PressKey(Key key) {
-            pressed_keys.insert(key);
-        }
+    class KeyboardCallbacks {
+    public:
+        void SetPressKeymapCallback(Key key, std::function<void()> callback);
 
-        void ReleaseKey(Key key) {
-            pressed_keys.erase(key);
-        }
+        void SetReleaseKeymapCallback(Key key, std::function<void()> callback);
 
-        bool IsPressed(Key key) {
-            return pressed_keys.find(key) != pressed_keys.end();
-        }
+        void TriggerPressKeyCallback(Key key) const;
+
+        void TriggerReleaseKeyCallback(Key key) const;
+
+    protected:
+        std::unordered_map<Key, std::function<void()> > press_key_callbacks;
+        std::unordered_map<Key, std::function<void()> > release_key_callbacks;
+
     };
 
     Key MapGlfwKey(int key);

@@ -5,6 +5,7 @@
 #include "InputModule.h"
 #include "Engine.h"
 #include "Mouse.h"
+#include "Keyboard.h"
 #include "LoggingMacros.h"
 #include "MainLoop.h"
 #include "GLFW/glfw3.h"
@@ -32,7 +33,8 @@ namespace Bcg {
     void InputModule::OnInitialize(const Events::Initialize &event) {
         Module::OnInitialize(event);
         Engine::GetContext().emplace<Mouse>();
-
+        Engine::GetContext().emplace<Keyboard>();
+        Engine::GetContext().emplace<KeyboardCallbacks>();
     }
 
     void InputModule::OnStartup(const Events::Startup &event) {
@@ -79,6 +81,13 @@ namespace Bcg {
                                  event.key,event.scancode,event.action, event.mode));
         }
 
+        auto &keyboard = Engine::GetContext().get<Keyboard>();
+
+        if(event.action == GLFW_PRESS){
+            keyboard.PressKey(MapGlfwKey(event.key));
+        } else if(event.action == GLFW_RELEASE){
+            keyboard.ReleaseKey(MapGlfwKey(event.key));
+        }
     }
 
     void InputModule::OnMouseCursor(const Events::MouseCursor &event) {
