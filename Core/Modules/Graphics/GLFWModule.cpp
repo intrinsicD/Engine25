@@ -13,7 +13,7 @@
 #include "MainLoop.h"
 #include "InputModule.h"
 #include "WindowComponent.h"
-#include "imgui.h"
+#include "ConfigFile.h"
 
 namespace Bcg {
     GLFWModule::GLFWModule() : Module("GLFWModule", "0.1") {
@@ -36,8 +36,7 @@ namespace Bcg {
     }
 
     static void glfw_error_callback(int error, const char *description) {
-        std::string message = "GLFW Error " + std::to_string(error) + ", " + description + "\n";
-        LOG_ERROR(fmt::format("GLFW: {}", message));
+        LOG_ERROR(fmt::format("GLFW Error: {} {}", error, description));
     }
 
     static void close_callback(GLFWwindow *window) {
@@ -133,7 +132,6 @@ namespace Bcg {
         }
         LOG_INFO(fmt::format("GLFWModule::OnInitialize: Starting GLFW context, {} {}", backend.name, backend.version));
 
-        GLFWwindow *glfw_window = nullptr;
         switch (backend.type) {
             case RenderingModule::Backend::Type::OpenGL:
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -158,9 +156,9 @@ namespace Bcg {
             auto window_handle = window_pool.Create();
             Window window;
             if (!Engine::GetContext().find<Window>()) {
-                window.width = 1280;
-                window.height = 720;
-                window.title = "Engine 25";
+                window.width = Config::GetInt("window.width");
+                window.height = Config::GetInt("window.height");
+                window.title = Config::GetString("window.title");
                 LOG_INFO("GLFWModule::OnStartup: Create window from default");
             } else {
                 window = Engine::GetContext().get<Window>();
@@ -172,7 +170,7 @@ namespace Bcg {
             window_handle->height = window.height;
             window_handle->title = window.title;
 
-            window_handle->handle = glfwCreateWindow(window_handle->width, window_handle->height, window_handle->title,
+            window_handle->handle = glfwCreateWindow(window_handle->width, window_handle->height, window_handle->title.c_str(),
                                                      nullptr, nullptr);
             if (!window_handle->handle) {
                 LOG_FATAL("GLFWModule::OnStartup: Failed to create window");

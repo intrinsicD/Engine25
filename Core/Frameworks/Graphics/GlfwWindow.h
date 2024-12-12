@@ -5,6 +5,8 @@
 #ifndef ENGINE25_GLFWWINDOW_H
 #define ENGINE25_GLFWWINDOW_H
 
+#include <string>
+
 struct GLFWwindow;
 
 namespace Bcg {
@@ -12,7 +14,7 @@ namespace Bcg {
         GLFWwindow *handle = nullptr;
         int width = 0;
         int height = 0;
-        const char *title = nullptr;
+        std::string title;
         float clear_color[3]{};
     };
 }

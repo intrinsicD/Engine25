@@ -7,3 +7,5 @@ target_sources(Engine25 PRIVATE
         MainLoop.cpp
         Keyboard.cpp
 )
+
+add_subdirectory(Graphics)
