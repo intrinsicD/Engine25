@@ -8,5 +8,8 @@
     "width": 1280,
     "height": 720,
     "title": "Engine25"
+  },
+  "jobs": {
+    "max_threads": 4
   }
 }

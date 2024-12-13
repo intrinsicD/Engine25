@@ -16,6 +16,18 @@ namespace Bcg::Events {
 
     };
 
+    struct BeginFrameEvent {
+
+    };
+
+    struct UpdateSystems{
+
+    };
+
+    struct EndFrameEvent {
+
+    };
+
     struct Synchronize {
 
     };

@@ -9,10 +9,10 @@
 #include "GLFW/glfw3.h"
 #include "LoggingMacros.h"
 #include "WindowComponent.h"
-#include "GraphicsApi.h"
+#include <slang/slang.h>
 
 namespace Bcg {
-    RenderingModule::RenderingModule() : Module("RenderingModule", "0.1") {
+    RenderingModule::RenderingModule() : Module("RenderingModule", "0.1"){
 
     }
 

@@ -7,6 +7,8 @@
 
 #include "entt/entity/registry.hpp"
 #include "entt/signal/dispatcher.hpp"
+#include "RenderGraph.h"
+#include "TaskGraph.h"
 
 namespace Bcg {
     using Scene = entt::registry;
@@ -30,6 +32,10 @@ namespace Bcg {
         static Context &GetContext();
 
         static Dispatcher &GetDispatcher();
+
+        static TaskGraph &GetTaskGraph();
+
+        static Graphics::RenderGraph &GetRenderGraph();
     private:
         const char *name = "Engine";
         const char *version = "0.0.1";

@@ -11,6 +11,7 @@
 #include "GuiModule.h"
 #include "InputModule.h"
 #include "ConfigFile.h"
+#include "JobSystem.h"
 
 namespace Bcg {
     static Scene scene;
@@ -27,6 +28,9 @@ namespace Bcg {
 
         LOG_INFO(fmt::format("{}::Init: version {}", name, version));
 
+        auto &jobs = GetContext().emplace<JobSystem>(Config::GetInt("num_threads"));
+        auto &taskGraph = GetContext().emplace<TaskGraph>();
+        auto &renderGraph = GetContext().emplace<Graphics::RenderGraph>();
         auto &loop = GetContext().emplace<MainLoop>();
         auto &renderer = GetContext().emplace<RenderingModule>();
         auto &glfw = GetContext().emplace<GLFWModule>();
@@ -60,6 +64,8 @@ namespace Bcg {
         //TODO
         LOG_INFO(fmt::format("{}::Shutdown", name));
         dispatcher.trigger<Events::Shutdown>();
+        auto &jobs = GetContext().get<JobSystem>();
+        jobs.Wait();
     }
 
     Scene &Engine::GetScene() {
@@ -72,5 +78,13 @@ namespace Bcg {
 
     Dispatcher &Engine::GetDispatcher() {
         return dispatcher;
+    }
+
+    TaskGraph &Engine::GetTaskGraph() {
+        return GetContext().get<TaskGraph>();
+    }
+
+    Graphics::RenderGraph &Engine::GetRenderGraph() {
+        return GetContext().get<Graphics::RenderGraph>();
     }
 }

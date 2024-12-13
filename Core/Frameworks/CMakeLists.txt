@@ -6,6 +6,8 @@ target_sources(Engine25 PRIVATE
         Logger.cpp
         MainLoop.cpp
         Keyboard.cpp
+        JobSystem.cpp
+        TaskGraph.cpp
 )
 
 add_subdirectory(Graphics)
