@@ -1,69 +1,142 @@
+// This is a conceptual example of a handle-based, backend-agnostic graphics API design.
+// It demonstrates enums, descriptors, handle types, and a Device interface that relies on
+// a backend-specific function table. This code is not tied to a specific backend implementation.
+// To use it in practice, you would implement the backend functions (e.g., OpenGL, Vulkan)
+// and provide them to the Device constructor.
 //
-// Created by alex on 12.12.24.
-//
+// Note on naming conventions:
+// - Free functions use CamelCase
+// - Member variables and local variables use snake_case
+// - Types (classes, structs, enums) use PascalCase
 
-#ifndef ENGINE25_GRAPHICSAPI_H
-#define ENGINE25_GRAPHICSAPI_H
-
+#pragma once
+#include <cstdint>
 #include <vector>
 #include <string>
-#include <limits>
-#include <cstddef>
-#include <memory>
 
 namespace Bcg::Graphics {
-
-    // Aliases for basic types
+    // ----------------------------------------------------------
+    // Basic Type Aliases
+    // ----------------------------------------------------------
     using Int32 = int;
     using Uint32 = unsigned int;
     using Uint64 = unsigned long long;
-    using IndexType = unsigned int;
+    using SizeType = size_t;
 
+    // ----------------------------------------------------------
+    // Handle Types (Opaque Identifiers)
+    // ----------------------------------------------------------
+    struct BufferHandle {
+        Uint32 id = 0;
+    };
+
+    struct TextureHandle {
+        Uint32 id = 0;
+    };
+
+    struct SamplerHandle {
+        Uint32 id = 0;
+    };
+
+    struct ShaderHandle {
+        Uint32 id = 0;
+    };
+
+    struct PipelineHandle {
+        Uint32 id = 0;
+    };
+
+    struct RenderPassHandle {
+        Uint32 id = 0;
+    };
+
+    struct FramebufferHandle {
+        Uint32 id = 0;
+    };
+
+    struct DescriptorSetLayoutHandle {
+        Uint32 id = 0;
+    };
+
+    struct DescriptorSetHandle {
+        Uint32 id = 0;
+    };
+
+    struct CommandBufferHandle {
+        Uint32 id = 0;
+    };
+
+    struct FenceHandle {
+        Uint32 id = 0;
+    };
+
+    struct SemaphoreHandle {
+        Uint32 id = 0;
+    };
+
+    struct SwapchainHandle {
+        Uint32 id = 0;
+    };
+
+    // A helper to indicate invalid handles
+    static constexpr Uint32 InvalidId = 0;
+
+
+    // ----------------------------------------------------------
     // Enums
+    // ----------------------------------------------------------
     enum class Format {
         R8,
-        R16,
-        R32,
         RG8,
-        RG16,
-        RG32,
         RGB8,
-        RGB16,
-        RGB32,
         RGBA8,
-        RGBA16,
-        RGBA32,
-        Depth32F,
+        RGBA16F,
+        RGBA32F,
+        Depth24Stencil8,
+        Depth32F
     };
 
-    enum class PresentMode {
-        Immediate,
-        Mailbox,
-        FIFO,
+    enum class ShaderStage {
+        Vertex,
+        Fragment,
+        Compute,
+        Geometry,
+        TessellationControl,
+        TessellationEvaluation
     };
 
-    enum class LoadOp {
-        Load,
-        Clear,
-        DontCare,
+    enum class Filter {
+        Nearest,
+        Linear
     };
 
-    enum class StoreOp {
-        Store,
-        DontCare,
+    enum class MipmapMode {
+        Nearest,
+        Linear
     };
 
-    enum class PolygonMode {
-        Fill,
-        Line,
-        Point,
+    enum class AddressMode {
+        Repeat,
+        MirroredRepeat,
+        ClampToEdge,
+        ClampToBorder
     };
 
-    enum class CullMode {
-        None,
-        Front,
-        Back,
-        FrontAndBack,
+    enum class BorderColor {
+        TransparentBlack,
+        OpaqueBlack,
+        OpaqueWhite
+    };
+
+    enum class CompareOp {
+        Never,
+        Less,
+        Equal,
+        LessOrEqual,
+        Greater,
+        NotEqual,
+        GreaterOrEqual,
+        Always
     };
 
     enum class BlendFactor {
@@ -76,64 +149,7 @@ namespace Bcg::Graphics {
         DstColor,
         OneMinusDstColor,
         DstAlpha,
-        OneMinusDstAlpha,
-    };
-
-    enum class CompareOp {
-        Never,
-        Less,
-        Equal,
-        LessOrEqual,
-        Greater,
-        NotEqual,
-        GreaterOrEqual,
-        Always,
-    };
-
-    enum class Filter {
-        Nearest,
-        Linear,
-    };
-
-    enum class MipmapMode {
-        Nearest,
-        Linear,
-    };
-
-    enum class AddressMode {
-        Repeat,
-        MirroredRepeat,
-        ClampToEdge,
-        ClampToBorder,
-    };
-
-    enum class BorderColor {
-        TransparentBlack,
-        OpaqueBlack,
-        OpaqueWhite,
-    };
-
-    enum class TextureUsage {
-        Sampled,
-        Storage,
-        RenderTarget,
-        DepthStencil,
-    };
-
-    enum class StencilOp {
-        Keep,
-        Zero,
-        Replace,
-        IncrementClamp,
-        DecrementClamp,
-        Invert,
-        IncrementWrap,
-        DecrementWrap,
-    };
-
-    enum class FrontFace {
-        Clockwise,
-        CounterClockwise,
+        OneMinusDstAlpha
     };
 
     enum class BlendOp {
@@ -141,86 +157,36 @@ namespace Bcg::Graphics {
         Subtract,
         ReverseSubtract,
         Min,
-        Max,
+        Max
     };
 
-    enum class PipelineStage {
-        TopOfPipe,
-        DrawIndirect,
-        VertexInput,
-        VertexShader,
-        FragmentShader,
-        ComputeShader,
-        Transfer,
-        BottomOfPipe,
-        Host,
+    enum class PolygonMode {
+        Fill,
+        Line,
+        Point
     };
 
-    enum class DescriptorType {
-        UniformBuffer,
-        StorageBuffer,
-        SampledImage,
-        CombinedImageSampler,
-        StorageImage,
+    enum class CullMode {
+        None,
+        Front,
+        Back,
+        FrontAndBack
     };
 
-    enum class AccessFlags {
-        None = 0,
-        Read = 1 << 0,               // Resource is read-only
-        Write = 1 << 1,              // Resource is writable
-        TransferRead = 1 << 2,       // Used in transfer (copy) operations for reading
-        TransferWrite = 1 << 3,      // Used in transfer (copy) operations for writing
-        ColorAttachmentRead = 1 << 4,    // Read from color attachment
-        ColorAttachmentWrite = 1 << 5,   // Write to color attachment
-        DepthStencilRead = 1 << 6,       // Read from depth/stencil attachment
-        DepthStencilWrite = 1 << 7,      // Write to depth/stencil attachment
-        ShaderRead = 1 << 8,         // Read in a shader stage
-        ShaderWrite = 1 << 9,        // Write in a shader stage
-        HostRead = 1 << 10,          // Host read access (CPU-visible)
-        HostWrite = 1 << 11,         // Host write access (CPU-visible)
+    enum class FrontFace {
+        Clockwise,
+        CounterClockwise
     };
 
-    enum class DeviceFeature {
-        MultiDrawIndirect,       // Supports multiple draw calls in a single command (e.g., glMultiDrawElementsIndirect)
-        ComputeShaders,          // Supports compute shaders
-        GeometryShaders,         // Supports geometry shaders
-        TessellationShaders,     // Supports tessellation control and evaluation shaders
-        RayTracing,              // Supports hardware-accelerated ray tracing
-        VariableRateShading,     // Supports variable rate shading
-        MeshShaders,             // Supports mesh and task shaders
-        SparseResources,         // Supports sparse memory (tiled resources)
-        DepthBoundsTest,         // Supports depth bounds testing
-        TextureCompressionBC,    // Supports BC (Block Compression) texture formats
-        TextureCompressionETC2,  // Supports ETC2 compressed texture formats
-        TextureCompressionASTC,  // Supports ASTC compressed texture formats
-        AnisotropicFiltering,    // Supports anisotropic texture filtering
-        SampleRateShading,       // Supports shading at sample frequency in MSAA
-        TimelineSemaphores,      // Supports timeline semaphores for advanced synchronization
-        ConservativeRasterization, // Supports conservative rasterization
-        WideLines,               // Supports wide lines for line rendering
-        ShaderFloat16,           // Supports 16-bit floating-point arithmetic in shaders
-        ShaderInt8,              // Supports 8-bit integer arithmetic in shaders
-        ShaderInt64,             // Supports 64-bit integer arithmetic in shaders
-        FragmentShaderInterlock, // Supports fragment shader interlock extensions
-        BindlessTextures,        // Supports bindless texture arrays
-        NonUniformResourceIndexing, // Supports non-uniform indexing in shaders
+    enum class LoadOp {
+        Load,
+        Clear,
+        DontCare
     };
 
-    enum class ShaderStage {
-        Vertex,
-        Fragment,
-        Compute,
-        Geometry,
-        TessellationControl,
-        TessellationEvaluation,
-    };
-
-    enum class SampleCount {
-        Count1 = 1,
-        Count2 = 2,
-        Count4 = 4,
-        Count8 = 8,
-        Count16 = 16,
+    enum class StoreOp {
+        Store,
+        DontCare
     };
 
     enum class MemoryUsage {
@@ -234,7 +200,56 @@ namespace Bcg::Graphics {
         VertexBuffer,
         IndexBuffer,
         UniformBuffer,
-        StorageBuffer,
+        StorageBuffer
+    };
+
+    enum class TextureUsage {
+        Sampled,
+        Storage,
+        RenderTarget,
+        DepthStencil
+    };
+
+    enum class PresentMode {
+        Immediate,
+        Mailbox,
+        FIFO
+    };
+
+    enum class SampleCount {
+        Count1 = 1,
+        Count2 = 2,
+        Count4 = 4,
+        Count8 = 8,
+        Count16 = 16
+    };
+
+    enum class PipelineStage {
+        TopOfPipe,
+        VertexInput,
+        VertexShader,
+        FragmentShader,
+        ComputeShader,
+        Transfer,
+        BottomOfPipe,
+        Host
+    };
+
+    enum class AccessFlags : Uint32 {
+        None = 0,
+        Read = 1 << 0,
+        Write = 1 << 1
+    };
+
+    inline AccessFlags operator|(AccessFlags a, AccessFlags b) {
+        return static_cast<AccessFlags>(static_cast<Uint32>(a) | static_cast<Uint32>(b));
+    }
+
+    enum class DeviceFeature {
+        MultiDrawIndirect,
+        ComputeShaders,
+        GeometryShaders,
+        RayTracing
     };
 
     enum class DeviceErrorType {
@@ -243,83 +258,100 @@ namespace Bcg::Graphics {
         InvalidOperation,
         ResourceCreationFailed,
         DeviceLost,
-        Unknown,
+        Unknown
     };
 
-    enum class ResourceType {
-        Buffer,
-        Texture,
-        Sampler,
-        Unknown,
+
+    // ----------------------------------------------------------
+    // Descriptors
+    // ----------------------------------------------------------
+
+    struct BufferDesc {
+        SizeType size = 0;
+        MemoryUsage memory_usage = MemoryUsage::GpuOnly;
+        BufferUsage usage = BufferUsage::VertexBuffer;
     };
 
-    // Resource Descriptions
     struct TextureDesc {
         Uint32 width = 0;
         Uint32 height = 0;
         Uint32 depth = 1;
-        Uint32 mipLevels = 1;
+        Uint32 mip_levels = 1;
         Format format = Format::RGBA8;
         TextureUsage usage = TextureUsage::Sampled;
-        Filter minFilter = Filter::Linear;
-        Filter magFilter = Filter::Linear;
-        AddressMode addressModeU = AddressMode::Repeat;
-        AddressMode addressModeV = AddressMode::Repeat;
+        // For simplicity, basic sampler-like states (some backends treat these separately)
+        Filter min_filter = Filter::Linear;
+        Filter mag_filter = Filter::Linear;
+        AddressMode address_mode_u = AddressMode::Repeat;
+        AddressMode address_mode_v = AddressMode::Repeat;
+        AddressMode address_mode_w = AddressMode::Repeat;
     };
 
     struct SamplerDesc {
-        Filter minFilter = Filter::Linear;
-        Filter magFilter = Filter::Linear;
-        MipmapMode mipmapMode = MipmapMode::Linear;
-        AddressMode addressModeU = AddressMode::Repeat;
-        AddressMode addressModeV = AddressMode::Repeat;
-        AddressMode addressModeW = AddressMode::Repeat;
-        float mipLodBias = 0.0f;
-        float maxAnisotropy = 1.0f;
-        BorderColor borderColor = BorderColor::OpaqueBlack;
+        Filter min_filter = Filter::Linear;
+        Filter mag_filter = Filter::Linear;
+        MipmapMode mipmap_mode = MipmapMode::Linear;
+        AddressMode address_mode_u = AddressMode::Repeat;
+        AddressMode address_mode_v = AddressMode::Repeat;
+        AddressMode address_mode_w = AddressMode::Repeat;
+        float mip_lod_bias = 0.0f;
+        float max_anisotropy = 1.0f;
+        BorderColor border_color = BorderColor::OpaqueBlack;
     };
 
-    struct BufferDesc {
-        size_t size = 0;
-        MemoryUsage memoryUsage = MemoryUsage::GpuOnly;
-        BufferUsage usage = BufferUsage::VertexBuffer;
+    struct ShaderDesc {
+        ShaderStage stage;
+        const void *code = nullptr;
+        SizeType code_size = 0;
+        const char *entry_point = "main";
+        std::vector<std::string> macros;
+        bool optimize = true;
+        bool debug_info = false;
     };
 
-    class IResource;
+    struct InputBindingDesc {
+        Uint32 binding = 0;
+        Uint32 stride = 0;
+        bool input_rate_instance = false;
+    };
 
-    struct DescriptorBinding {
-        Uint32 binding;
-        DescriptorType type;
-        Uint32 count;
+    struct InputAttributeDesc {
+        Uint32 location = 0;
+        Format format = Format::RGBA8;
+        Uint32 offset = 0;
+        Uint32 binding = 0;
+    };
 
-        std::vector<std::shared_ptr<IResource>> resources;
+    struct InputLayoutDesc {
+        std::vector<InputBindingDesc> bindings;
+        std::vector<InputAttributeDesc> attributes;
     };
 
     struct RasterizationStateDesc {
-        bool depthClampEnable;
-        PolygonMode fillMode;
-        CullMode cullMode;
-        FrontFace frontFace;
-        bool depthBiasEnable;
-        float depthBiasConstantFactor;
-        float depthBiasClamp;
-        float depthBiasSlopeFactor;
+        bool depth_clamp_enable = false;
+        PolygonMode fill_mode = PolygonMode::Fill;
+        CullMode cull_mode = CullMode::Back;
+        FrontFace front_face = FrontFace::CounterClockwise;
+        bool depth_bias_enable = false;
+        float depth_bias_constant_factor = 0.0f;
+        float depth_bias_clamp = 0.0f;
+        float depth_bias_slope_factor = 0.0f;
     };
 
     struct DepthStencilStateDesc {
-        bool depthTestEnable;
-        bool depthWriteEnable;
-        CompareOp depthCompareOp;
-        bool stencilTestEnable;
+        bool depth_test_enable = true;
+        bool depth_write_enable = true;
+        CompareOp depth_compare_op = CompareOp::Less;
+        bool stencil_test_enable = false;
 
         struct StencilOpDesc {
-            StencilOp failOp;
-            StencilOp passOp;
-            StencilOp depthFailOp;
-            CompareOp compareOp;
-            Uint32 compareMask;
-            Uint32 writeMask;
-            Uint32 reference;
+            BlendOp fail_op = BlendOp::Add; // Not correct semantically, placeholder for stencil ops
+            BlendOp pass_op = BlendOp::Add; // Similarly placeholders
+            BlendOp depth_fail_op = BlendOp::Add;
+            CompareOp compare_op = CompareOp::Always;
+            Uint32 compare_mask = 0xFF;
+            Uint32 write_mask = 0xFF;
+            Uint32 reference = 0;
         };
 
         StencilOpDesc front;
@@ -327,380 +359,286 @@ namespace Bcg::Graphics {
     };
 
     struct BlendStateDesc {
-        bool blendEnable;
-        BlendFactor srcColorBlendFactor;
-        BlendFactor dstColorBlendFactor;
-        BlendOp colorBlendOp;
-        BlendFactor srcAlphaBlendFactor;
-        BlendFactor dstAlphaBlendFactor;
-        BlendOp alphaBlendOp;
-
         struct RenderTargetBlendDesc {
-            bool blendEnable;
-            BlendFactor srcColorBlendFactor;
-            BlendFactor dstColorBlendFactor;
-            BlendOp colorBlendOp;
-            BlendFactor srcAlphaBlendFactor;
-            BlendFactor dstAlphaBlendFactor;
-            BlendOp alphaBlendOp;
-            Uint32 colorWriteMask;
+            bool blend_enable = false;
+            BlendFactor src_color_blend_factor = BlendFactor::One;
+            BlendFactor dst_color_blend_factor = BlendFactor::Zero;
+            BlendOp color_blend_op = BlendOp::Add;
+            BlendFactor src_alpha_blend_factor = BlendFactor::One;
+            BlendFactor dst_alpha_blend_factor = BlendFactor::Zero;
+            BlendOp alpha_blend_op = BlendOp::Add;
+            Uint32 color_write_mask = 0xF; // RGBA
         };
 
-        std::vector<RenderTargetBlendDesc> renderTargetBlends;
+        std::vector<RenderTargetBlendDesc> render_target_blends;
+    };
+
+    struct DescriptorSetLayoutBinding {
+        Uint32 binding = 0;
+        // In a more complex system, you'd have a DescriptorType enum
+        // For simplicity, assume uniform buffer binding
+        ShaderStage stage_flags = ShaderStage::Vertex;
+        Uint32 count = 1;
+    };
+
+    struct DescriptorSetLayoutDesc {
+        std::vector<DescriptorSetLayoutBinding> bindings;
+    };
+
+    struct PipelineLayoutDesc {
+        std::vector<DescriptorSetLayoutDesc> descriptor_sets;
+        Uint32 push_constant_size = 0;
+        ShaderStage push_constant_stages = ShaderStage::Vertex;
     };
 
     struct RenderPassDesc {
         struct AttachmentDescription {
-            Format format;       // Format of the attachment (e.g., RGBA8, Depth32F)
-            LoadOp loadOp;       // Load operation (e.g., Load, Clear)
-            StoreOp storeOp;     // Store operation (e.g., Store, DontCare)
-            bool isDepthStencil; // Is this attachment used for depth/stencil?
-            SampleCount sampleCount; // Multisample count (e.g., 1, 4, 8, 16)
+            Format format;
+            LoadOp load_op;
+            StoreOp store_op;
+            bool is_depth_stencil = false;
+            SampleCount sample_count = SampleCount::Count1;
         };
 
         struct SubpassDescription {
-            std::vector<Uint32> colorAttachments;  // Indices of color attachments
-            Int32 depthStencilAttachment;         // Index of depth/stencil attachment (-1 if none)
-            std::vector<Uint32> inputAttachments; // Attachments used as inputs
-            std::vector<Uint32> preserveAttachments; // Attachments preserved for future subpasses
-            std::vector<Uint32> resolveAttachments; // Attachments for resolving multisample targets
+            std::vector<Uint32> color_attachments;
+            Int32 depth_stencil_attachment = -1;
         };
 
-        struct SubpassDependency {
-            Uint32 srcSubpass;        // Source subpass index
-            Uint32 dstSubpass;        // Destination subpass index
-            PipelineStage srcStage;   // Source pipeline stage (e.g., FragmentShader, Transfer)
-            PipelineStage dstStage;   // Destination pipeline stage
-            AccessFlags srcAccessMask; // Source access flags (e.g., read/write permissions)
-            AccessFlags dstAccessMask; // Destination access flags
-        };
-
-        std::vector<AttachmentDescription> attachments; // All attachments used in the render pass
-        std::vector<SubpassDescription> subpasses;      // Subpasses within the render pass
-        std::vector<SubpassDependency> dependencies;    // Subpass dependencies
-    };
-
-    struct ShaderDesc {
-        ShaderStage stage;        // Stage of the shader (Vertex, Fragment, Compute, etc.)
-        const char *code;         // Pointer to shader source code or binary
-        size_t codeSize;          // Size of the shader code in bytes
-        const char *entryPoint;   // Entry point name (required for SPIR-V/Vulkan-like APIs)
-        const char *debugName;    // Optional name for debugging purposes
-
-        // Optional fields for compile-time settings (if applicable)
-        std::vector<std::string> macros;   // List of preprocessor macros (e.g., #define NAME VALUE)
-        bool optimize = true;              // Enable/disable compiler optimizations
-        bool debugInfo = false;            // Include debug information for shader
-    };
-
-    struct InputLayoutDesc {
-        // Describes a single vertex buffer binding
-        struct InputBindingDesc {
-            Uint32 binding;          // Binding index in the shader
-            Uint32 stride;           // Size of each vertex in the buffer (in bytes)
-            bool inputRateInstance;  // true for per-instance data, false for per-vertex data
-        };
-
-        // Describes a single vertex attribute
-        struct InputAttributeDesc {
-            Uint32 location;         // Location in the vertex shader (layout(location))
-            Format format;           // Data format (e.g., RGB32F, RGBA8)
-            Uint32 offset;           // Offset within a single vertex (in bytes)
-            Uint32 binding;          // The binding index this attribute is sourced from
-        };
-
-        // Arrays of bindings and attributes
-        std::vector<InputBindingDesc> bindings;
-        std::vector<InputAttributeDesc> attributes;
-    };
-
-    struct PipelineLayoutDesc {
-        struct DescriptorSetLayoutBinding {
-            Uint32 binding;         // Binding index in the shader
-            DescriptorType type;    // Resource type (e.g., UniformBuffer, SampledImage)
-            Uint32 count;           // Number of resources in the binding
-            ShaderStage stageFlags; // Shader stages where the resource is used
-        };
-
-        // Descriptor sets in this pipeline layout
-        struct DescriptorSetLayoutDesc {
-            std::vector<DescriptorSetLayoutBinding> bindings; // Bindings within this set
-        };
-
-        std::vector<DescriptorSetLayoutDesc> descriptorSets; // All descriptor sets for the pipeline
-
-        Uint32 pushConstantSize;   // Size of push constants (optional, for Vulkan/DirectX-like APIs)
-        ShaderStage pushConstantStages; // Stages using push constants (optional)
-
-        const char *debugName;     // Optional name for debugging purposes
-    };
-
-    class IShader;
-
-    struct ShaderStages {
-        IShader *vertexShader;
-        IShader *fragmentShader;
-        IShader *computeShader;
-        IShader *geometryShader;
-        IShader *tessellationControlShader;
-        IShader *tessellationEvaluationShader;
-    };
-
-    struct RenderStateDesc {
-        RasterizationStateDesc rasterizationState;
-        DepthStencilStateDesc depthStencilState;
-        BlendStateDesc blendState;
+        std::vector<AttachmentDescription> attachments;
+        std::vector<SubpassDescription> subpasses;
     };
 
     struct PipelineDesc {
-        ShaderStages shaders;          // Shaders used in the pipeline
-        InputLayoutDesc inputLayout;   // Vertex input layout
-        RenderStateDesc renderStates;  // Rasterization, blending, and depth-stencil states
-        PipelineLayoutDesc pipelineLayout; // Descriptor set and push constant layout
-        RenderPassDesc renderPass;     // Associated render pass
-        const char *debugName;         // Optional debug name
-    };
+        ShaderHandle vertex_shader;
+        ShaderHandle fragment_shader;
+        // Add other shader stages as needed
 
-    struct ClearValue {
-        union {
-            float color[4];   // Clear color for color attachments
-            struct {
-                float depth;  // Clear depth value
-                Uint32 stencil; // Clear stencil value
-            } depthStencil;
-        };
+        InputLayoutDesc input_layout;
+        RasterizationStateDesc rasterization_state;
+        DepthStencilStateDesc depth_stencil_state;
+        BlendStateDesc blend_state;
+        PipelineLayoutDesc pipeline_layout;
+        RenderPassHandle render_pass;
     };
 
     struct CommandBufferDesc {
-        bool isPrimary;       // True if this is a primary command buffer; false for secondary
-        bool isGraphics;       // Indicates whether the buffer will record graphics commands.
-        bool isCompute;       // Indicates whether the buffer will record compute commands.
-        bool allowSimultaneousUse; // True if this buffer can be submitted multiple times concurrently
-        const char *debugName;     // Optional name for debugging and profiling
+        bool is_primary = true;
+        bool is_graphics = true;
+        bool is_compute = false;
+        bool allow_simultaneous_use = false;
     };
 
     struct SwapchainDesc {
-        Uint32 width;            // Width of the swapchain images
-        Uint32 height;           // Height of the swapchain images
-        Format format;           // Pixel format of the images
-        Uint32 imageCount;       // Number of images in the swapchain
-        PresentMode presentMode; // Presentation mode (e.g., FIFO, Mailbox, Immediate)
+        Uint32 width;
+        Uint32 height;
+        Format format;
+        Uint32 image_count;
+        PresentMode present_mode;
     };
 
-    // Interfaces
-    class IResource {
+
+    // ----------------------------------------------------------
+    // Device Functions Table
+    // ----------------------------------------------------------
+    struct DeviceFunctions {
+        // Resource creation
+        BufferHandle (*CreateBuffer)(void *ctx, const BufferDesc &) = nullptr;
+
+        void (*DestroyBuffer)(void *ctx, BufferHandle) = nullptr;
+
+        TextureHandle (*CreateTexture)(void *ctx, const TextureDesc &) = nullptr;
+
+        void (*DestroyTexture)(void *ctx, TextureHandle) = nullptr;
+
+        SamplerHandle (*CreateSampler)(void *ctx, const SamplerDesc &) = nullptr;
+
+        void (*DestroySampler)(void *ctx, SamplerHandle) = nullptr;
+
+        ShaderHandle (*CreateShader)(void *ctx, const ShaderDesc &) = nullptr;
+
+        void (*DestroyShader)(void *ctx, ShaderHandle) = nullptr;
+
+        PipelineHandle (*CreatePipeline)(void *ctx, const PipelineDesc &) = nullptr;
+
+        void (*DestroyPipeline)(void *ctx, PipelineHandle) = nullptr;
+
+        RenderPassHandle (*CreateRenderPass)(void *ctx, const RenderPassDesc &) = nullptr;
+
+        void (*DestroyRenderPass)(void *ctx, RenderPassHandle) = nullptr;
+
+        CommandBufferHandle (*CreateCommandBuffer)(void *ctx, const CommandBufferDesc &) = nullptr;
+
+        void (*DestroyCommandBuffer)(void *ctx, CommandBufferHandle) = nullptr;
+
+        FenceHandle (*CreateFence)(void *ctx) = nullptr;
+
+        void (*DestroyFence)(void *ctx, FenceHandle) = nullptr;
+
+        SemaphoreHandle (*CreateSemaphore)(void *ctx) = nullptr;
+
+        void (*DestroySemaphore)(void *ctx, SemaphoreHandle) = nullptr;
+
+        SwapchainHandle (*CreateSwapchain)(void *ctx, const SwapchainDesc &) = nullptr;
+
+        void (*DestroySwapchain)(void *ctx, SwapchainHandle) = nullptr;
+
+        // Operations
+        void (*DeviceBarrier)(void *ctx,
+                              PipelineStage src_stage,
+                              PipelineStage dst_stage,
+                              AccessFlags src_access,
+                              AccessFlags dst_access) = nullptr;
+
+        bool (*IsFeatureSupported)(void *ctx, DeviceFeature feature) = nullptr;
+
+        DeviceErrorType (*GetLastErrorType)(void *ctx) = nullptr;
+
+        void (*ClearLastError)(void *ctx) = nullptr;
+    };
+
+
+    // ----------------------------------------------------------
+    // Device Class
+    // ----------------------------------------------------------
+    class Device {
     public:
-        virtual ~IResource() = default;
+        Device(const DeviceFunctions &funcs, void *backend_context)
+            : funcs_(funcs), backend_context_(backend_context) {
+        }
 
-        virtual ResourceType GetResourceType() const = 0;
+        BufferHandle CreateBuffer(const BufferDesc &desc) {
+            return funcs_.CreateBuffer(backend_context_, desc);
+        }
 
-        virtual const char *GetDebugName() const = 0;
+        void DestroyBuffer(BufferHandle handle) {
+            funcs_.DestroyBuffer(backend_context_, handle);
+        }
 
-        virtual void SetDebugName(const char *name) = 0;
+        TextureHandle CreateTexture(const TextureDesc &desc) {
+            return funcs_.CreateTexture(backend_context_, desc);
+        }
+
+        void DestroyTexture(TextureHandle handle) {
+            funcs_.DestroyTexture(backend_context_, handle);
+        }
+
+        SamplerHandle CreateSampler(const SamplerDesc &desc) {
+            return funcs_.CreateSampler(backend_context_, desc);
+        }
+
+        void DestroySampler(SamplerHandle handle) {
+            funcs_.DestroySampler(backend_context_, handle);
+        }
+
+        ShaderHandle CreateShader(const ShaderDesc &desc) {
+            return funcs_.CreateShader(backend_context_, desc);
+        }
+
+        void DestroyShader(ShaderHandle handle) {
+            funcs_.DestroyShader(backend_context_, handle);
+        }
+
+        PipelineHandle CreatePipeline(const PipelineDesc &desc) {
+            return funcs_.CreatePipeline(backend_context_, desc);
+        }
+
+        void DestroyPipeline(PipelineHandle handle) {
+            funcs_.DestroyPipeline(backend_context_, handle);
+        }
+
+        RenderPassHandle CreateRenderPass(const RenderPassDesc &desc) {
+            return funcs_.CreateRenderPass(backend_context_, desc);
+        }
+
+        void DestroyRenderPass(RenderPassHandle handle) {
+            funcs_.DestroyRenderPass(backend_context_, handle);
+        }
+
+        CommandBufferHandle CreateCommandBuffer(const CommandBufferDesc &desc) {
+            return funcs_.CreateCommandBuffer(backend_context_, desc);
+        }
+
+        void DestroyCommandBuffer(CommandBufferHandle handle) {
+            funcs_.DestroyCommandBuffer(backend_context_, handle);
+        }
+
+        FenceHandle CreateFence() {
+            return funcs_.CreateFence(backend_context_);
+        }
+
+        void DestroyFence(FenceHandle handle) {
+            funcs_.DestroyFence(backend_context_, handle);
+        }
+
+        SemaphoreHandle CreateSemaphore() {
+            return funcs_.CreateSemaphore(backend_context_);
+        }
+
+        void DestroySemaphore(SemaphoreHandle handle) {
+            funcs_.DestroySemaphore(backend_context_, handle);
+        }
+
+        SwapchainHandle CreateSwapchain(const SwapchainDesc &desc) {
+            return funcs_.CreateSwapchain(backend_context_, desc);
+        }
+
+        void DestroySwapchain(SwapchainHandle handle) {
+            funcs_.DestroySwapchain(backend_context_, handle);
+        }
+
+        void DeviceBarrier(PipelineStage src_stage,
+                           PipelineStage dst_stage,
+                           AccessFlags src_access,
+                           AccessFlags dst_access) {
+            funcs_.DeviceBarrier(backend_context_, src_stage, dst_stage, src_access, dst_access);
+        }
+
+        bool IsFeatureSupported(DeviceFeature feature) const {
+            return funcs_.IsFeatureSupported(backend_context_, feature);
+        }
+
+        DeviceErrorType GetLastErrorType() const {
+            return funcs_.GetLastErrorType(backend_context_);
+        }
+
+        void ClearLastError() {
+            funcs_.ClearLastError(backend_context_);
+        }
+
+    private:
+        DeviceFunctions funcs_;
+        void *backend_context_ = nullptr;
     };
 
-    class IBuffer : public IResource {
+
+    // ----------------------------------------------------------
+    // Example RAII Wrapper (for illustration)
+    // ----------------------------------------------------------
+    class Buffer {
     public:
-        virtual void *Map() = 0;
+        Buffer(Device &device, const BufferDesc &desc)
+            : device_(device) {
+            handle_ = device_.CreateBuffer(desc);
+        }
 
-        virtual void Unmap() = 0;
+        ~Buffer() {
+            if (handle_.id != InvalidId) {
+                device_.DestroyBuffer(handle_);
+            }
+        }
 
-        virtual size_t GetSize() const = 0;
+        BufferHandle GetHandle() const { return handle_; }
+
+    private:
+        Device &device_;
+        BufferHandle handle_{};
     };
 
-    class ITexture : public IResource {
-    public:
-        ~ITexture() override = default;
+    // Similarly, you could create RAII wrappers for other resources.
 
-        virtual Uint32 GetWidth() const = 0;
 
-        virtual Uint32 GetHeight() const = 0;
-
-        virtual Uint32 GetDepth() const = 0;
-
-        virtual Format GetFormat() const = 0;
-
-        virtual Uint32 GetMipLevels() const = 0;
-    };
-
-    class ISampler {
-    public:
-        virtual ~ISampler() = default;
-    };
-
-    class IShader {
-    public:
-        virtual ~IShader() = default;
-
-        virtual ShaderStage GetStage() const = 0;
-
-        virtual const char *GetDebugName() const = 0;
-    };
-
-    class IDescriptorSet {
-    public:
-        virtual ~IDescriptorSet() = default;
-
-        virtual void UpdateBindings(const std::vector<DescriptorBinding> &bindings) = 0;
-
-        virtual void ResetBindings() = 0; // Reset all bindings
-
-        virtual const DescriptorBinding *GetBinding(Uint32 bindingIndex) const = 0; //
-    };
-
-    class ICommandBuffer {
-    public:
-        virtual ~ICommandBuffer() = default;
-
-        virtual void Begin() = 0;
-
-        virtual void End() = 0;
-
-        virtual void Submit() = 0;
-
-        virtual void Reset() = 0; // Reset the command buffer for reuse
-
-        virtual bool IsRecording() const = 0; // Query if the buffer is currently recording
-    };
-
-    class ISemaphore {
-    public:
-        virtual ~ISemaphore() = default;
-
-        // Wait for the semaphore to be signaled
-        virtual void Wait(Uint64 timeout = UINT64_MAX) = 0;
-
-        // Check if the semaphore is signaled
-        virtual bool IsSignaled() const = 0;
-
-        // Signal the semaphore manually (optional, useful for CPU-GPU sync)
-        virtual void Signal() = 0;
-    };
-
-    class ITimelineSemaphore : public ISemaphore {
-    public:
-        // Wait for the semaphore to reach or exceed the specified value
-        virtual void WaitForValue(Uint64 value, Uint64 timeout = UINT64_MAX) = 0;
-
-        // Signal the semaphore with the specified value
-        virtual void SignalValue(Uint64 value) = 0;
-
-        // Get the current value of the semaphore
-        virtual Uint64 GetCurrentValue() const = 0;
-    };
-
-    class IFence {
-    public:
-        virtual ~IFence() = default;
-
-        // Wait until the fence is signaled or timeout expires
-        virtual void Wait(Uint64 timeout = UINT64_MAX) = 0;
-
-        // Check if the fence is signaled without blocking
-        virtual bool IsSignaled() const = 0;
-
-        // Reset the fence to an unsignaled state
-        virtual void Reset() = 0;
-    };
-
-    class ISwapchain {
-    public:
-        virtual ~ISwapchain() = default;
-
-        // Get the properties of the swapchain
-        virtual Uint32 GetWidth() const = 0;    // Width of the swapchain images
-
-        virtual Uint32 GetHeight() const = 0;   // Height of the swapchain images
-
-        virtual Format GetFormat() const = 0;   // Format of the swapchain images
-
-        virtual Uint32 GetImageCount() const = 0;
-
-        // Present the current frame to the screen
-        virtual void Present(ISemaphore *waitSemaphore = nullptr) = 0;
-
-        // Retrieve the current back buffer for rendering
-        virtual ITexture *GetCurrentImage() = 0;
-
-        // Recreate the swapchain in case of resize or other events
-        virtual void Recreate(Uint32 width, Uint32 height, Format format) = 0;
-    };
-
-
-    class IPipeline {
-    public:
-        virtual ~IPipeline() = default;
-
-        virtual const PipelineDesc &GetDescription() const = 0;
-
-        virtual IShader *GetShader(ShaderStage stage) const = 0;
-    };
-
-    class IRenderPass {
-    public:
-        virtual ~IRenderPass() = default;
-
-        // Returns the description of the render pass
-        virtual const RenderPassDesc &GetDescription() const = 0;
-
-        // Begin the render pass
-        virtual void Begin(ICommandBuffer *commandBuffer, const std::vector<ClearValue> &clearValues) = 0;
-
-        // End the render pass
-        virtual void End(ICommandBuffer *commandBuffer) = 0;
-
-        virtual bool IsCompatibleWith(const IPipeline *pipeline) const = 0;
-    };
-
-
-    class IDevice {
-    public:
-        virtual ~IDevice() = default;
-
-        // Resource creation and management
-        virtual IBuffer *CreateBuffer(const BufferDesc &desc) = 0;
-
-        virtual ITexture *CreateTexture(const TextureDesc &desc) = 0;
-
-        virtual ISampler *CreateSampler(const SamplerDesc &desc) = 0;
-
-        virtual IShader *CreateShader(const ShaderDesc &desc) = 0;
-
-        virtual IPipeline *CreatePipeline(const PipelineDesc &desc) = 0;
-
-        virtual IRenderPass *CreateRenderPass(const RenderPassDesc &desc) = 0;
-
-        virtual void DestroyResource(IResource *resource) = 0; // Explicitly destroy a resource
-
-        // Command buffer creation
-        virtual ICommandBuffer *CreateCommandBuffer(const CommandBufferDesc &desc) = 0;
-
-        // Swapchain management
-        virtual ISwapchain *CreateSwapchain(const SwapchainDesc &desc) = 0;
-
-        // Synchronization objects
-        virtual IFence *CreateFence() = 0;
-
-        virtual ISemaphore *CreateSemaphore() = 0;
-
-        virtual ITimelineSemaphore *CreateTimelineSemaphore() = 0;
-
-        // Device-wide synchronization
-        virtual void DeviceBarrier(PipelineStage srcStage, PipelineStage dstStage, AccessFlags srcAccess,
-                                   AccessFlags dstAccess) = 0;
-
-        // Device capabilities
-        virtual bool IsFeatureSupported(DeviceFeature feature) const = 0;
-
-        // Error handling
-        virtual DeviceErrorType GetLastErrorType() const = 0; // Retrieve error type
-
-        virtual void ClearLastError() = 0;
-
-        // Debugging
-        virtual void EnableDebugLayer(bool enable) = 0;
-    };
-
-} // namespace Bcg::Graphics
-
-#endif // ENGINE25_GRAPHICS_API_H
+    // ----------------------------------------------------------
+    // This completes the conceptual code example.
+    // ----------------------------------------------------------
+}

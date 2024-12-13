@@ -9,7 +9,7 @@
 #include "GLFW/glfw3.h"
 #include "LoggingMacros.h"
 #include "WindowComponent.h"
-#include "OpenGL/OpenGLGraphicsApi.h"
+#include "GraphicsApi.h"
 
 namespace Bcg {
     RenderingModule::RenderingModule() : Module("RenderingModule", "0.1") {
