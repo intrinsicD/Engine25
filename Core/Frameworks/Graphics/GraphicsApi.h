@@ -1,4 +1,5 @@
 #pragma once
+
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -16,6 +17,14 @@ namespace Bcg::Graphics {
     // They do not directly own or manage the underlying resources.
     // Creation and destruction are handled by the Device and its backend.
     // ----------------------------------------------------------
+    enum class BackendType {
+        Unknown,
+        Vulkan,
+        OpenGL,
+        Direct3D12,
+        Metal
+    };
+
     struct BufferHandle {
         Uint32 id = 0;
     };
@@ -514,42 +523,55 @@ namespace Bcg::Graphics {
     struct DeviceFunctions {
         // Resource creation/destruction
         BufferHandle (*CreateBuffer)(void *ctx, const BufferDesc &) = nullptr;
+
         void (*DestroyBuffer)(void *ctx, BufferHandle) = nullptr;
 
         TextureHandle (*CreateTexture)(void *ctx, const TextureDesc &) = nullptr;
+
         void (*DestroyTexture)(void *ctx, TextureHandle) = nullptr;
 
         SamplerHandle (*CreateSampler)(void *ctx, const SamplerDesc &) = nullptr;
+
         void (*DestroySampler)(void *ctx, SamplerHandle) = nullptr;
 
         ShaderHandle (*CreateShader)(void *ctx, const ShaderDesc &) = nullptr;
+
         void (*DestroyShader)(void *ctx, ShaderHandle) = nullptr;
 
         PipelineHandle (*CreatePipeline)(void *ctx, const PipelineDesc &) = nullptr;
+
         void (*DestroyPipeline)(void *ctx, PipelineHandle) = nullptr;
 
         RenderPassHandle (*CreateRenderPass)(void *ctx, const RenderPassDesc &) = nullptr;
+
         void (*DestroyRenderPass)(void *ctx, RenderPassHandle) = nullptr;
 
         FramebufferHandle (*CreateFramebuffer)(void *ctx, const FramebufferDesc &) = nullptr;
+
         void (*DestroyFramebuffer)(void *ctx, FramebufferHandle) = nullptr;
 
         DescriptorSetLayoutHandle (*CreateDescriptorSetLayout)(void *ctx, const DescriptorSetLayoutDesc &) = nullptr;
+
         void (*DestroyDescriptorSetLayout)(void *ctx, DescriptorSetLayoutHandle) = nullptr;
 
         DescriptorSetHandle (*CreateDescriptorSet)(void *ctx, const DescriptorSetDesc &) = nullptr;
+
         void (*DestroyDescriptorSet)(void *ctx, DescriptorSetHandle) = nullptr;
 
         CommandBufferHandle (*CreateCommandBuffer)(void *ctx, const CommandBufferDesc &) = nullptr;
+
         void (*DestroyCommandBuffer)(void *ctx, CommandBufferHandle) = nullptr;
 
         FenceHandle (*CreateFence)(void *ctx) = nullptr;
+
         void (*DestroyFence)(void *ctx, FenceHandle) = nullptr;
 
         SemaphoreHandle (*CreateSemaphore)(void *ctx) = nullptr;
+
         void (*DestroySemaphore)(void *ctx, SemaphoreHandle) = nullptr;
 
         SwapchainHandle (*CreateSwapchain)(void *ctx, const SwapchainDesc &) = nullptr;
+
         void (*DestroySwapchain)(void *ctx, SwapchainHandle) = nullptr;
 
         // Memory barriers for resource synchronization
@@ -559,20 +581,28 @@ namespace Bcg::Graphics {
         bool (*IsFeatureSupported)(void *ctx, DeviceFeature feature) = nullptr;
 
         DeviceErrorType (*GetLastErrorType)(void *ctx) = nullptr;
+
         void (*ClearLastError)(void *ctx) = nullptr;
 
         // High-end features:
         // Command buffer recording
         void (*BeginCommandBuffer)(void *ctx, CommandBufferHandle) = nullptr;
+
         void (*EndCommandBuffer)(void *ctx, CommandBufferHandle) = nullptr;
 
         // Submitting command buffers for execution
         void (*Submit)(void *ctx, const SubmitInfo &) = nullptr;
-        void (*WaitForFences)(void *ctx, const std::vector<FenceHandle> &fences, bool wait_all, Uint64 timeout) = nullptr;
+
+        void
+        (*WaitForFences)(void *ctx, const std::vector<FenceHandle> &fences, bool wait_all, Uint64 timeout) = nullptr;
+
         void (*ResetFences)(void *ctx, const std::vector<FenceHandle> &fences) = nullptr;
 
         // Swapchain operations for presentation
-        bool (*AcquireNextImage)(void *ctx, SwapchainHandle, Uint64 timeout, SemaphoreHandle semaphore, FenceHandle fence, Uint32 *image_index) = nullptr;
+        bool
+        (*AcquireNextImage)(void *ctx, SwapchainHandle, Uint64 timeout, SemaphoreHandle semaphore, FenceHandle fence,
+                            Uint32 *image_index) = nullptr;
+
         void (*Present)(void *ctx, const PresentInfo &) = nullptr;
 
         // Descriptor set updates for changing bound resources on-the-fly
@@ -589,61 +619,95 @@ namespace Bcg::Graphics {
     // ----------------------------------------------------------
     class Device {
     public:
-        Device(const DeviceFunctions &funcs, void *backend_context)
-                : funcs_(funcs), backend_context_(backend_context) {
+        Device(const DeviceFunctions &funcs, void *backend_context, BackendType backend_type)
+                : funcs_(funcs), backend_context_(backend_context), backend_type_(backend_type) {
         }
 
         // Resource Creation/Destruction
         BufferHandle CreateBuffer(const BufferDesc &desc) { return funcs_.CreateBuffer(backend_context_, desc); }
+
         void DestroyBuffer(BufferHandle handle) { funcs_.DestroyBuffer(backend_context_, handle); }
 
         TextureHandle CreateTexture(const TextureDesc &desc) { return funcs_.CreateTexture(backend_context_, desc); }
+
         void DestroyTexture(TextureHandle handle) { funcs_.DestroyTexture(backend_context_, handle); }
 
         SamplerHandle CreateSampler(const SamplerDesc &desc) { return funcs_.CreateSampler(backend_context_, desc); }
+
         void DestroySampler(SamplerHandle handle) { funcs_.DestroySampler(backend_context_, handle); }
 
         ShaderHandle CreateShader(const ShaderDesc &desc) { return funcs_.CreateShader(backend_context_, desc); }
+
         void DestroyShader(ShaderHandle handle) { funcs_.DestroyShader(backend_context_, handle); }
 
-        PipelineHandle CreatePipeline(const PipelineDesc &desc) { return funcs_.CreatePipeline(backend_context_, desc); }
+        PipelineHandle CreatePipeline(const PipelineDesc &desc) {
+            return funcs_.CreatePipeline(backend_context_, desc);
+        }
+
         void DestroyPipeline(PipelineHandle handle) { funcs_.DestroyPipeline(backend_context_, handle); }
 
-        RenderPassHandle CreateRenderPass(const RenderPassDesc &desc) { return funcs_.CreateRenderPass(backend_context_, desc); }
+        RenderPassHandle CreateRenderPass(const RenderPassDesc &desc) {
+            return funcs_.CreateRenderPass(backend_context_, desc);
+        }
+
         void DestroyRenderPass(RenderPassHandle handle) { funcs_.DestroyRenderPass(backend_context_, handle); }
 
-        FramebufferHandle CreateFramebuffer(const FramebufferDesc &desc) { return funcs_.CreateFramebuffer(backend_context_, desc); }
+        FramebufferHandle CreateFramebuffer(const FramebufferDesc &desc) {
+            return funcs_.CreateFramebuffer(backend_context_, desc);
+        }
+
         void DestroyFramebuffer(FramebufferHandle handle) { funcs_.DestroyFramebuffer(backend_context_, handle); }
 
-        DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc &desc) { return funcs_.CreateDescriptorSetLayout(backend_context_, desc); }
-        void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle handle) { funcs_.DestroyDescriptorSetLayout(backend_context_, handle); }
+        DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDesc &desc) {
+            return funcs_.CreateDescriptorSetLayout(backend_context_, desc);
+        }
 
-        DescriptorSetHandle CreateDescriptorSet(const DescriptorSetDesc &desc) { return funcs_.CreateDescriptorSet(backend_context_, desc); }
+        void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle handle) {
+            funcs_.DestroyDescriptorSetLayout(backend_context_, handle);
+        }
+
+        DescriptorSetHandle CreateDescriptorSet(const DescriptorSetDesc &desc) {
+            return funcs_.CreateDescriptorSet(backend_context_, desc);
+        }
+
         void DestroyDescriptorSet(DescriptorSetHandle handle) { funcs_.DestroyDescriptorSet(backend_context_, handle); }
 
-        CommandBufferHandle CreateCommandBuffer(const CommandBufferDesc &desc) { return funcs_.CreateCommandBuffer(backend_context_, desc); }
+        CommandBufferHandle CreateCommandBuffer(const CommandBufferDesc &desc) {
+            return funcs_.CreateCommandBuffer(backend_context_, desc);
+        }
+
         void DestroyCommandBuffer(CommandBufferHandle handle) { funcs_.DestroyCommandBuffer(backend_context_, handle); }
 
         FenceHandle CreateFence() { return funcs_.CreateFence(backend_context_); }
+
         void DestroyFence(FenceHandle handle) { funcs_.DestroyFence(backend_context_, handle); }
 
         SemaphoreHandle CreateSemaphore() { return funcs_.CreateSemaphore(backend_context_); }
+
         void DestroySemaphore(SemaphoreHandle handle) { funcs_.DestroySemaphore(backend_context_, handle); }
 
-        SwapchainHandle CreateSwapchain(const SwapchainDesc &desc) { return funcs_.CreateSwapchain(backend_context_, desc); }
+        SwapchainHandle CreateSwapchain(const SwapchainDesc &desc) {
+            return funcs_.CreateSwapchain(backend_context_, desc);
+        }
+
         void DestroySwapchain(SwapchainHandle handle) { funcs_.DestroySwapchain(backend_context_, handle); }
 
-        void DeviceBarrier(PipelineStage src_stage, PipelineStage dst_stage, AccessFlags src_access, AccessFlags dst_access) {
+        void DeviceBarrier(PipelineStage src_stage, PipelineStage dst_stage, AccessFlags src_access,
+                           AccessFlags dst_access) {
             funcs_.DeviceBarrier(backend_context_, src_stage, dst_stage, src_access, dst_access);
         }
 
-        bool IsFeatureSupported(DeviceFeature feature) const { return funcs_.IsFeatureSupported(backend_context_, feature); }
+        bool IsFeatureSupported(DeviceFeature feature) const {
+            return funcs_.IsFeatureSupported(backend_context_, feature);
+        }
 
         DeviceErrorType GetLastErrorType() const { return funcs_.GetLastErrorType(backend_context_); }
+
         void ClearLastError() { funcs_.ClearLastError(backend_context_); }
 
         // High-end operations
         void BeginCommandBuffer(CommandBufferHandle cmd) { funcs_.BeginCommandBuffer(backend_context_, cmd); }
+
         void EndCommandBuffer(CommandBufferHandle cmd) { funcs_.EndCommandBuffer(backend_context_, cmd); }
 
         void Submit(const SubmitInfo &info) { funcs_.Submit(backend_context_, info); }
@@ -656,7 +720,8 @@ namespace Bcg::Graphics {
             funcs_.ResetFences(backend_context_, fences);
         }
 
-        bool AcquireNextImage(SwapchainHandle swapchain, Uint64 timeout, SemaphoreHandle semaphore, FenceHandle fence, Uint32 *image_index) {
+        bool AcquireNextImage(SwapchainHandle swapchain, Uint64 timeout, SemaphoreHandle semaphore, FenceHandle fence,
+                              Uint32 *image_index) {
             return funcs_.AcquireNextImage(backend_context_, swapchain, timeout, semaphore, fence, image_index);
         }
 
@@ -667,9 +732,13 @@ namespace Bcg::Graphics {
         void UpdateDescriptorSets(const std::vector<DescriptorUpdate> &updates) {
             funcs_.UpdateDescriptorSets(backend_context_, updates);
         }
+
+        BackendType GetBackendType() const { return backend_type_; }
+
     private:
         DeviceFunctions funcs_;
         void *backend_context_ = nullptr;
+        BackendType backend_type_;
     };
 
     // ----------------------------------------------------------

@@ -5,6 +5,7 @@
 #include "SlangShaderModule.h"
 #include "Engine.h"
 #include "GraphicsApi.h"
+#include <slang/slang.h>
 
 namespace Bcg{
     SlangShaderModule::SlangShaderModule() : Module("SlangShaderModule", "0.1") {
@@ -31,7 +32,26 @@ namespace Bcg{
         Module::OnInitialize(event);
 
         Graphics::Device &device = Engine::GetContext().get<Graphics::Device>();
-        device.
+        Graphics::BackendType backend = device.GetBackendType();
+        SlangSourceLanguage sourceLanguage = SLANG_SOURCE_LANGUAGE_SPIRV; // default
+
+        switch (backend) {
+            case Graphics::BackendType::Vulkan:
+                sourceLanguage = SLANG_SOURCE_LANGUAGE_SPIRV;
+                break;
+            case Graphics::BackendType::OpenGL:
+                sourceLanguage = SLANG_SOURCE_LANGUAGE_GLSL;
+                break;
+            case Graphics::BackendType::Direct3D12:
+                sourceLanguage = SLANG_SOURCE_LANGUAGE_HLSL;
+                break;
+            case Graphics::BackendType::Metal:
+                sourceLanguage = SLANG_SOURCE_LANGUAGE_METAL; // If supported
+                break;
+            default:
+                // Handle unknown backend (error or default to something sensible)
+                break;
+        }
     }
 
     void SlangShaderModule::OnStartup(const Events::Startup &event) {
