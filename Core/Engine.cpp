@@ -3,7 +3,7 @@
 //
 
 #include "Engine.h"
-#include "LoggingMacros.h"
+#include "Logger.h"
 #include "MainLoop.h"
 #include "EngineEvents.h"
 #include "RenderingModule.h"
@@ -28,7 +28,7 @@ namespace Bcg {
 
         LOG_INFO(fmt::format("{}::Init: version {}", name, version));
 
-        auto &jobs = GetContext().emplace<JobSystem>(Config::GetInt("num_threads"));
+        auto &jobs = GetContext().emplace<JobSystem>(Config::GetInt("jobs.max_threads"));
         auto &taskGraph = GetContext().emplace<TaskGraph>();
         auto &renderGraph = GetContext().emplace<Graphics::RenderGraph>();
         auto &loop = GetContext().emplace<MainLoop>();

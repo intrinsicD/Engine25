@@ -6,7 +6,7 @@
 #include "Engine.h"
 #include "Mouse.h"
 #include "Keyboard.h"
-#include "LoggingMacros.h"
+#include "Logger.h"
 #include "MainLoop.h"
 #include "GLFW/glfw3.h"
 

@@ -7,7 +7,7 @@
 #include "MainLoop.h"
 #include "glad/gl.h"
 #include "GLFW/glfw3.h"
-#include "LoggingMacros.h"
+#include "Logger.h"
 #include "WindowComponent.h"
 #include <slang/slang.h>
 

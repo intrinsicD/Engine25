@@ -50,16 +50,16 @@ namespace Bcg {
     };
 
     template<typename T>
-    Pool<T>::Pool(const char *name) : name(name), ref_count(properties.get_or_add<size_t>("ref_count", 0)),
-                                      objects(properties.get_or_add<T>("objects")) {
+    Pool<T>::Pool(const char *name) : name(name), ref_count(properties.GetOrAdd<size_t>("ref_count", 0)),
+                                      objects(properties.GetOrAdd<T>("objects")) {
     }
 
     template<typename T>
     PoolHandle<T> Pool<T>::Create() {
         size_t idx;
         if (free_list.empty()) {
-            properties.push_back();
-            idx = properties.size() - 1;
+            properties.PushBack();
+            idx = properties.Size() - 1;
         } else {
             idx = free_list.front();
             free_list.pop();
@@ -78,7 +78,7 @@ namespace Bcg {
     template<typename T>
     void Pool<T>::IncrementRefCount(size_t idx) {
         std::scoped_lock lock(mutex);
-        assert(idx < properties.size());
+        assert(idx < properties.Size());
         assert(ref_count);
 
         ++ref_count[idx];
@@ -87,7 +87,7 @@ namespace Bcg {
     template<typename T>
     void Pool<T>::DecrementRefCount(size_t idx) {
         std::scoped_lock lock(mutex);
-        assert(idx < properties.size());
+        assert(idx < properties.Size());
         assert(ref_count);
 
         size_t &ref = ref_count[idx];

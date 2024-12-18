@@ -6,7 +6,7 @@
 #include "GuiModule.h"
 #include "Engine.h"
 #include "GLFW/glfw3.h"
-#include "LoggingMacros.h"
+#include "Logger.h"
 #include "RenderingModule.h"
 #include "Pool.h"
 #include "PoolHandle.h"

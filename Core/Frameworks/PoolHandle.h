@@ -16,11 +16,12 @@ namespace Bcg {
     class PoolHandle {
     public:
         PoolHandle() : pool(nullptr), idx(std::numeric_limits<size_t>::max()) {
+
         }
 
         // Copy constructor
         PoolHandle(const PoolHandle &other) : pool(other.pool), idx(other.idx) {
-            if (other.pool && idx < pool->properties.size()) {
+            if (other.pool && idx < pool->properties.Size()) {
                 assert(other.pool != nullptr);
                 assert(pool != nullptr);
 
@@ -41,14 +42,14 @@ namespace Bcg {
         PoolHandle &operator=(const PoolHandle &other) {
             if (this != &other) {
                 // Decrement current reference
-                if (pool && idx < pool->properties.size()) {
+                if (pool && idx < pool->properties.Size()) {
                     pool->DecrementRefCount(idx);
                 }
 
                 // Copy new reference
                 pool = other.pool;
                 idx = other.idx;
-                if (pool && idx < pool->properties.size()) {
+                if (pool && idx < pool->properties.Size()) {
                     pool->IncrementRefCount(idx);
                 }
             }
@@ -58,7 +59,7 @@ namespace Bcg {
         PoolHandle &operator=(PoolHandle &&other) noexcept {
             if (this != &other) {
                 // Decrement current reference
-                if (pool && idx < pool->properties.size()) {
+                if (pool && idx < pool->properties.Size()) {
                     pool->DecrementRefCount(idx);
                 }
 
@@ -72,13 +73,13 @@ namespace Bcg {
         }
 
         ~PoolHandle() {
-            if (pool && idx < pool->properties.size()) {
+            if (pool && idx < pool->properties.Size()) {
                 pool->DecrementRefCount(idx);
             }
         }
 
         [[nodiscard]] bool IsValid() const {
-            if (!pool || idx >= pool->properties.size()) {
+            if (!pool || idx >= pool->properties.Size()) {
                 return false;
             }
             size_t ref = pool->ref_count[idx];
@@ -131,7 +132,7 @@ namespace Bcg {
         friend class Pool<T>;
 
         PoolHandle(Pool<T> *pool, size_t idx) : pool(pool), idx(idx) {
-            if (pool && idx < pool->properties.size()) {
+            if (pool && idx < pool->properties.Size()) {
                 pool->IncrementRefCount(idx);
             }
         }

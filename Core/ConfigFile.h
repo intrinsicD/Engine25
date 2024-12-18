@@ -8,7 +8,7 @@
 #include <string>
 #include <fstream>
 #include <nlohmann/json.hpp>
-#include "LoggingMacros.h"
+#include "Logger.h"
 
 namespace Bcg {
     using json = nlohmann::json;

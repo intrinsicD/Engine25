@@ -3,7 +3,7 @@
 //
 
 #include "Module.h"
-#include "LoggingMacros.h"
+#include "Logger.h"
 
 namespace Bcg {
     Module::Module(std::string name, std::string version) : name(std::move(name)), version(std::move(version)) {

@@ -2,9 +2,13 @@
 // Created by alex on 04.12.24.
 //
 
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+
 #include "Logger.h"
 #include "fmt/color.h"
-#include "fmt/core.h"
 
 namespace Bcg {
     Logger &Logger::GetInstance() {
