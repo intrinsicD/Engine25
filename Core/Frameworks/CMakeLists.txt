@@ -8,4 +8,5 @@ target_sources(Engine25 PRIVATE
         TaskGraph.cpp
 )
 
+add_subdirectory(Geometry)
 add_subdirectory(Graphics)

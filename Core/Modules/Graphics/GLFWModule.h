@@ -7,7 +7,7 @@
 
 #include "Module.h"
 #include "Command.h"
-#include "glm/glm.hpp"
+#include "Math.h"
 #include "Keyboard.h"
 
 namespace Bcg {
@@ -31,7 +31,7 @@ namespace Bcg {
 
         static GLFWwindow *GetCurrentWindow();
 
-        static glm::vec2 GetCursorPosition(GLFWwindow *window);
+        static Vector<Real, 2> GetCursorPosition(GLFWwindow *window);
 
         static float GetDpiScaling();
     };

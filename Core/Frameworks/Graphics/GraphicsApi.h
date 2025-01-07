@@ -274,6 +274,7 @@ namespace Bcg::Graphics {
     //   BufferHandle bh = device.CreateBuffer(bd);
     //   // Use bh in rendering operations.
     // ----------------------------------------------------------
+
     struct BufferDesc {
         SizeType size = 0;
         MemoryUsage memory_usage = MemoryUsage::GpuOnly;

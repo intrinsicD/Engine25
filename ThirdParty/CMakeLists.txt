@@ -11,11 +11,17 @@ target_link_libraries(Engine25 PUBLIC glfw)
 target_include_directories(Engine25 SYSTEM PUBLIC glad/include)
 target_sources(Engine25 PRIVATE glad/src/gl.c)
 
+add_subdirectory(eigen)
+target_link_libraries(Engine25 PUBLIC Eigen3::Eigen)
+
 add_subdirectory(json)
 target_link_libraries(Engine25 PUBLIC nlohmann_json::nlohmann_json)
 
-add_subdirectory(glm)
-target_link_libraries(Engine25 PUBLIC glm)
+add_subdirectory(slang)
+target_link_libraries(Engine25 PUBLIC slang gfx)
+
+add_subdirectory(googletest)
+
 
 target_include_directories(Engine25 SYSTEM PUBLIC imgui)
 target_sources(Engine25 PRIVATE

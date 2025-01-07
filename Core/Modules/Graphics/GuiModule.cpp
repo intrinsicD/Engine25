@@ -16,6 +16,8 @@
 #include "Cache.h"
 #include <filesystem>
 
+#include "Math.h"
+
 namespace Bcg {
     namespace fs = std::filesystem;
 
@@ -152,8 +154,8 @@ namespace Bcg {
         auto &window = Engine::GetContext().get<WindowComponent>();
         static bool show_window_gui = true;
         if (ImGui::Begin("Window", &show_window_gui, ImGuiWindowFlags_AlwaysAutoResize)) {
-            if (ImGui::ColorEdit3("clear_color", window->clear_color)) {
-                SetClearColor(window->clear_color).Execute();
+            if (ImGui::ColorEdit3("clear_color", window->clear_color.data())) {
+                SetClearColor(window->clear_color.data()).Execute();
             }
             ImGui::Text("Width %d", window->width);
             ImGui::Text("Height %d", window->height);

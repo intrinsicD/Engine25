@@ -5,7 +5,11 @@
 #include "SlangShaderModule.h"
 #include "Engine.h"
 #include "GraphicsApi.h"
-#include <slang/slang.h>
+#include "LoggingMacros.h"
+#include <slang.h>
+#include <slang-gfx.h>
+#include <slang-com-ptr.h>
+#include <slang-com-helper.h>
 
 namespace Bcg{
     SlangShaderModule::SlangShaderModule() : Module("SlangShaderModule", "0.1") {
@@ -28,8 +32,14 @@ namespace Bcg{
         Module::DisconnectEvents();
     }
 
+    struct SlangContext{
+        SlangSession *session;
+    };
+
     void SlangShaderModule::OnInitialize(const Events::Initialize &event) {
         Module::OnInitialize(event);
+
+
 
         Graphics::Device &device = Engine::GetContext().get<Graphics::Device>();
         Graphics::BackendType backend = device.GetBackendType();
@@ -64,5 +74,27 @@ namespace Bcg{
 
     void SlangShaderModule::OnShutdown(const Events::Shutdown &event) {
         Module::OnShutdown(event);
+    }
+
+    using namespace gfx;
+
+    struct MyDebugCallback : public IDebugCallback
+    {
+        virtual SLANG_NO_THROW void SLANG_MCALL handleMessage(
+            DebugMessageType type,
+            DebugMessageSource source,
+            const char* message) override
+        {
+          LOG_ERROR(fmt::format("Slang error: %s", message));
+        }
+    }gCallback;
+
+    void SlangShaderModule::InitGfx(){
+        gfxEnableDebugLayer();
+        gfxSetDebugCallback(&gCallback);
+
+        IDevice::Desc deviceDesc = {};
+        IDevice* gDevice = nullptr;
+        gfxCreateDevice(&deviceDesc, &gDevice);
     }
 }

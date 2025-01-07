@@ -113,7 +113,7 @@ namespace Bcg {
         return glfwGetCurrentContext();
     }
 
-    glm::vec2 GLFWModule::GetCursorPosition(GLFWwindow *window) {
+    Vector<Real, 2> GLFWModule::GetCursorPosition(GLFWwindow *window) {
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         return {xpos, ypos};

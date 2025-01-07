@@ -20,29 +20,29 @@ namespace Bcg {
         virtual ~BasePropertyArray() = default;
 
         //! Reserve memory for n elements.
-        virtual void Reserve(size_t n) = 0;
+        virtual void reserve(size_t n) = 0;
 
         //! Resize storage to hold n elements.
-        virtual void Resize(size_t n) = 0;
+        virtual void resize(size_t n) = 0;
 
         //! Free unused memory.
-        virtual void FreeMemory() = 0;
+        virtual void free_memory() = 0;
 
         //! Extend the number of elements by one.
-        virtual void PushBack() = 0;
+        virtual void push_back() = 0;
 
         //! Let two elements swap their storage place.
-        virtual void Swap(size_t i0, size_t i1) = 0;
+        virtual void swap(size_t i0, size_t i1) = 0;
 
         //! Return a deep copy of self.
-        [[nodiscard]] virtual BasePropertyArray *Clone() const = 0;
+        [[nodiscard]] virtual BasePropertyArray *clone() const = 0;
 
         //! Return the name of the property
-        [[nodiscard]] virtual const std::string &Name() const = 0;
+        [[nodiscard]] virtual const std::string &name() const = 0;
 
-        [[nodiscard]] virtual size_t Size() const = 0;
+        [[nodiscard]] virtual size_t size() const = 0;
 
-        [[nodiscard]] virtual size_t Dims() const = 0;
+        [[nodiscard]] virtual size_t dims() const = 0;
     };
 
     template<typename S, typename Enable = void>
@@ -68,31 +68,31 @@ namespace Bcg {
             : name_(std::move(name)), value_(std::move(t)) {
         }
 
-        void Reserve(size_t n) override { data_.reserve(n); }
+        void reserve(size_t n) override { data_.reserve(n); }
 
-        void Resize(size_t n) override { data_.resize(n, value_); }
+        void resize(size_t n) override { data_.resize(n, value_); }
 
-        void PushBack() override { data_.push_back(value_); }
+        void push_back() override { data_.push_back(value_); }
 
-        void FreeMemory() override { data_.shrink_to_fit(); }
+        void free_memory() override { data_.shrink_to_fit(); }
 
-        void Swap(size_t i0, size_t i1) override {
+        void swap(size_t i0, size_t i1) override {
             T d(data_[i0]);
             data_[i0] = data_[i1];
             data_[i1] = d;
         }
 
-        [[nodiscard]] BasePropertyArray *Clone() const override {
+        [[nodiscard]] BasePropertyArray *clone() const override {
             auto *p = new PropertyArray<T>(name_, value_);
             p->data_ = data_;
             return p;
         }
 
         //! Get pointer to array (does not work for T==bool)
-        [[nodiscard]] const T *Data() const { return &data_[0]; }
+        [[nodiscard]] const T *data() const { return &data_[0]; }
 
         //! Get reference to the underlying vector
-        std::vector<T> &Vector() { return data_; }
+        std::vector<T> &vector() { return data_; }
 
         //! Access the i'th element. No range check is performed!
         reference operator[](size_t idx) {
@@ -107,14 +107,14 @@ namespace Bcg {
         }
 
         //! Return the name of the property
-        [[nodiscard]] const std::string &Name() const override { return name_; }
+        [[nodiscard]] const std::string &name() const override { return name_; }
 
 
-        [[nodiscard]] size_t Size() const override {
+        [[nodiscard]] size_t size() const override {
             return data_.size();
         }
 
-        [[nodiscard]] size_t Dims() const override {
+        [[nodiscard]] size_t dims() const override {
             return GetDimensions(value_);
         }
 
@@ -126,7 +126,7 @@ namespace Bcg {
 
     // specialization for bool properties
     template<>
-    inline const bool *PropertyArray<bool>::Data() const {
+    inline const bool *PropertyArray<bool>::data() const {
         assert(false);
         return nullptr;
     }
@@ -152,7 +152,7 @@ namespace Bcg {
 
         explicit operator bool() const { return parray_ != nullptr; }
 
-        [[nodiscard]] const std::string &Name() const { return parray_->Name(); }
+        [[nodiscard]] const std::string &name() const { return parray_->name(); }
 
         reference operator[](size_t i) {
             assert(parray_ != nullptr);
@@ -164,27 +164,27 @@ namespace Bcg {
             return (*parray_)[i];
         }
 
-        const T *Data() const {
+        const T *data() const {
             assert(parray_ != nullptr);
-            return parray_->Data();
+            return parray_->data();
         }
 
-        std::vector<T> &Vector() {
+        std::vector<T> &vector() {
             assert(parray_ != nullptr);
-            return parray_->Vector();
+            return parray_->vector();
         }
 
-        [[nodiscard]] const BasePropertyArray *Base() const {
+        [[nodiscard]] const BasePropertyArray *base() const {
             return parray_;
         }
 
     private:
-        PropertyArray<T> &Array() {
+        PropertyArray<T> &array() {
             assert(parray_ != nullptr);
             return *parray_;
         }
 
-        const PropertyArray<T> &Array() const {
+        const PropertyArray<T> &array() const {
             assert(parray_ != nullptr);
             return *parray_;
         }
@@ -198,7 +198,7 @@ namespace Bcg {
         PropertyContainer() = default;
 
         // destructor (deletes all property arrays)
-        virtual ~PropertyContainer() { Clear(); }
+        virtual ~PropertyContainer() { clear(); }
 
         // copy constructor: performs deep copy of property arrays
         PropertyContainer(const PropertyContainer &rhs) { operator=(rhs); }
@@ -206,32 +206,32 @@ namespace Bcg {
         // assignment: performs deep copy of property arrays
         PropertyContainer &operator=(const PropertyContainer &rhs) {
             if (this != &rhs) {
-                Clear();
+                clear();
                 size_ = rhs.size_;
                 for(const auto &pair: rhs.parrays_) {
-                    parrays_[pair.first] = pair.second->Clone();
+                    parrays_[pair.first] = pair.second->clone();
                 }
             }
             return *this;
         }
 
-        [[nodiscard]] bool IsEmpty() const { return size_ == 0; }
+        [[nodiscard]] bool is_empty() const { return size_ == 0; }
 
         // returns the current size of the property arrays
-        [[nodiscard]] size_t Size() const { return size_; }
+        [[nodiscard]] size_t size() const { return size_; }
 
         // returns the number of property arrays
-        [[nodiscard]] size_t NumProperties() const { return parrays_.size(); }
+        [[nodiscard]] size_t num_props() const { return parrays_.size(); }
 
         // returns a vector of all property names
-        [[nodiscard]] std::vector<std::string> Properties(std::initializer_list<int> filter_dims = {}) const {
+        [[nodiscard]] std::vector<std::string> properties(std::initializer_list<int> filter_dims = {}) const {
             //TODO figure out filtering by type, float, int, other custom types ...
             std::vector<std::string> names;
             names.reserve(parrays_.size());
             for (const auto &parray: parrays_) {
                 if (filter_dims.size() > 0) {
                     for (const auto &dim: filter_dims) {
-                        if (parray.second->Dims() == dim) {
+                        if (parray.second->dims() == dim) {
                             names.emplace_back(parray.first);
                         }
                     }
@@ -244,7 +244,7 @@ namespace Bcg {
 
         // add a property with name \p name and default value \p t
         template<class T>
-        Property<T> Add(const std::string &name, const T t = T()) {
+        Property<T> add(const std::string &name, const T t = T()) {
             // throw exception if a property with this name already exists
             if (parrays_.contains(name)) {
                 LOG_WARN(fmt::format("[PropertyContainer] A property with name \"{}\" already exists.", name));
@@ -253,19 +253,19 @@ namespace Bcg {
 
             // otherwise add the property
             auto *p = new PropertyArray<T>(name, t);
-            p->Resize(size_);
+            p->resize(size_);
             parrays_[name] = p;
             return Property<T>(p);
         }
 
         // do we have a property with a given name?
-        [[nodiscard]] bool Exists(const std::string &name) const {
+        [[nodiscard]] bool exists(const std::string &name) const {
             return parrays_.contains(name);
         }
 
         // get a property by its name. returns invalid property if it does not exist.
         template<class T>
-        Property<T> Get(const std::string &name) const {
+        Property<T> get(const std::string &name) const {
             auto iter = parrays_.find(name);
             if (iter != parrays_.end()) {
                 return Property<T>(dynamic_cast<PropertyArray<T> *>(iter->second));
@@ -273,7 +273,7 @@ namespace Bcg {
             return Property<T>();
         }
 
-        [[nodiscard]] BasePropertyArray *GetBase(const std::string &name) const {
+        [[nodiscard]] BasePropertyArray *get_base(const std::string &name) const {
             auto iter = parrays_.find(name);
             if (iter != parrays_.end()) {
                 return iter->second;
@@ -283,17 +283,17 @@ namespace Bcg {
 
         // returns a property if it exists, otherwise it creates it first.
         template<class T>
-        Property<T> GetOrAdd(const std::string &name, const T t = T()) {
-            Property<T> p = Get<T>(name);
+        Property<T> get_or_add(const std::string &name, const T t = T()) {
+            Property<T> p = get<T>(name);
             if (!p) {
-                p = Add<T>(name, t);
+                p = add<T>(name, t);
             }
             return p;
         }
 
         // delete a property
         template<class T>
-        void Remove(Property<T> &h) {
+        void remove(Property<T> &h) {
             const auto end = parrays_.end();
             for (auto it = parrays_.begin(); it != end; ++it) {
                 if (*it == h.parray_) {
@@ -306,7 +306,7 @@ namespace Bcg {
         }
 
         // delete all properties
-        void Clear() {
+        void clear() {
             for (auto &parray: parrays_) {
                 delete parray.second;
             }
@@ -315,43 +315,43 @@ namespace Bcg {
         }
 
         // reserve memory for n entries in all arrays
-        void Reserve(size_t n) const {
+        void reserve(size_t n) const {
             for (auto &parray: parrays_) {
-                parray.second->Reserve(n);
+                parray.second->reserve(n);
             }
         }
 
         // resize all arrays to size n
-        void Resize(size_t n) {
+        void resize(size_t n) {
             for (auto &parray: parrays_) {
-                parray.second->Resize(n);
+                parray.second->resize(n);
             }
             size_ = n;
         }
 
         // free unused space in all arrays
-        void FreeMemory() const {
+        void free_memory() const {
             for (auto &parray: parrays_) {
-                parray.second->FreeMemory();
+                parray.second->free_memory();
             }
         }
 
         // add a new element to each vector
-        void PushBack() {
+        void push_back() {
             for (auto &parray: parrays_) {
-                parray.second->PushBack();
+                parray.second->push_back();
             }
             ++size_;
         }
 
         // swap elements i0 and i1 in all arrays
-        void Swap(size_t i0, size_t i1) const {
+        void swap(size_t i0, size_t i1) const {
             for (auto &parray: parrays_) {
-                parray.second->Swap(i0, i1);
+                parray.second->swap(i0, i1);
             }
         }
 
-        [[nodiscard]] const std::unordered_map<std::string, BasePropertyArray *> &GetArray() const {
+        [[nodiscard]] const std::unordered_map<std::string, BasePropertyArray *> &get_array() const {
             return parrays_;
         }
 

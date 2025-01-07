@@ -6,6 +6,7 @@
 #define ENGINE25_GLFWWINDOW_H
 
 #include <string>
+#include "Math.h"
 
 struct GLFWwindow;
 
@@ -15,7 +16,7 @@ namespace Bcg {
         int width = 0;
         int height = 0;
         std::string title;
-        float clear_color[3]{};
+        Vector<float, 3> clear_color = {0.0f, 0.0f, 0.0f};
     };
 }
 

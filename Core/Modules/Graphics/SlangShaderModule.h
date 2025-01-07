@@ -25,6 +25,8 @@ namespace Bcg{
         void OnSynchronize(const Events::Synchronize &event) override;
 
         void OnShutdown(const Events::Shutdown &event) override;
+
+        void InitGfx();
     };
 }
 

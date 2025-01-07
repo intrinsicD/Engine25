@@ -5,7 +5,7 @@
 #ifndef ENGINE25_MOUSE_H
 #define ENGINE25_MOUSE_H
 
-#include "glm/glm.hpp"
+#include "Math.h"
 
 namespace Bcg {
     class Mouse {
@@ -29,8 +29,8 @@ namespace Bcg {
                 Repeat
             }state;
 
-            glm::vec2 last_press;
-            glm::vec2 last_release;
+            Vector<Real, 2> last_press;
+            Vector<Real, 2> last_release;
         };
 
         struct Wheel {
@@ -41,9 +41,9 @@ namespace Bcg {
                 Release,
                 Repeat
             }state;
-            glm::vec2 scroll_offset;
-            glm::vec2 last_press;
-            glm::vec2 last_release;
+            Vector<Real, 2> scroll_offset;
+            Vector<Real, 2> last_press;
+            Vector<Real, 2> last_release;
         };
 
         Button left;
@@ -54,7 +54,7 @@ namespace Bcg {
             return left.state == Button::State::Press || right.state == Button::State::Press || wheel.state == Wheel::State::Press;
         }
 
-        glm::vec2 cursor_position;
+        Vector<Real, 2> cursor_position;
     };
 }
 
