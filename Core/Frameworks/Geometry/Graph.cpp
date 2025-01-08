@@ -6,55 +6,60 @@
 
 namespace Bcg {
     Graph::Graph() {
-
     }
 
     Graph &Graph::operator=(const Graph &rhs) {
-
     }
 
     Graph &Graph::assign(const Graph &rhs) {
-
     }
 
     void Graph::clear() {
-
     }
 
     void Graph::free_memory() {
-
     }
 
     void Graph::reserve(size_t nvertices) {
-
     }
 
     void Graph::garbage_collection() {
-
     }
 
     Vertex Graph::add_vertex(const Vector<Real, 3> &p) {
-
     }
 
     void Graph::mark_deleted(const Vertex &v) {
+        if (v_deleted[v]) {
+            return;
+        }
 
+        v_deleted[v] = true;
+        ++vertices.num_deleted;
     }
 
     void Graph::mark_deleted(const Halfedge &h) {
+        if (h_deleted[h]) {
+            return;
+        }
 
+        h_deleted[h] = true;
+        ++halfedges.num_deleted;
     }
 
     void Graph::mark_deleted(const Edge &e) {
+        if (e_deleted[e]) {
+            return;
+        }
 
+        e_deleted[e] = true;
+        ++edges.num_deleted;
     }
 
     void Graph::delete_vertex(const Vertex &v) {
-
     }
 
     void Graph::delete_edge(const Edge &v) {
-
     }
 
     Halfedge Graph::new_edge(const Vertex &v0, const Vertex &v1) {
@@ -112,8 +117,12 @@ namespace Bcg {
         return new_h;
     }
 
-    Property<Vector<unsigned int, 2>> Graph::get_edges() {
-
+    EdgeProperty<Vector<unsigned int, 2> > Graph::get_edges() {
+        EdgeProperty<Vector<unsigned int, 2> > indices = edge_property<Vector<unsigned int, 2> >("e:indices");
+        for (const auto e: edges) {
+            indices[e] = {get_vertex(get_halfedge(e, 0)).idx(), get_vertex(get_halfedge(e, 1)).idx()};
+        }
+        return indices;
     }
 
     Halfedge Graph::find_halfedge(const Vertex &v0, const Vertex &v1) const {
@@ -129,6 +138,10 @@ namespace Bcg {
     }
 
     size_t Graph::get_valence(const Vertex &v) const {
-
+        size_t valence = 0;
+        for (const auto h: get_halfedges(v)) {
+            valence++;
+        }
+        return valence;
     }
 }

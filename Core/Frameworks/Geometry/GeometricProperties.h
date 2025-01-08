@@ -15,16 +15,15 @@ namespace Bcg {
     class Handle {
     public:
         explicit Handle(size_t idx = BCG_INVALID_IDX) : m_idx(idx) {
-
         }
 
-        inline size_t idx() const { return m_idx; }
+        [[nodiscard]] size_t idx() const { return m_idx; }
 
-        inline bool is_valid() const { return m_idx != BCG_INVALID_IDX; }
+        [[nodiscard]] bool is_valid() const { return m_idx != BCG_INVALID_IDX; }
 
-        inline void invalidate() { m_idx = BCG_INVALID_IDX; }
+        void invalidate() { m_idx = BCG_INVALID_IDX; }
 
-        inline auto operator<=>(const Handle &rhs) const = default;
+        auto operator<=>(const Handle &rhs) const = default;
 
         size_t m_idx;
     };
@@ -53,7 +52,6 @@ namespace Bcg {
     public:
         using Handle::Handle;
     };
-
 
     inline std::ostream &operator<<(std::ostream &os, Vertex v) {
         return (os << 'v' << v.idx());
@@ -84,11 +82,11 @@ namespace Bcg {
         explicit VertexProperty(Property<T> p) : Property<T>(p) {
         }
 
-        inline typename Property<T>::reference operator[](Vertex v) {
+        typename Property<T>::reference operator[](Vertex v) {
             return Property<T>::operator[](v.idx());
         }
 
-        inline typename Property<T>::const_reference operator[](Vertex v) const {
+        typename Property<T>::const_reference operator[](Vertex v) const {
             return Property<T>::operator[](v.idx());
         }
     };
@@ -101,11 +99,11 @@ namespace Bcg {
         explicit HalfedgeProperty(Property<T> p) : Property<T>(p) {
         }
 
-        inline typename Property<T>::reference operator[](Halfedge h) {
+        typename Property<T>::reference operator[](Halfedge h) {
             return Property<T>::operator[](h.idx());
         }
 
-        inline typename Property<T>::const_reference operator[](Halfedge h) const {
+        typename Property<T>::const_reference operator[](Halfedge h) const {
             return Property<T>::operator[](h.idx());
         }
     };
@@ -118,11 +116,11 @@ namespace Bcg {
         explicit EdgeProperty(Property<T> p) : Property<T>(p) {
         }
 
-        inline typename Property<T>::reference operator[](Edge e) {
+        typename Property<T>::reference operator[](Edge e) {
             return Property<T>::operator[](e.idx());
         }
 
-        inline typename Property<T>::const_reference operator[](Edge e) const {
+        typename Property<T>::const_reference operator[](Edge e) const {
             return Property<T>::operator[](e.idx());
         }
     };
@@ -135,11 +133,11 @@ namespace Bcg {
         explicit FaceProperty(Property<T> p) : Property<T>(p) {
         }
 
-        inline typename Property<T>::reference operator[](Face f) {
+        typename Property<T>::reference operator[](Face f) {
             return Property<T>::operator[](f.idx());
         }
 
-        inline typename Property<T>::const_reference operator[](Face f) const {
+        typename Property<T>::const_reference operator[](Face f) const {
             return Property<T>::operator[](f.idx());
         }
     };
@@ -152,11 +150,11 @@ namespace Bcg {
         explicit TetProperty(Property<T> p) : Property<T>(p) {
         }
 
-        inline typename Property<T>::reference operator[](Tet t) {
+        typename Property<T>::reference operator[](Tet t) {
             return Property<T>::operator[](t.idx());
         }
 
-        inline typename Property<T>::const_reference operator[](Tet t) const {
+        typename Property<T>::const_reference operator[](Tet t) const {
             return Property<T>::operator[](t.idx());
         }
     };
@@ -176,9 +174,9 @@ namespace Bcg {
             }
         }
 
-        inline HandleType operator*() const { return m_handle; }
+        HandleType operator*() const { return m_handle; }
 
-        inline auto operator<=>(const Iterator &rhs) const = default;
+        auto operator<=>(const Iterator &rhs) const = default;
 
         Iterator &operator++() {
             ++m_handle.idx_;
@@ -230,7 +228,7 @@ namespace Bcg {
         //! default constructor
         VertexAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                          Vertex v = Vertex())
-                : m_data(data) {
+            : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -286,7 +284,7 @@ namespace Bcg {
         operator bool() const { return m_halfedge.is_valid(); }
 
         //! \return the current halfedge
-        Halfedge halfedge() const { return m_halfedge; }
+        [[nodiscard]] Halfedge halfedge() const { return m_halfedge; }
 
         // helper for C++11 range-based for-loops
         VertexAroundVertexCirculatorBase &begin() {
@@ -321,7 +319,7 @@ namespace Bcg {
         //! default constructor
         HalfedgeAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                            Vertex v = Vertex())
-                : m_data(data) {
+            : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -406,7 +404,7 @@ namespace Bcg {
         //! default constructor
         EdgeAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                        Vertex v = Vertex())
-                : m_data(data) {
+            : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -491,7 +489,7 @@ namespace Bcg {
         //! construct with data and vertex (vertex should not be isolated!)
         FaceAroundVertexCirculatorBase(const DataContainer *m = nullptr,
                                        Vertex v = Vertex())
-                : m_data(m) {
+            : m_data(m) {
             if (m_data) {
                 m_halfedge = m_data->get_halfedge(v);
                 if (m_halfedge.is_valid() && m_data->is_boundary(m_halfedge))
@@ -586,7 +584,7 @@ namespace Bcg {
         //! default constructor
         VertexAroundFaceCirculatorBase(const DataContainer *m = nullptr,
                                        Face f = Face())
-                : m_data(m) {
+            : m_data(m) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(f);
         }
@@ -671,7 +669,7 @@ namespace Bcg {
         //! default constructor
         HalfedgeAroundFaceCirculatorBase(const DataContainer *m = nullptr,
                                          Face f = Face())
-                : m_data(m) {
+            : m_data(m) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(f);
         }
@@ -746,36 +744,35 @@ namespace Bcg {
         size_t num_deleted;
 
         Vertices() : v_deleted(vertex_property<bool>("v:deleted", false)), num_deleted(0) {
-
         }
 
-        inline VertexIterator begin() {
+        VertexIterator begin() {
             return {Vertex(0), this};
         }
 
-        inline VertexIterator end() {
+        VertexIterator end() {
             return {Vertex(size()), this};
         }
 
-        [[nodiscard]] inline size_t n_vertices() const { return size() - num_deleted; }
+        [[nodiscard]] size_t n_vertices() const { return size() - num_deleted; }
 
-        [[nodiscard]] inline bool is_empty() const {
+        [[nodiscard]] bool is_empty() const {
             return n_vertices() == 0;
         }
 
-        [[nodiscard]] inline bool is_valid(const Vertex &v) const {
+        [[nodiscard]] bool is_valid(const Vertex &v) const {
             return v.idx() < size();
         }
 
-        [[nodiscard]] inline bool is_deleted(const Vertex &v) const {
+        [[nodiscard]] bool is_deleted(const Vertex &v) const {
             return v_deleted[v];
         }
 
-        [[nodiscard]] inline bool has_garbage() const {
+        [[nodiscard]] bool has_garbage() const {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] inline size_t num_v_deleted() const {
+        [[nodiscard]] size_t num_v_deleted() const {
             return num_deleted;
         }
 
@@ -829,37 +826,36 @@ namespace Bcg {
         size_t num_deleted = 0;
 
         Halfedges() : h_deleted(m_halfedgeproperty<bool>("h:deleted", false)), num_deleted(0) {
-
         }
 
-        inline HalfEdgeIterator begin() {
+        HalfEdgeIterator begin() {
             return {Halfedge(0), this};
         }
 
-        inline HalfEdgeIterator end() {
+        HalfEdgeIterator end() {
             return {Halfedge(size()), this};
         }
 
 
-        [[nodiscard]] inline size_t n_halfedges() const { return size() - num_deleted; }
+        [[nodiscard]] size_t n_halfedges() const { return size() - num_deleted; }
 
-        [[nodiscard]] inline bool is_empty() const {
+        [[nodiscard]] bool is_empty() const {
             return n_halfedges() == 0;
         }
 
-        [[nodiscard]] inline bool is_valid(const Halfedge &h) const {
+        [[nodiscard]] bool is_valid(const Halfedge &h) const {
             return h.idx() < size();
         }
 
-        [[nodiscard]] inline bool is_deleted(const Halfedge &h) const {
+        [[nodiscard]] bool is_deleted(const Halfedge &h) const {
             return h_deleted[h];
         }
 
-        [[nodiscard]] inline bool has_garbage() const {
+        [[nodiscard]] bool has_garbage() const {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] inline size_t num_h_deleted() const {
+        [[nodiscard]] size_t num_h_deleted() const {
             return num_deleted;
         }
 
@@ -907,36 +903,35 @@ namespace Bcg {
         size_t num_deleted = 0;
 
         Edges() : e_deleted(edge_property<bool>("e:deleted", false)), num_deleted(0) {
-
         }
 
-        inline EdgeIterator begin() {
+        EdgeIterator begin() {
             return {Edge(0), this};
         }
 
-        inline EdgeIterator end() {
+        EdgeIterator end() {
             return {Edge(size()), this};
         }
 
-        [[nodiscard]] inline size_t n_edges() const { return size() - num_deleted; }
+        [[nodiscard]] size_t n_edges() const { return size() - num_deleted; }
 
-        [[nodiscard]] inline bool is_empty() const {
+        [[nodiscard]] bool is_empty() const {
             return n_edges() == 0;
         }
 
-        [[nodiscard]] inline bool is_valid(const Edge &e) const {
+        [[nodiscard]] bool is_valid(const Edge &e) const {
             return e.idx() < size();
         }
 
-        [[nodiscard]] inline bool is_deleted(const Edge &e) const {
+        [[nodiscard]] bool is_deleted(const Edge &e) const {
             return e_deleted[e];
         }
 
-        [[nodiscard]] inline bool has_garbage() const {
+        [[nodiscard]] bool has_garbage() const {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] inline size_t num_e_deleted() const {
+        [[nodiscard]] size_t num_e_deleted() const {
             return num_deleted;
         }
 
@@ -983,30 +978,29 @@ namespace Bcg {
         FaceProperty<bool> deleted_faces;
 
         Faces() : deleted_faces(get_or_add<bool>("f:deleted", false)) {
-
         }
 
-        inline FaceIterator begin() {
+        FaceIterator begin() {
             return {Face(0), this};
         }
 
-        inline FaceIterator end() {
+        FaceIterator end() {
             return {Face(size()), this};
         }
 
-        [[nodiscard]] inline bool is_valid(const Face &f) const {
+        [[nodiscard]] bool is_valid(const Face &f) const {
             return f.idx() < size();
         }
 
-        [[nodiscard]] inline bool is_deleted(const Face &f) const {
+        [[nodiscard]] bool is_deleted(const Face &f) const {
             return deleted_faces && deleted_faces[f];
         }
 
-        [[nodiscard]] inline bool has_garbage() const {
+        [[nodiscard]] bool has_garbage() const {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] inline size_t num_deleted_faces() const {
+        [[nodiscard]] size_t num_deleted_faces() const {
             return num_deleted;
         }
 
@@ -1021,30 +1015,29 @@ namespace Bcg {
         TetProperty<bool> deleted_tets;
 
         Tets() : deleted_tets(get_or_add<bool>("t:deleted", false)) {
-
         }
 
-        inline TetIterator begin() {
+        TetIterator begin() {
             return {Tet(0), this};
         }
 
-        inline TetIterator end() {
+        TetIterator end() {
             return {Tet(size()), this};
         }
 
-        [[nodiscard]] inline bool is_valid(const Tet &t) const {
+        [[nodiscard]] bool is_valid(const Tet &t) const {
             return t.idx() < size();
         }
 
-        [[nodiscard]] inline bool is_deleted(const Tet &t) const {
+        [[nodiscard]] bool is_deleted(const Tet &t) const {
             return deleted_tets && deleted_tets[t];
         }
 
-        [[nodiscard]] inline bool has_garbage() const {
+        [[nodiscard]] bool has_garbage() const {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] inline size_t num_deleted_tets() const {
+        [[nodiscard]] size_t num_deleted_tets() const {
             return num_deleted;
         }
 

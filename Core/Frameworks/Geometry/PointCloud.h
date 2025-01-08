@@ -10,7 +10,7 @@
 namespace Bcg {
     class PointCloud {
     public:
-        VertexProperty<Vector<Real, 3>> positions;
+        VertexProperty<Vector<Real, 3> > positions;
         VertexProperty<bool> v_deleted;
         Vertices vertices;
 
@@ -32,15 +32,15 @@ namespace Bcg {
 
         void garbage_collection();
 
-        [[nodiscard]] inline size_t n_vertices() const { return vertices.n_vertices(); }
+        [[nodiscard]] size_t n_vertices() const { return vertices.n_vertices(); }
 
-        [[nodiscard]] inline bool is_empty() const { return n_vertices() == 0; }
+        [[nodiscard]] bool is_empty() const { return n_vertices() == 0; }
 
-        [[nodiscard]] inline bool is_deleted(const Vertex &v) const { return vertices.is_deleted(v); }
+        [[nodiscard]] bool is_deleted(const Vertex &v) const { return vertices.is_deleted(v); }
 
-        [[nodiscard]] inline bool is_valid(const Vertex &v) const { return vertices.is_valid(v); }
+        [[nodiscard]] bool is_valid(const Vertex &v) const { return vertices.is_valid(v); }
 
-        [[nodiscard]] inline bool has_garbage() const { return vertices.has_garbage(); }
+        [[nodiscard]] bool has_garbage() const { return vertices.has_garbage(); }
 
         template<class T>
         VertexProperty<T> add_vertex_property(const std::string &name,
@@ -67,7 +67,7 @@ namespace Bcg {
             return vertices.exists(name);
         }
 
-        inline Vertex new_vertex() { return vertices.new_vertex(); }
+        Vertex new_vertex() { return vertices.new_vertex(); }
 
         Vertex add_vertex(const Vector<Real, 3> &p);
 

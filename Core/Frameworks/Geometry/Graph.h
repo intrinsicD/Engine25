@@ -23,8 +23,8 @@ namespace Bcg {
 
         VertexProperty<bool> v_deleted;
         VertexProperty<Halfedge> v_connectivity;
-        VertexProperty<bool> h_deleted;
-        VertexProperty<bool> e_deleted;
+        HalfedgeProperty<bool> h_deleted;
+        EdgeProperty<bool> e_deleted;
 
         struct HalfedgeConnectivity {
             Vertex v;
@@ -59,27 +59,27 @@ namespace Bcg {
 
         void garbage_collection();
 
-        [[nodiscard]] inline size_t n_vertices() const { return vertices.n_vertices(); }
+        [[nodiscard]]  size_t n_vertices() const { return vertices.n_vertices(); }
 
-        [[nodiscard]] inline size_t n_halfedges() const { return halfedges.n_halfedges(); }
+        [[nodiscard]]  size_t n_halfedges() const { return halfedges.n_halfedges(); }
 
-        [[nodiscard]] inline size_t n_edges() const { return edges.n_edges(); }
+        [[nodiscard]]  size_t n_edges() const { return edges.n_edges(); }
 
-        [[nodiscard]] inline bool is_empty() const { return n_vertices() == 0; }
+        [[nodiscard]]  bool is_empty() const { return n_vertices() == 0; }
 
-        [[nodiscard]] inline bool is_deleted(const Vertex &v) const { return vertices.is_deleted(v); }
+        [[nodiscard]]  bool is_deleted(const Vertex &v) const { return vertices.is_deleted(v); }
 
-        [[nodiscard]] inline bool is_deleted(const Halfedge &h) const { return halfedges.is_deleted(h); }
+        [[nodiscard]]  bool is_deleted(const Halfedge &h) const { return halfedges.is_deleted(h); }
 
-        [[nodiscard]] inline bool is_deleted(const Edge &e) const { return edges.is_deleted(e); }
+        [[nodiscard]]  bool is_deleted(const Edge &e) const { return edges.is_deleted(e); }
 
-        [[nodiscard]] inline bool is_valid(const Vertex &v) const { return vertices.is_valid(v); }
+        [[nodiscard]]  bool is_valid(const Vertex &v) const { return vertices.is_valid(v); }
 
-        [[nodiscard]] inline bool is_valid(const Halfedge &h) const { return halfedges.is_valid(h); }
+        [[nodiscard]]  bool is_valid(const Halfedge &h) const { return halfedges.is_valid(h); }
 
-        [[nodiscard]] inline bool is_valid(const Edge &e) const { return edges.is_valid(e); }
+        [[nodiscard]]  bool is_valid(const Edge &e) const { return edges.is_valid(e); }
 
-        [[nodiscard]] inline bool has_garbage() const {
+        [[nodiscard]]  bool has_garbage() const {
             return vertices.has_garbage() ||
                    halfedges.has_garbage() ||
                    edges.has_garbage();
@@ -160,7 +160,7 @@ namespace Bcg {
             return edges.exists(name);
         }
 
-        inline Vertex new_vertex() { return vertices.new_vertex(); }
+         Vertex new_vertex() { return vertices.new_vertex(); }
 
         void mark_deleted(const Vertex &v);
 
@@ -178,89 +178,89 @@ namespace Bcg {
 
         Halfedge add_edge(const Vertex &v0, const Vertex &v1);
 
-        Property<Vector<unsigned int, 2>> get_edges();
+        EdgeProperty<Vector<unsigned int, 2>> get_edges();
 
-        inline bool is_isolated(const Vertex &v) const {
+         bool is_isolated(const Vertex &v) const {
             return is_valid(get_halfedge(v)) && is_valid(get_opposite(get_halfedge(v)));
         }
 
-        inline bool is_boundary(const Vertex &v) const {
+         bool is_boundary(const Vertex &v) const {
             return is_boundary(get_halfedge(v));
         }
 
-        inline bool is_boundary(const Halfedge &h) const {
+         bool is_boundary(const Halfedge &h) const {
             return get_next(h) == get_opposite(h);
         }
 
-        inline bool is_boundary(const Edge &e) const {
+         bool is_boundary(const Edge &e) const {
             return is_boundary(get_halfedge(e, 0)) || is_boundary(get_halfedge(e, 1));
         }
 
         Halfedge find_halfedge(const Vertex &v0, const Vertex &v1) const;
 
-        inline Halfedge get_opposite(const Halfedge &h) const {
+         Halfedge get_opposite(const Halfedge &h) const {
             return Halfedge((h.idx() & 1) ? h.idx() - 1 : h.idx() + 1);
         }
 
-        inline void set_halfedge(const Vertex &v, const Halfedge &h) {
+         void set_halfedge(const Vertex &v, const Halfedge &h) {
             v_connectivity[v] = h;
         }
 
-        inline Halfedge get_halfedge(const Vertex &v) const {
+         Halfedge get_halfedge(const Vertex &v) const {
             return v_connectivity[v];
         }
 
-        inline Halfedge get_halfedge(const Edge &e, int i) const {
+         Halfedge get_halfedge(const Edge &e, int i) const {
             return Halfedge{(e.idx() << 1) + i};
         }
 
-        inline Vertex get_vertex(const Edge &e, int i) const {
+         Vertex get_vertex(const Edge &e, int i) const {
             return get_vertex(get_halfedge(e, i));
         }
 
-        inline void set_vertex(const Halfedge &h, const Vertex &v) {
+         void set_vertex(const Halfedge &h, const Vertex &v) {
             h_connectivity[h].v = v;
         }
 
-        inline Vertex get_vertex(const Halfedge &h) const {
+         Vertex get_vertex(const Halfedge &h) const {
             return h_connectivity[h].v;
         }
 
-        inline Halfedge get_next(const Halfedge &h) const {
+         Halfedge get_next(const Halfedge &h) const {
             return h_connectivity[h].nh;
         }
 
-        inline void set_next(const Halfedge &h, const Halfedge &nh) {
+         void set_next(const Halfedge &h, const Halfedge &nh) {
             h_connectivity[h].nh = nh;
         }
 
-        inline Halfedge get_prev(const Halfedge &h) const {
+         Halfedge get_prev(const Halfedge &h) const {
             return h_connectivity[h].ph;
         }
 
-        inline Halfedge rotate_cw(const Halfedge &h) const {
+         Halfedge rotate_cw(const Halfedge &h) const {
             return get_next(get_opposite(h));
         }
 
-        inline Halfedge rotate_ccw(const Halfedge &h) const {
+         Halfedge rotate_ccw(const Halfedge &h) const {
             return get_opposite(get_prev(h));
         }
 
-        inline Edge get_edge(const Halfedge &h) const {
+         Edge get_edge(const Halfedge &h) const {
             return Edge(h.idx() >> 1);
         }
 
         size_t get_valence(const Vertex &v) const;
 
-        inline VertexAroundVertexCirculator get_vertices(const Vertex &v) const {
+         VertexAroundVertexCirculator get_vertices(const Vertex &v) const {
             return {this, v};
         }
 
-        inline HalfedgeAroundVertexCirculator get_halfedges(const Vertex &v) const {
+         HalfedgeAroundVertexCirculator get_halfedges(const Vertex &v) const {
             return {this, v};
         }
 
-        inline EdgeAroundVertexCirculator get_edges(const Vertex &v) const {
+         EdgeAroundVertexCirculator get_edges(const Vertex &v) const {
             return {this, v};
         }
     };
