@@ -10,7 +10,6 @@
 namespace Bcg {
     class Graph {
     public:
-        using VertexIterator = Iterator<Vertices, Vertex>;
         using VertexAroundVertexCirculator = VertexAroundVertexCirculatorBase<Graph>;
         using HalfedgeAroundVertexCirculator = HalfedgeAroundVertexCirculatorBase<Graph>;
         using EdgeAroundVertexCirculator = EdgeAroundVertexCirculatorBase<Graph>;
@@ -20,26 +19,13 @@ namespace Bcg {
         Edges edges;
 
         VertexProperty<Vector<Real, 3>> positions;
-
         VertexProperty<bool> v_deleted;
-        VertexProperty<Halfedge> v_connectivity;
+        VertexProperty<VertexConnectivity> v_connectivity;
+
         HalfedgeProperty<bool> h_deleted;
-        EdgeProperty<bool> e_deleted;
-
-        struct HalfedgeConnectivity {
-            Vertex v;
-            Halfedge nh;
-            Halfedge ph;
-
-            friend std::ostream &operator<<(std::ostream &os, const HalfedgeConnectivity &hc) {
-                os << "v: " << hc.v.idx()
-                   << "nh: " << hc.nh.idx()
-                   << "ph: " << hc.ph.idx();
-                return os;
-            }
-        };
-
         HalfedgeProperty<HalfedgeConnectivity> h_connectivity;
+
+        EdgeProperty<bool> e_deleted;
 
         Graph();
 
@@ -55,34 +41,63 @@ namespace Bcg {
 
         void free_memory();
 
-        void reserve(size_t nvertices);
+        void reserve(size_t nvertices, size_t nedges);
 
         void garbage_collection();
 
-        [[nodiscard]]  size_t n_vertices() const { return vertices.n_vertices(); }
+        [[nodiscard]] bool is_empty() const { return n_vertices() == 0; }
 
-        [[nodiscard]]  size_t n_halfedges() const { return halfedges.n_halfedges(); }
-
-        [[nodiscard]]  size_t n_edges() const { return edges.n_edges(); }
-
-        [[nodiscard]]  bool is_empty() const { return n_vertices() == 0; }
-
-        [[nodiscard]]  bool is_deleted(const Vertex &v) const { return vertices.is_deleted(v); }
-
-        [[nodiscard]]  bool is_deleted(const Halfedge &h) const { return halfedges.is_deleted(h); }
-
-        [[nodiscard]]  bool is_deleted(const Edge &e) const { return edges.is_deleted(e); }
-
-        [[nodiscard]]  bool is_valid(const Vertex &v) const { return vertices.is_valid(v); }
-
-        [[nodiscard]]  bool is_valid(const Halfedge &h) const { return halfedges.is_valid(h); }
-
-        [[nodiscard]]  bool is_valid(const Edge &e) const { return edges.is_valid(e); }
-
-        [[nodiscard]]  bool has_garbage() const {
+        [[nodiscard]] bool has_garbage() const {
             return vertices.has_garbage() ||
                    halfedges.has_garbage() ||
                    edges.has_garbage();
+        }
+
+        // Vertex Methods
+
+        [[nodiscard]] size_t n_vertices() const { return vertices.n_vertices(); }
+
+        [[nodiscard]] bool is_deleted(const Vertex &v) const { return vertices.is_deleted(v); }
+
+        [[nodiscard]] bool is_valid(const Vertex &v) const { return vertices.is_valid(v); }
+
+        [[nodiscard]] bool is_isolated(const Vertex &v) const { return !is_valid(get_halfedge(v)); }
+
+        // check only the incoming halfedge because if v is a boundary vertex then the outgoing halfedge is the next
+        // halfedge of the incoming halfedge (its build that way)
+        [[nodiscard]] bool is_boundary(const Vertex &v) const { return is_boundary(get_opposite(get_halfedge(v))); }
+
+        Vertex new_vertex() {
+            vertices.push_back();
+            return Vertex(vertices.size() - 1);
+        }
+
+        Vertex add_vertex(const Vector<Real, 3> &p);
+
+        void mark_deleted(const Vertex &v);
+
+        void delete_vertex(const Vertex &v);
+
+        void set_halfedge(const Vertex &v, const Halfedge &h) {
+            v_connectivity[v].h = h;
+        }
+
+        Halfedge get_halfedge(const Vertex &v) const {
+            return v_connectivity[v].h;
+        }
+
+        size_t get_valence(const Vertex &v) const;
+
+        VertexAroundVertexCirculator get_vertices(const Vertex &v) const {
+            return {this, v};
+        }
+
+        HalfedgeAroundVertexCirculator get_halfedges(const Vertex &v) const {
+            return {this, v};
+        }
+
+        EdgeAroundVertexCirculator get_edges(const Vertex &v) const {
+            return {this, v};
         }
 
         template<class T>
@@ -110,6 +125,57 @@ namespace Bcg {
             return vertices.exists(name);
         }
 
+        // Halfedge Methods
+
+        [[nodiscard]] size_t n_halfedges() const { return halfedges.n_halfedges(); }
+
+        [[nodiscard]] bool is_deleted(const Halfedge &h) const { return halfedges.is_deleted(h); }
+
+        [[nodiscard]] bool is_valid(const Halfedge &h) const { return halfedges.is_valid(h); }
+
+        [[nodiscard]] bool is_boundary(const Halfedge &h) const { return get_next(h) == get_opposite(h); }
+
+        void mark_deleted(const Halfedge &h);
+
+        Halfedge find_halfedge(const Vertex &v0, const Vertex &v1) const;
+
+        Halfedge get_opposite(const Halfedge &h) const {
+            return Halfedge((h.idx() & 1) ? h.idx() - 1 : h.idx() + 1);
+        }
+
+        void set_vertex(const Halfedge &h, const Vertex &v) {
+            h_connectivity[h].v = v;
+        }
+
+        Vertex get_vertex(const Halfedge &h) const {
+            return h_connectivity[h].v;
+        }
+
+        Halfedge get_next(const Halfedge &h) const {
+            return h_connectivity[h].nh;
+        }
+
+        void set_next(const Halfedge &h, const Halfedge &nh) {
+            h_connectivity[h].nh = nh;
+            h_connectivity[h].ph = h;
+        }
+
+        Halfedge get_prev(const Halfedge &h) const {
+            return h_connectivity[h].ph;
+        }
+
+        Halfedge rotate_cw(const Halfedge &h) const {
+            return get_next(get_opposite(h));
+        }
+
+        Halfedge rotate_ccw(const Halfedge &h) const {
+            return get_opposite(get_prev(h));
+        }
+
+        Edge get_edge(const Halfedge &h) const {
+            return Edge(h.idx() >> 1);
+        }
+
         template<class T>
         HalfedgeProperty<T> add_halfedge_property(const std::string &name,
                                                   const T t = T()) {
@@ -133,6 +199,34 @@ namespace Bcg {
 
         [[nodiscard]] bool has_halfedge_property(const std::string &name) const {
             return halfedges.exists(name);
+        }
+
+        // Edge Methods
+
+        [[nodiscard]] size_t n_edges() const { return edges.n_edges(); }
+
+        [[nodiscard]] bool is_deleted(const Edge &e) const { return edges.is_deleted(e); }
+
+        [[nodiscard]] bool is_valid(const Edge &e) const { return edges.is_valid(e); }
+
+        [[nodiscard]] bool is_boundary(const Edge &e) const {
+            return is_boundary(get_halfedge(e, 0)) || is_boundary(get_halfedge(e, 1));
+        }
+
+        Halfedge new_edge(const Vertex &v0, const Vertex &v1);
+
+        Halfedge add_edge(const Vertex &v0, const Vertex &v1);
+
+        void mark_deleted(const Edge &e);
+
+        void delete_edge(const Edge &e);
+
+        Halfedge get_halfedge(const Edge &e, int i) const {
+            return Halfedge{(e.idx() << 1) + i};
+        }
+
+        Vertex get_vertex(const Edge &e, int i) const {
+            return get_vertex(get_halfedge(e, i));
         }
 
         template<class T>
@@ -160,108 +254,53 @@ namespace Bcg {
             return edges.exists(name);
         }
 
-         Vertex new_vertex() { return vertices.new_vertex(); }
-
-        void mark_deleted(const Vertex &v);
-
-        void mark_deleted(const Halfedge &h);
-
-        void mark_deleted(const Edge &e);
-
-        void delete_vertex(const Vertex &v);
-
-        void delete_edge(const Edge &v);
-
-        Vertex add_vertex(const Vector<Real, 3> &p);
-
-        Halfedge new_edge(const Vertex &v0, const Vertex &v1);
-
-        Halfedge add_edge(const Vertex &v0, const Vertex &v1);
+        //TODO: Move these to separate files
 
         EdgeProperty<Vector<unsigned int, 2>> get_edges();
 
-         bool is_isolated(const Vertex &v) const {
-            return is_valid(get_halfedge(v)) && is_valid(get_opposite(get_halfedge(v)));
+        template<typename T, int N>
+        Vector<T, N> vector(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N>> &pos) const {
+            return pos[v1] - pos[v0];
         }
 
-         bool is_boundary(const Vertex &v) const {
-            return is_boundary(get_halfedge(v));
+        template<typename T, int N>
+        Vector<T, N> vector(const Edge &e, const VertexProperty<Vector<T, N>> &pos) const {
+            return vector(get_vertex(e, 0), get_vertex(e, 1), pos);
         }
 
-         bool is_boundary(const Halfedge &h) const {
-            return get_next(h) == get_opposite(h);
+        template<typename T, int N>
+        Vector<T, N> vector(const Halfedge &h, const VertexProperty<Vector<T, N>> &pos) const {
+            return vector(get_edge(h), pos);
         }
 
-         bool is_boundary(const Edge &e) const {
-            return is_boundary(get_halfedge(e, 0)) || is_boundary(get_halfedge(e, 1));
+        template<typename T, int N>
+        Real length(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N>> &pos) const {
+            return vector(v0, v1, pos).norm();
         }
 
-        Halfedge find_halfedge(const Vertex &v0, const Vertex &v1) const;
-
-         Halfedge get_opposite(const Halfedge &h) const {
-            return Halfedge((h.idx() & 1) ? h.idx() - 1 : h.idx() + 1);
+        template<typename T, int N>
+        Real length(const Edge &e, const VertexProperty<Vector<T, N>> &pos) const {
+            return vector(e, pos).norm();
         }
 
-         void set_halfedge(const Vertex &v, const Halfedge &h) {
-            v_connectivity[v] = h;
+        template<typename T, int N>
+        Real length(const Halfedge &h, const VertexProperty<Vector<T, N>> &pos) const {
+            return vector(h, pos).norm();
         }
 
-         Halfedge get_halfedge(const Vertex &v) const {
-            return v_connectivity[v];
+        template<typename T, int N>
+        Vector<T, N> center(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N>> &pos) const {
+            return (pos[v0] + pos[v1]) / 2;
         }
 
-         Halfedge get_halfedge(const Edge &e, int i) const {
-            return Halfedge{(e.idx() << 1) + i};
+        template<typename T, int N>
+        Vector<T, N> center(const Edge &e, const VertexProperty<Vector<T, N>> &pos) const {
+            return center(get_vertex(e, 0), get_vertex(e, 1), pos);
         }
 
-         Vertex get_vertex(const Edge &e, int i) const {
-            return get_vertex(get_halfedge(e, i));
-        }
-
-         void set_vertex(const Halfedge &h, const Vertex &v) {
-            h_connectivity[h].v = v;
-        }
-
-         Vertex get_vertex(const Halfedge &h) const {
-            return h_connectivity[h].v;
-        }
-
-         Halfedge get_next(const Halfedge &h) const {
-            return h_connectivity[h].nh;
-        }
-
-         void set_next(const Halfedge &h, const Halfedge &nh) {
-            h_connectivity[h].nh = nh;
-        }
-
-         Halfedge get_prev(const Halfedge &h) const {
-            return h_connectivity[h].ph;
-        }
-
-         Halfedge rotate_cw(const Halfedge &h) const {
-            return get_next(get_opposite(h));
-        }
-
-         Halfedge rotate_ccw(const Halfedge &h) const {
-            return get_opposite(get_prev(h));
-        }
-
-         Edge get_edge(const Halfedge &h) const {
-            return Edge(h.idx() >> 1);
-        }
-
-        size_t get_valence(const Vertex &v) const;
-
-         VertexAroundVertexCirculator get_vertices(const Vertex &v) const {
-            return {this, v};
-        }
-
-         HalfedgeAroundVertexCirculator get_halfedges(const Vertex &v) const {
-            return {this, v};
-        }
-
-         EdgeAroundVertexCirculator get_edges(const Vertex &v) const {
-            return {this, v};
+        template<typename T, int N>
+        Vector<T, N> center(const Halfedge &h, const VertexProperty<Vector<T, N>> &pos) const {
+            return center(get_edge(h), pos);
         }
     };
 }

@@ -67,7 +67,10 @@ namespace Bcg {
             return vertices.exists(name);
         }
 
-        Vertex new_vertex() { return vertices.new_vertex(); }
+        Vertex new_vertex() {
+            vertices.push_back();
+            return Vertex(vertices.size() - 1);
+        }
 
         Vertex add_vertex(const Vector<Real, 3> &p);
 

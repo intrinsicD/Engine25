@@ -5,18 +5,18 @@
 #include "PointCloud.h"
 
 namespace Bcg {
-    PointCloud::PointCloud()
-            : vertices(),
-              positions(vertices.vertex_property<Vector<Real, 3>>("v:position")),
-              v_deleted(vertices.vertex_property<bool>("v:deleted")) {
-
+    PointCloud::PointCloud() : vertices() {
+        // link properties to containers
+        positions = vertices.vertex_property<Vector<Real, 3>>("v:position");
+        v_deleted = vertices.vertex_property<bool>("v:deleted", false);
     }
 
     PointCloud &PointCloud::operator=(const PointCloud &rhs) {
         if (this != &rhs) {
             // deep copy of property containers
             vertices = rhs.vertices;
-            // copy properties from other mesh
+
+            // link properties from copied containers
             positions = vertices.vertex_property<Vector<Real, 3>>("v:position");
             v_deleted = vertices.vertex_property<bool>("v:deleted");
             vertices.num_deleted = rhs.vertices.num_deleted;
@@ -33,10 +33,12 @@ namespace Bcg {
             // resize (needed by property containers)
             vertices.resize(rhs.vertices.size());
 
+            // copy properties from other mesh
             positions.vector() = rhs.positions.vector();
 
-            // how many elements are deleted?
             v_deleted.vector() = rhs.v_deleted.vector();
+
+            // how many elements are deleted?
             vertices.num_deleted = rhs.vertices.num_deleted;
         }
 
@@ -86,7 +88,7 @@ namespace Bcg {
         auto nV = vertices.size();
 
         // setup handle mapping
-        VertexProperty<Vertex> vmap = vertices.add_vertex_property<Vertex>("v:garbage-collection");
+        VertexProperty<Vertex> vmap = vertices.vertex_property<Vertex>("v:garbage_collection");
 
         for (size_t i = 0; i < nV; ++i)
             vmap[Vertex(i)] = Vertex(i);

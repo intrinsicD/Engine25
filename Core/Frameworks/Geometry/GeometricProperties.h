@@ -73,6 +73,51 @@ namespace Bcg {
         return (os << 't' << t.idx());
     }
 
+    struct VertexConnectivity {
+        Halfedge h;
+
+        friend std::ostream &operator<<(std::ostream &os, const VertexConnectivity &vc) {
+            os << "h: " << vc.h.idx();
+            return os;
+        }
+    };
+
+    struct HalfedgeConnectivity {
+        Vertex v;
+        Halfedge nh;
+        Halfedge ph;
+
+        friend std::ostream &operator<<(std::ostream &os, const HalfedgeConnectivity &hc) {
+            os << "v: " << hc.v.idx();
+            os << " nh: " << hc.nh.idx();
+            os << " ph: " << hc.ph.idx();
+            return os;
+        }
+    };
+
+    struct FaceConnectivity {
+        Halfedge h;
+        Tet to, ti; // outer tet, inner tet (normal of face points to outer tet)
+
+        friend std::ostream &operator<<(std::ostream &os, const FaceConnectivity &fc) {
+            os << "h: " << fc.h.idx();
+            os << " to: " << fc.to.idx();
+            os << " ti: " << fc.ti.idx();
+            return os;
+        }
+    };
+
+    struct TetConnectivity {
+        Face f0, f1, f2, f3;
+
+        friend std::ostream &operator<<(std::ostream &os, const TetConnectivity &tc) {
+            os << "f0: " << tc.f0.idx();
+            os << " f1: " << tc.f1.idx();
+            os << " f2: " << tc.f2.idx();
+            os << " f3: " << tc.f3.idx();
+            return os;
+        }
+    };
 
     template<class T>
     class VertexProperty : public Property<T> {
@@ -179,10 +224,10 @@ namespace Bcg {
         auto operator<=>(const Iterator &rhs) const = default;
 
         Iterator &operator++() {
-            ++m_handle.idx_;
+            ++m_handle.m_idx;
             assert(m_data);
             while (m_data->has_garbage() && m_data->is_valid(m_handle) && m_data->is_deleted(m_handle)) {
-                ++m_handle.idx_;
+                ++m_handle.m_idx;
             }
             return *this;
         }
@@ -195,10 +240,10 @@ namespace Bcg {
 
         //! pre-decrement iterator
         Iterator &operator--() {
-            --m_handle.idx_;
+            --m_handle.m_idx;
             assert(m_data);
             while (m_data->has_garbage() && m_data->is_valid(m_handle) && m_data->is_deleted(m_handle)) {
-                --m_handle.idx_;
+                --m_handle.m_idx;
             }
             return *this;
         }
@@ -228,7 +273,7 @@ namespace Bcg {
         //! default constructor
         VertexAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                          Vertex v = Vertex())
-            : m_data(data) {
+                : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -277,7 +322,7 @@ namespace Bcg {
         //! get the vertex the circulator refers to
         Vertex operator*() const {
             assert(m_data);
-            return m_data->to_vertex(m_halfedge);
+            return m_data->get_vertex(m_halfedge);
         }
 
         //! cast to bool: true if vertex is not isolated
@@ -319,7 +364,7 @@ namespace Bcg {
         //! default constructor
         HalfedgeAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                            Vertex v = Vertex())
-            : m_data(data) {
+                : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -404,7 +449,7 @@ namespace Bcg {
         //! default constructor
         EdgeAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                        Vertex v = Vertex())
-            : m_data(data) {
+                : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -424,7 +469,7 @@ namespace Bcg {
         //! pre-increment (rotate counter-clockwise)
         EdgeAroundVertexCirculatorBase &operator++() {
             assert(m_data);
-            m_halfedge = m_data->crotate_cw(m_halfedge);
+            m_halfedge = m_data->rotate_cw(m_halfedge);
             m_is_active = true;
             return *this;
         }
@@ -451,7 +496,7 @@ namespace Bcg {
         }
 
         //! get the halfedge the circulator refers to
-        Edge operator*() const { return m_data->edge(m_halfedge); }
+        Edge operator*() const { return m_data->get_edge(m_halfedge); }
 
         //! cast to bool: true if vertex is not isolated
         operator bool() const { return m_halfedge.is_valid(); }
@@ -489,7 +534,7 @@ namespace Bcg {
         //! construct with data and vertex (vertex should not be isolated!)
         FaceAroundVertexCirculatorBase(const DataContainer *m = nullptr,
                                        Vertex v = Vertex())
-            : m_data(m) {
+                : m_data(m) {
             if (m_data) {
                 m_halfedge = m_data->get_halfedge(v);
                 if (m_halfedge.is_valid() && m_data->is_boundary(m_halfedge))
@@ -584,7 +629,7 @@ namespace Bcg {
         //! default constructor
         VertexAroundFaceCirculatorBase(const DataContainer *m = nullptr,
                                        Face f = Face())
-            : m_data(m) {
+                : m_data(m) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(f);
         }
@@ -669,7 +714,7 @@ namespace Bcg {
         //! default constructor
         HalfedgeAroundFaceCirculatorBase(const DataContainer *m = nullptr,
                                          Face f = Face())
-            : m_data(m) {
+                : m_data(m) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(f);
         }
@@ -772,11 +817,6 @@ namespace Bcg {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] size_t num_v_deleted() const {
-            return num_deleted;
-        }
-
-
         void clear() override {
             PropertyContainer::clear();
             v_deleted = vertex_property<bool>("v:deleted", false);
@@ -811,11 +851,6 @@ namespace Bcg {
         [[nodiscard]] std::vector<std::string> vertex_properties() const {
             return properties();
         }
-
-        Vertex new_vertex() {
-            push_back();
-            return Vertex(size() - 1);
-        }
     };
 
     class Halfedges : public PropertyContainer {
@@ -823,9 +858,9 @@ namespace Bcg {
         using HalfEdgeIterator = Iterator<Halfedges, Halfedge>;
 
         HalfedgeProperty<bool> h_deleted;
-        size_t num_deleted = 0;
+        size_t num_deleted;
 
-        Halfedges() : h_deleted(m_halfedgeproperty<bool>("h:deleted", false)), num_deleted(0) {
+        Halfedges() : h_deleted(halfedge_property<bool>("h:deleted", false)), num_deleted(0) {
         }
 
         HalfEdgeIterator begin() {
@@ -855,42 +890,38 @@ namespace Bcg {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] size_t num_h_deleted() const {
-            return num_deleted;
-        }
-
         void clear() override {
             PropertyContainer::clear();
-            h_deleted = m_halfedgeproperty<bool>("h:deleted", false);
+            h_deleted = halfedge_property<bool>("h:deleted", false);
             num_deleted = 0;
         }
 
         template<class T>
-        HalfedgeProperty<T> add_m_halfedgeproperty(const std::string &name,
-                                                   const T t = T()) {
+        HalfedgeProperty<T> add_halfedge_property(const std::string &name,
+                                                  const T t = T()) {
             return HalfedgeProperty<T>(add<T>(name, t));
         }
 
         template<class T>
-        HalfedgeProperty<T> get_m_halfedgeproperty(const std::string &name) const {
+        HalfedgeProperty<T> get_halfedge_property(const std::string &name) const {
             return HalfedgeProperty<T>(get<T>(name));
         }
 
         template<class T>
-        HalfedgeProperty<T> m_halfedgeproperty(const std::string &name, const T t = T()) {
+        HalfedgeProperty<T> halfedge_property(const std::string &name, const T t = T()) {
             return HalfedgeProperty<T>(get_or_add<T>(name, t));
         }
 
         template<class T>
-        void remove_m_halfedgeproperty(HalfedgeProperty<T> &p) {
+        void remove_halfedge_property(HalfedgeProperty<T> &p) {
             remove(p);
         }
 
-        [[nodiscard]] bool has_m_halfedgeproperty(const std::string &name) const {
+        [[nodiscard]] bool has_halfedge_property(const std::string &name) const {
             return exists(name);
         }
 
-        [[nodiscard]] std::vector<std::string> m_halfedgeproperties() const {
+        [[nodiscard]] std::vector<std::string> halfedgeproperties() const {
             return properties();
         }
     };
@@ -900,7 +931,7 @@ namespace Bcg {
         using EdgeIterator = Iterator<Edges, Edge>;
 
         EdgeProperty<bool> e_deleted;
-        size_t num_deleted = 0;
+        size_t num_deleted;
 
         Edges() : e_deleted(edge_property<bool>("e:deleted", false)), num_deleted(0) {
         }
@@ -929,10 +960,6 @@ namespace Bcg {
 
         [[nodiscard]] bool has_garbage() const {
             return num_deleted > 0;
-        }
-
-        [[nodiscard]] size_t num_e_deleted() const {
-            return num_deleted;
         }
 
         void clear() override {
@@ -975,9 +1002,10 @@ namespace Bcg {
     public:
         using FaceIterator = Iterator<Faces, Face>;
 
-        FaceProperty<bool> deleted_faces;
+        FaceProperty<bool> f_deleted;
+        size_t num_deleted;
 
-        Faces() : deleted_faces(get_or_add<bool>("f:deleted", false)) {
+        Faces() : f_deleted(face_property<bool>("f:deleted", false)), num_deleted(0) {
         }
 
         FaceIterator begin() {
@@ -988,33 +1016,68 @@ namespace Bcg {
             return {Face(size()), this};
         }
 
+        [[nodiscard]] size_t n_faces() const { return size() - num_deleted; }
+
+        [[nodiscard]] bool is_empty() const {
+            return n_faces() == 0;
+        }
+
         [[nodiscard]] bool is_valid(const Face &f) const {
             return f.idx() < size();
         }
 
         [[nodiscard]] bool is_deleted(const Face &f) const {
-            return deleted_faces && deleted_faces[f];
+            return f_deleted[f];
         }
 
         [[nodiscard]] bool has_garbage() const {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] size_t num_deleted_faces() const {
-            return num_deleted;
+        void clear() override {
+            PropertyContainer::clear();
+            f_deleted = face_property<bool>("f:deleted", false);
+            num_deleted = 0;
         }
 
-    protected:
-        size_t num_deleted = 0;
+        template<class T>
+        FaceProperty<T> add_face_property(const std::string &name,
+                                          const T t = T()) {
+            return FaceProperty<T>(add<T>(name, t));
+        }
+
+        template<class T>
+        FaceProperty<T> get_face_property(const std::string &name) const {
+            return FaceProperty<T>(get<T>(name));
+        }
+
+        template<class T>
+        FaceProperty<T> face_property(const std::string &name, const T t = T()) {
+            return FaceProperty<T>(get_or_add<T>(name, t));
+        }
+
+        template<class T>
+        void remove_face_property(FaceProperty<T> &p) {
+            remove(p);
+        }
+
+        [[nodiscard]] bool has_face_property(const std::string &name) const {
+            return exists(name);
+        }
+
+        [[nodiscard]] std::vector<std::string> face_properties() const {
+            return properties();
+        }
     };
 
     class Tets : public PropertyContainer {
     public:
         using TetIterator = Iterator<Tets, Tet>;
 
-        TetProperty<bool> deleted_tets;
+        TetProperty<bool> t_deleted;
+        size_t num_deleted;
 
-        Tets() : deleted_tets(get_or_add<bool>("t:deleted", false)) {
+        Tets() : t_deleted(tet_property<bool>("t:deleted", false)), num_deleted(0) {
         }
 
         TetIterator begin() {
@@ -1025,24 +1088,58 @@ namespace Bcg {
             return {Tet(size()), this};
         }
 
+        [[nodiscard]] size_t n_tets() const { return size() - num_deleted; }
+
+        [[nodiscard]] bool is_empty() const {
+            return n_tets() == 0;
+        }
+
         [[nodiscard]] bool is_valid(const Tet &t) const {
             return t.idx() < size();
         }
 
         [[nodiscard]] bool is_deleted(const Tet &t) const {
-            return deleted_tets && deleted_tets[t];
+            return t_deleted[t];
         }
 
         [[nodiscard]] bool has_garbage() const {
             return num_deleted > 0;
         }
 
-        [[nodiscard]] size_t num_deleted_tets() const {
-            return num_deleted;
+        void clear() override {
+            PropertyContainer::clear();
+            t_deleted = tet_property<bool>("t:deleted", false);
+            num_deleted = 0;
         }
 
-    protected:
-        size_t num_deleted = 0;
+        template<class T>
+        TetProperty<T> add_tet_property(const std::string &name,
+                                        const T t = T()) {
+            return TetProperty<T>(add<T>(name, t));
+        }
+
+        template<class T>
+        TetProperty<T> get_tet_property(const std::string &name) const {
+            return TetProperty<T>(get<T>(name));
+        }
+
+        template<class T>
+        TetProperty<T> tet_property(const std::string &name, const T t = T()) {
+            return TetProperty<T>(get_or_add<T>(name, t));
+        }
+
+        template<class T>
+        void remove_tet_property(TetProperty<T> &p) {
+            remove(p);
+        }
+
+        [[nodiscard]] bool has_tet_property(const std::string &name) const {
+            return exists(name);
+        }
+
+        [[nodiscard]] std::vector<std::string> tet_properties() const {
+            return properties();
+        }
     };
 }
 
