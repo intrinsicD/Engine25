@@ -86,11 +86,13 @@ namespace Bcg {
         Vertex v;
         Halfedge nh;
         Halfedge ph;
+        Face f;
 
         friend std::ostream &operator<<(std::ostream &os, const HalfedgeConnectivity &hc) {
             os << "v: " << hc.v.idx();
             os << " nh: " << hc.nh.idx();
             os << " ph: " << hc.ph.idx();
+            os << " f: " << hc.f.idx();
             return os;
         }
     };
@@ -215,7 +217,9 @@ namespace Bcg {
 
         Iterator(HandleType handle = HandleType(), const DataContainer *m = nullptr) : m_handle(handle), m_data(m) {
             if (m_data && m_data->has_garbage()) {
-                while (m_data->is_valid(m_handle) && m_data->is_deleted(m_handle)) { ++m_handle.m_idx; }
+                while (m_data->is_valid(m_handle) && m_data->is_deleted(m_handle)) {
+                    ++m_handle.m_idx;
+                }
             }
         }
 
@@ -273,7 +277,7 @@ namespace Bcg {
         //! default constructor
         VertexAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                          Vertex v = Vertex())
-                : m_data(data) {
+            : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -364,7 +368,7 @@ namespace Bcg {
         //! default constructor
         HalfedgeAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                            Vertex v = Vertex())
-                : m_data(data) {
+            : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -449,7 +453,7 @@ namespace Bcg {
         //! default constructor
         EdgeAroundVertexCirculatorBase(const DataContainer *data = nullptr,
                                        Vertex v = Vertex())
-                : m_data(data) {
+            : m_data(data) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(v);
         }
@@ -534,7 +538,7 @@ namespace Bcg {
         //! construct with data and vertex (vertex should not be isolated!)
         FaceAroundVertexCirculatorBase(const DataContainer *m = nullptr,
                                        Vertex v = Vertex())
-                : m_data(m) {
+            : m_data(m) {
             if (m_data) {
                 m_halfedge = m_data->get_halfedge(v);
                 if (m_halfedge.is_valid() && m_data->is_boundary(m_halfedge))
@@ -629,7 +633,7 @@ namespace Bcg {
         //! default constructor
         VertexAroundFaceCirculatorBase(const DataContainer *m = nullptr,
                                        Face f = Face())
-                : m_data(m) {
+            : m_data(m) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(f);
         }
@@ -714,7 +718,7 @@ namespace Bcg {
         //! default constructor
         HalfedgeAroundFaceCirculatorBase(const DataContainer *m = nullptr,
                                          Face f = Face())
-                : m_data(m) {
+            : m_data(m) {
             if (m_data)
                 m_halfedge = m_data->get_halfedge(f);
         }
@@ -796,6 +800,14 @@ namespace Bcg {
         }
 
         VertexIterator end() {
+            return {Vertex(size()), this};
+        }
+
+        VertexIterator begin() const {
+            return {Vertex(0), this};
+        }
+
+        VertexIterator end() const {
             return {Vertex(size()), this};
         }
 
