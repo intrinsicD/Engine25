@@ -54,9 +54,10 @@ namespace Bcg {
     }
 
     template<typename S>
-    std::enable_if_t<std::is_member_function_pointer_v<decltype(&S::size)>, size_t>
+    std::enable_if_t<std::is_member_function_pointer_v<decltype(&S::size)> &&
+                     !std::is_integral_v<decltype(std::declval<S>().size())>, size_t>
     GetDimensions(const S &s) {
-        return s.size();
+        return s.size(); // Specialized for types with a `size` member function that does not return integral types
     }
 
     template<class T>
@@ -91,7 +92,7 @@ namespace Bcg {
         //! Get reference to the underlying vector
          std::vector<T> &vector() { return m_data; }
 
-         const std::vector<T> &vector() const { return m_data; }
+         [[nodiscard]] const std::vector<T> &vector() const { return m_data; }
 
         //! Access the i'th element. No range check is performed!
         reference operator[](size_t idx) {

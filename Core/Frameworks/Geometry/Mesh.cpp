@@ -3,6 +3,8 @@
 //
 
 #include "Mesh.h"
+#include "Exceptions.h"
+#include "Logger.h"
 
 namespace Bcg {
     Mesh::Mesh() {
@@ -268,9 +270,9 @@ namespace Bcg {
     }
 
     bool Mesh::is_triangle_mesh() const {
-        for (auto f: faces)
-            if (get_valence(f) != 3)
-                return false;
+        for (auto f: faces) {
+            if (get_valence(f) != 3) return false;
+        }
 
         return true;
     }
@@ -640,16 +642,16 @@ namespace Bcg {
         // test for topological errors
         for (i = 0, ii = 1; i < n; ++i, ++ii, ii %= n) {
             if (!is_boundary(f_vertices[i])) {
-                auto what = "SurfaceMesh::add_face: Complex vertex.";
-                throw TopologyException(what);
+                auto what = "Mesh::add_face: Complex vertex.";
+                LOG_ERROR(what);
             }
 
             halfedges[i] = find_halfedge(f_vertices[i], f_vertices[ii]);
             is_new[i] = !halfedges[i].is_valid();
 
             if (!is_new[i] && !is_boundary(halfedges[i])) {
-                auto what = "SurfaceMesh::add_face: Complex edge.";
-                throw TopologyException(what);
+                auto what = "Mesh::add_face: Complex edge.";
+                LOG_ERROR(what);
             }
         }
 
@@ -676,9 +678,8 @@ namespace Bcg {
 
                     // ok ?
                     if (boundary_next == inner_next) {
-                        auto what =
-                                "SurfaceMesh::add_face: Patch re-linking failed.";
-                        throw TopologyException(what);
+                        auto what = "Mesh::add_face: Patch re-linking failed.";
+                        LOG_ERROR(what);
                     }
 
                     // other halfedges' handles
@@ -868,6 +869,7 @@ namespace Bcg {
     // Tet Methods TODO
 
     Tet Mesh::add_tet(const Vertex &v0, const Vertex &v1, const Vertex &v2, const Vertex &v3) {
+        return {};
     }
 
     void Mesh::mark_deleted(const Tet &t) {

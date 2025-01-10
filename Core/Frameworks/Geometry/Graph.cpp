@@ -218,7 +218,7 @@ namespace Bcg {
 
 
     void Graph::delete_vertex(const Vertex &v) {
-        if(v_deleted[v]) {
+        if (v_deleted[v]) {
             return;
         }
 
@@ -231,7 +231,7 @@ namespace Bcg {
 
     size_t Graph::get_valence(const Vertex &v) const {
         size_t valence = 0;
-        for (const Halfedge &h: get_halfedges(v)) {
+        for (const Edge &e: get_edges(v)) {
             valence++;
         }
         return valence;
@@ -249,12 +249,17 @@ namespace Bcg {
     }
 
     Halfedge Graph::find_halfedge(const Vertex &v0, const Vertex &v1) const {
-        if (halfedges.is_valid(get_halfedge(v0))) {
-            for (const Halfedge &h: get_halfedges(v0)) {
-                if (get_vertex(h) == v1) {
+        assert(is_valid(v0) && is_valid(v1));
+
+        Halfedge h = get_halfedge(v0);
+        const Halfedge hh = h;
+
+        if (h.is_valid()) {
+            do {
+                if (get_vertex(h) == v1)
                     return h;
-                }
-            }
+                h = rotate_cw(h);
+            } while (h != hh);
         }
 
         return {};
@@ -277,7 +282,7 @@ namespace Bcg {
         return h;
     }
 
-    Halfedge Graph::add_edge(const Vertex &v0, const Vertex &v1) {
+    /*Halfedge Graph::add_edge(const Vertex &v0, const Vertex &v1) {
         //check if edge exists between v0 and v1.
         Halfedge h01 = find_halfedge(v0, v1);
         if (h01.is_valid()) {
@@ -316,6 +321,53 @@ namespace Bcg {
         set_halfedge(v0, new_h);
 
         return new_h;
+    }*/
+
+    Halfedge Graph::add_edge(const Vertex &v0, const Vertex &v1) {
+        //check if edge exists between v0 and v1.
+        Halfedge h01 = find_halfedge(v0, v1);
+        if (h01.is_valid()) {
+            //edge exists, so just return it.
+            return h01;
+        }
+
+        //make new edge between v0 and v1
+        Halfedge h = new_edge(v0, v1);
+
+        //there is no edge between v0 and v1 jet
+        //check if v0 has an outgoing halfedge
+        Halfedge h0 = get_halfedge(v0);
+
+        if (h0.is_valid()) {
+            Halfedge p = get_prev(h0);
+            Halfedge n = get_next(h0);
+
+            if (n.is_valid()) {
+                set_next(h, n);
+            }
+            if (p.is_valid()) {
+                set_next(p, h);
+            }
+        }
+        //check if v1 has an outgoing halfedge
+        Halfedge h1 = get_halfedge(v1);
+
+        if (h1.is_valid()) {
+            Halfedge p = get_prev(h1);
+            Halfedge n = get_next(h1);
+
+            if (n.is_valid()) {
+                set_next(h, n);
+            }
+            if (p.is_valid()) {
+                set_next(p, h);
+            }
+        }
+
+        set_halfedge(v0, h);
+        set_halfedge(v1, get_opposite(h));
+
+        return h;
     }
 
     void Graph::mark_deleted(const Edge &e) {
@@ -329,7 +381,7 @@ namespace Bcg {
         ++edges.num_deleted;
     }
 
-    void Graph::delete_edge(const Edge &e) {
+    /*void Graph::delete_edge(const Edge &e) {
         if (e_deleted[e]) return;
 
         Halfedge h0 = get_halfedge(e, 0);
@@ -354,6 +406,33 @@ namespace Bcg {
         }
 
         mark_deleted(e);
+    }*/
+
+    void Graph::delete_edge(const Edge &e) {
+        if (e_deleted[e]) return;
+
+        Halfedge h = get_halfedge(e, 0);
+        Halfedge o = get_halfedge(e, 1);
+
+        Vertex v1 = get_vertex(h);
+        Vertex v0 = get_vertex(o);
+
+        if (halfedges.is_valid(h)) {
+            Halfedge p = get_prev(h);
+            Halfedge n = get_next(h);
+            if (halfedges.is_valid(p) && halfedges.is_valid(n)) {
+                set_next(p, n);
+            }
+        }
+        if (halfedges.is_valid(o)) {
+            Halfedge p = get_prev(o);
+            Halfedge n = get_next(o);
+            if (halfedges.is_valid(p) && halfedges.is_valid(n)) {
+                set_next(p, n);
+            }
+        }
+
+        mark_deleted(e);
     }
 
     //TODO: Move these to separate files
@@ -365,8 +444,6 @@ namespace Bcg {
         }
         return indices;
     }
-
-
 
 
 }

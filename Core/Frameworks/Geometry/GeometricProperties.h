@@ -7,7 +7,6 @@
 
 #include "Properties.h"
 #include "Math.h"
-#include "source/compiler-core/slang-source-loc.h"
 
 namespace Bcg {
     constexpr size_t BCG_INVALID_IDX = std::numeric_limits<size_t>::max();
@@ -74,7 +73,9 @@ namespace Bcg {
     }
 
     struct VertexConnectivity {
-        Halfedge h;
+        Halfedge h; //< outgoing halfedge
+
+        size_t size() const { return 1; }
 
         friend std::ostream &operator<<(std::ostream &os, const VertexConnectivity &vc) {
             os << "h: " << vc.h.idx();
@@ -83,10 +84,12 @@ namespace Bcg {
     };
 
     struct HalfedgeConnectivity {
-        Vertex v;
-        Halfedge nh;
-        Halfedge ph;
-        Face f;
+        Vertex v; ///< to_vertex
+        Halfedge nh; ///< next halfedge
+        Halfedge ph; ///< prev halfedge
+        Face f; ///< indicent face
+
+        size_t size() const { return 4; }
 
         friend std::ostream &operator<<(std::ostream &os, const HalfedgeConnectivity &hc) {
             os << "v: " << hc.v.idx();
@@ -98,8 +101,10 @@ namespace Bcg {
     };
 
     struct FaceConnectivity {
-        Halfedge h;
+        Halfedge h; ///< incident halfedge
         Tet to, ti; // outer tet, inner tet (normal of face points to outer tet)
+
+        size_t size() const { return 3; }
 
         friend std::ostream &operator<<(std::ostream &os, const FaceConnectivity &fc) {
             os << "h: " << fc.h.idx();
@@ -111,6 +116,8 @@ namespace Bcg {
 
     struct TetConnectivity {
         Face f0, f1, f2, f3;
+
+        size_t size() const { return 4; }
 
         friend std::ostream &operator<<(std::ostream &os, const TetConnectivity &tc) {
             os << "f0: " << tc.f0.idx();
@@ -594,7 +601,7 @@ namespace Bcg {
         //! get the face the circulator refers to
         Face operator*() const {
             assert(m_data && m_halfedge.is_valid());
-            return m_data->face(m_halfedge);
+            return m_data->get_face(m_halfedge);
         }
 
         //! cast to bool: true if vertex is not isolated
@@ -653,7 +660,7 @@ namespace Bcg {
         //! pre-increment (rotates counter-clockwise)
         VertexAroundFaceCirculatorBase &operator++() {
             assert(m_data && m_halfedge.is_valid());
-            m_halfedge = m_data->next_halfedge(m_halfedge);
+            m_halfedge = m_data->get_next(m_halfedge);
             m_is_active = true;
             return *this;
         }
@@ -668,7 +675,7 @@ namespace Bcg {
         //! pre-decrement (rotates clockwise)
         VertexAroundFaceCirculatorBase &operator--() {
             assert(m_data && m_halfedge.is_valid());
-            m_halfedge = m_data->prev_halfedge(m_halfedge);
+            m_halfedge = m_data->get_prev(m_halfedge);
             return *this;
         }
 
@@ -682,7 +689,7 @@ namespace Bcg {
         //! get the vertex the circulator refers to
         Vertex operator*() const {
             assert(m_data && m_halfedge.is_valid());
-            return m_data->to_vertex(m_halfedge);
+            return m_data->get_vertex(m_halfedge);
         }
 
         // helper for C++11 range-based for-loops
@@ -738,7 +745,7 @@ namespace Bcg {
         //! pre-increment (rotates counter-clockwise)
         HalfedgeAroundFaceCirculatorBase &operator++() {
             assert(m_data && m_halfedge.is_valid());
-            m_halfedge = m_data->next_halfedge(m_halfedge);
+            m_halfedge = m_data->get_next(m_halfedge);
             m_is_active = true;
             return *this;
         }
@@ -753,7 +760,7 @@ namespace Bcg {
         //! pre-decrement (rotates clockwise)
         HalfedgeAroundFaceCirculatorBase &operator--() {
             assert(m_data && m_halfedge.is_valid());
-            m_halfedge = m_data->prev_halfedge(m_halfedge);
+            m_halfedge = m_data->get_prev(m_halfedge);
             return *this;
         }
 
@@ -813,7 +820,7 @@ namespace Bcg {
 
         [[nodiscard]] size_t n_vertices() const { return size() - num_deleted; }
 
-        [[nodiscard]] bool is_empty() const {
+        [[nodiscard]] bool is_empty() const override{
             return n_vertices() == 0;
         }
 
@@ -886,7 +893,7 @@ namespace Bcg {
 
         [[nodiscard]] size_t n_halfedges() const { return size() - num_deleted; }
 
-        [[nodiscard]] bool is_empty() const {
+        [[nodiscard]] bool is_empty() const override{
             return n_halfedges() == 0;
         }
 
@@ -958,7 +965,7 @@ namespace Bcg {
 
         [[nodiscard]] size_t n_edges() const { return size() - num_deleted; }
 
-        [[nodiscard]] bool is_empty() const {
+        [[nodiscard]] bool is_empty() const override{
             return n_edges() == 0;
         }
 
@@ -1028,9 +1035,17 @@ namespace Bcg {
             return {Face(size()), this};
         }
 
+        FaceIterator begin() const {
+            return {Face(0), this};
+        }
+
+        FaceIterator end() const {
+            return {Face(size()), this};
+        }
+
         [[nodiscard]] size_t n_faces() const { return size() - num_deleted; }
 
-        [[nodiscard]] bool is_empty() const {
+        [[nodiscard]] bool is_empty() const override {
             return n_faces() == 0;
         }
 
@@ -1101,10 +1116,6 @@ namespace Bcg {
         }
 
         [[nodiscard]] size_t n_tets() const { return size() - num_deleted; }
-
-        [[nodiscard]] bool is_empty() const {
-            return n_tets() == 0;
-        }
 
         [[nodiscard]] bool is_valid(const Tet &t) const {
             return t.idx() < size();

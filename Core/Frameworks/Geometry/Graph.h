@@ -157,7 +157,7 @@ namespace Bcg {
 
         void set_next(const Halfedge &h, const Halfedge &nh) {
             h_connectivity[h].nh = nh;
-            h_connectivity[h].ph = h;
+            h_connectivity[nh].ph = h;
         }
 
         Halfedge get_prev(const Halfedge &h) const {

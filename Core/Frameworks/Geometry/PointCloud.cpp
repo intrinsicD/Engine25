@@ -62,7 +62,7 @@ namespace Bcg {
     };
 
     Vertex PointCloud::add_vertex(const Vector<Real, 3> &p) {
-        Vertex v = vertices.new_vertex();
+        Vertex v = new_vertex();
         if (v.is_valid()) {
             positions[v] = p;
         }
