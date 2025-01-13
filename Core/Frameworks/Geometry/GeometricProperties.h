@@ -73,9 +73,9 @@ namespace Bcg {
     }
 
     struct VertexConnectivity {
-        Halfedge h; //< outgoing halfedge
+        Halfedge h; ///< outgoing halfedge
 
-        size_t size() const { return 1; }
+        [[nodiscard]] size_t size() const { return 1; }
 
         friend std::ostream &operator<<(std::ostream &os, const VertexConnectivity &vc) {
             os << "h: " << vc.h.idx();
@@ -89,7 +89,7 @@ namespace Bcg {
         Halfedge ph; ///< prev halfedge
         Face f; ///< indicent face
 
-        size_t size() const { return 4; }
+        [[nodiscard]] size_t size() const { return 4; }
 
         friend std::ostream &operator<<(std::ostream &os, const HalfedgeConnectivity &hc) {
             os << "v: " << hc.v.idx();
@@ -102,28 +102,11 @@ namespace Bcg {
 
     struct FaceConnectivity {
         Halfedge h; ///< incident halfedge
-        Tet to, ti; // outer tet, inner tet (normal of face points to outer tet)
 
-        size_t size() const { return 3; }
+        [[nodiscard]] size_t size() const { return 3; }
 
         friend std::ostream &operator<<(std::ostream &os, const FaceConnectivity &fc) {
             os << "h: " << fc.h.idx();
-            os << " to: " << fc.to.idx();
-            os << " ti: " << fc.ti.idx();
-            return os;
-        }
-    };
-
-    struct TetConnectivity {
-        Face f0, f1, f2, f3;
-
-        size_t size() const { return 4; }
-
-        friend std::ostream &operator<<(std::ostream &os, const TetConnectivity &tc) {
-            os << "f0: " << tc.f0.idx();
-            os << " f1: " << tc.f1.idx();
-            os << " f2: " << tc.f2.idx();
-            os << " f3: " << tc.f3.idx();
             return os;
         }
     };

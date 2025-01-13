@@ -7,7 +7,7 @@
 #include "Logger.h"
 
 namespace Bcg {
-    Mesh::Mesh() {
+    Mesh::Mesh() : Graph() {
         positions = vertex_property<Vector<Real, 3> >("v:point");
         v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
@@ -122,10 +122,8 @@ namespace Bcg {
         faces.free_memory();
     }
 
-    void Mesh::reserve(size_t nvertices, size_t nedges, size_t nfaces, size_t ntets) {
-        vertices.reserve(nvertices);
-        halfedges.reserve(2 * nedges);
-        edges.reserve(nedges);
+    void Mesh::reserve(size_t nvertices, size_t nedges, size_t nfaces) {
+        Graph::reserve(nvertices, nedges);
         faces.reserve(nfaces);
     }
 
@@ -234,7 +232,7 @@ namespace Bcg {
         for (size_t i = 0; i < nV; ++i) {
             auto v = Vertex(i);
             if (!is_isolated(v))
-                set_halfedge(v, hmap[get_halfedge(v)]);
+                Graph::set_halfedge(v, hmap[Graph::get_halfedge(v)]);
         }
 
         // update halfedge connectivity
@@ -270,8 +268,20 @@ namespace Bcg {
     }
 
     bool Mesh::is_triangle_mesh() const {
+/*
         for (auto f: faces) {
             if (get_valence(f) != 3) return false;
+        }
+*/
+
+        return std::all_of(faces.begin(), faces.end(), [this](const Face &f) {
+            return get_valence(f) == 3;
+        });
+    }
+
+    bool Mesh::is_quad_mesh() const {
+        for (auto f: faces) {
+            if (get_valence(f) != 4) return false;
         }
 
         return true;
@@ -293,25 +303,9 @@ namespace Bcg {
         return n < 2;
     }
 
-    Vertex Mesh::add_vertex(const Vector<Real, 3> &p) {
-        Vertex v = new_vertex();
-        if (v.is_valid()) {
-            positions[v] = p;
-        }
-        return v;
-    }
-
-    void Mesh::mark_deleted(const Vertex &v) {
-        if (v_deleted[v]) {
-            return;
-        }
-
-        v_deleted[v] = true;
-        ++vertices.num_deleted;
-    }
 
     void Mesh::delete_vertex(const Vertex &v) {
-        if (is_deleted(v)) {
+        if (PointCloud::is_deleted(v)) {
             return;
         }
 
@@ -333,19 +327,14 @@ namespace Bcg {
         }
     }
 
-    [[nodiscard]] size_t Mesh::get_valence(const Vertex &v) const {
-        auto vv = get_vertices(v);
-        return std::distance(vv.begin(), vv.end());
-    }
-
-    void Mesh::adjust_outgoing_halfedge(Vertex v) {
-        Halfedge h = get_halfedge(v);
+    void Mesh::adjust_outgoing_halfedge(const Vertex &v) {
+        Halfedge h = Graph::get_halfedge(v);
         const Halfedge hh = h;
 
         if (h.is_valid()) {
             do {
                 if (is_boundary(h)) {
-                    set_halfedge(v, h);
+                    Graph::set_halfedge(v, h);
                     return;
                 }
                 h = rotate_cw(h);
@@ -355,16 +344,7 @@ namespace Bcg {
 
     // Halfedge Methods
 
-    void Mesh::mark_deleted(const Halfedge &h) {
-        if (h_deleted[h]) {
-            return;
-        }
-
-        h_deleted[h] = true;
-        ++halfedges.num_deleted;
-    }
-
-    Halfedge Mesh::insert_vertex(Halfedge h0, Vertex v) {
+    Halfedge Mesh::insert_vertex(const Halfedge &h0, const Vertex &v) {
         // before:
         //
         // v0      h0       v2
@@ -402,9 +382,9 @@ namespace Bcg {
         set_face(o1, fo);
 
         // adjust vertex connectivity
-        set_halfedge(v2, o1);
+        Graph::set_halfedge(v2, o1);
         adjust_outgoing_halfedge(v2);
-        set_halfedge(v, h1);
+        Graph::set_halfedge(v, h1);
         adjust_outgoing_halfedge(v);
 
         // adjust face connectivity
@@ -418,35 +398,17 @@ namespace Bcg {
         return o1;
     }
 
-    Halfedge Mesh::find_halfedge(Vertex start, Vertex end) const {
-        assert(is_valid(start) && is_valid(end));
-
-        Halfedge h = get_halfedge(start);
-        const Halfedge hh = h;
-
-        if (h.is_valid()) {
-            do {
-                if (get_vertex(h) == end)
-                    return h;
-                h = rotate_cw(h);
-            } while (h != hh);
-        }
-
-        return {};
-    }
-
-
-    bool Mesh::is_collapse_ok(Halfedge v0v1) const {
-        Halfedge v1v0(get_opposite(v0v1));
-        Vertex v0(get_vertex(v1v0));
-        Vertex v1(get_vertex(v0v1));
+    bool Mesh::is_collapse_ok(const Halfedge &h) const {
+        Halfedge o = get_opposite(h);
+        Vertex v0 = get_vertex(o);
+        Vertex v1 = get_vertex(h);
         Vertex vl, vr;
         Halfedge h1, h2;
 
         // the edges v1-vl and vl-v0 must not be both boundary edges
-        if (!is_boundary(v0v1)) {
-            vl = get_vertex(get_next(v0v1));
-            h1 = get_next(v0v1);
+        if (!is_boundary(h)) {
+            vl = get_vertex(get_next(h));
+            h1 = get_next(h);
             h2 = get_next(h1);
             if (is_boundary(get_opposite(h1)) &&
                 is_boundary(get_opposite(h2)))
@@ -454,9 +416,9 @@ namespace Bcg {
         }
 
         // the edges v0-vr and vr-v1 must not be both boundary edges
-        if (!is_boundary(v1v0)) {
-            vr = get_vertex(get_next(v1v0));
-            h1 = get_next(v1v0);
+        if (!is_boundary(o)) {
+            vr = get_vertex(get_next(o));
+            h1 = get_next(o);
             h2 = get_next(h1);
             if (is_boundary(get_opposite(h1)) &&
                 is_boundary(get_opposite(h2)))
@@ -468,8 +430,7 @@ namespace Bcg {
             return false;
 
         // edge between two boundary vertices should be a boundary edge
-        if (is_boundary(v0) && is_boundary(v1) && !is_boundary(v0v1) &&
-            !is_boundary(v1v0))
+        if (is_boundary(v0) && is_boundary(v1) && !is_boundary(h) && !is_boundary(o))
             return false;
 
         // test intersection of the one-rings of v0 and v1
@@ -483,35 +444,119 @@ namespace Bcg {
         return true;
     }
 
-    // Edge Methods
+    void Mesh::collapse(const Halfedge &h0) {
+        //move v0 to v1
+        Halfedge h1 = get_prev(h0);
+        Halfedge o0 = get_opposite(h0);
+        Halfedge o1 = get_next(o0);
 
-    Halfedge Mesh::new_edge(const Vertex &v0, const Vertex &v1) {
-        assert(v0 != v1);
-        edges.push_back();
-        halfedges.push_back();
-        halfedges.push_back();
+        // remove edge
+        remove_edge_helper(h0);
 
-        Halfedge h(halfedges.size() - 2);
-        Halfedge o(halfedges.size() - 1);
-
-        set_vertex(h, v1);
-        set_vertex(o, v0);
-        return h;
-    }
-
-    void Mesh::mark_deleted(const Edge &e) {
-        if (e_deleted[e]) {
-            return;
+        // remove loops
+        if (get_next(get_next(h1)) == h1) {
+            remove_loop_helper(h1);
+        }
+        if (get_next(get_next(o1)) == o1) {
+            remove_loop_helper(o1);
         }
 
-        e_deleted[e] = true;
-        ++edges.num_deleted;
-        mark_deleted(get_halfedge(e, 0));
-        mark_deleted(get_halfedge(e, 1));
+        assert(has_garbage());
     }
 
+    void Mesh::remove_edge_helper(const Halfedge &h) {
+        Halfedge hn = get_next(h);
+        Halfedge hp = get_prev(h);
+
+        Halfedge o = get_opposite(h);
+        Halfedge on = get_next(o);
+        Halfedge op = get_prev(o);
+
+        Face fh = get_face(h);
+        Face fo = get_face(o);
+
+        Vertex vh = get_vertex(h);
+        Vertex vo = get_vertex(o);
+
+        // halfedge -> vertex
+        HalfedgeAroundVertexCirculator vhit, vhend;
+        vhit = vhend = get_halfedges(vo);
+        do {
+            set_vertex(get_opposite(*vhit), vh);
+        } while (++vhit != vhend);
+
+        // halfedge -> halfedge
+        set_next(hp, hn);
+        set_next(op, on);
+
+        // face -> halfedge
+        if (fh.is_valid()) {
+            set_halfedge(fh, hn);
+        }
+        if (fo.is_valid()) {
+            set_halfedge(fo, on);
+        }
+
+        // vertex -> halfedge
+        if (Graph::get_halfedge(vh) == o) {
+            Graph::set_halfedge(vh, hn);
+        }
+        adjust_outgoing_halfedge(vh);
+        Graph::set_halfedge(vo, Halfedge());
+
+        PointCloud::mark_deleted(vo);
+        Graph::mark_deleted(get_edge(h));
+
+        assert(has_garbage());
+    }
+
+    void Mesh::remove_loop_helper(const Halfedge &h0) {
+        Halfedge h1 = get_next(h0);
+
+        Halfedge o0 = get_opposite(h0);
+        Halfedge o1 = get_opposite(h1);
+
+        Vertex v0 = get_vertex(h0);
+        Vertex v1 = get_vertex(h1);
+
+        Face fh = get_face(h0);
+        Face fo = get_face(o0);
+
+        // is it a loop ?
+        assert((get_next(h1) == h0) && (h1 != o0));
+
+        // halfedge -> halfedge
+        set_next(h1, get_next(o0));
+        set_next(get_prev(o0), h1);
+
+        // halfedge -> face
+        set_face(h1, fo);
+
+        // vertex -> halfedge
+        Graph::set_halfedge(v0, h1);
+        adjust_outgoing_halfedge(v0);
+        Graph::set_halfedge(v1, o1);
+        adjust_outgoing_halfedge(v1);
+
+        // face -> halfedge
+        if (fo.is_valid() && get_halfedge(fo) == o0) {
+            set_halfedge(fo, h1);
+        }
+
+        // delete stuff
+        if (fh.is_valid()) {
+            mark_deleted(fh);
+        }
+
+        Graph::mark_deleted(get_edge(h0));
+
+        assert(has_garbage());
+    }
+
+    // Edge Methods
+
     void Mesh::delete_edge(const Edge &e) {
-        if (is_deleted(e)) {
+        if (Graph::is_deleted(e)) {
             return;
         }
 
@@ -526,14 +571,14 @@ namespace Bcg {
         }
     }
 
-    Edge Mesh::find_edge(Vertex a, Vertex b) const {
-        Halfedge h = find_halfedge(a, b);
+    Edge Mesh::find_edge(const Vertex &start, const Vertex &end) const {
+        Halfedge h = find_halfedge(start, end);
         return h.is_valid() ? get_edge(h) : Edge();
     }
 
-    bool Mesh::is_flip_ok(Edge e) const {
+    bool Mesh::is_flip_ok(const Edge &e) const {
         // boundary edges cannot be flipped
-        if (is_boundary(e))
+        if (Graph::is_boundary(e))
             return false;
 
         // check if the flipped edge is already present in the mesh
@@ -552,7 +597,7 @@ namespace Bcg {
         return true;
     }
 
-    void Mesh::flip(Edge e) {
+    void Mesh::flip(const Edge &e) {
         //let's make it sure it is actually checked
         assert(is_flip_ok(e));
 
@@ -591,10 +636,10 @@ namespace Bcg {
         set_halfedge(fa, a0);
         set_halfedge(fb, b0);
 
-        if (get_halfedge(va0) == b0)
-            set_halfedge(va0, a1);
-        if (get_halfedge(vb0) == a0)
-            set_halfedge(vb0, b1);
+        if (Graph::get_halfedge(va0) == b0)
+            Graph::set_halfedge(va0, a1);
+        if (Graph::get_halfedge(vb0) == a0)
+            Graph::set_halfedge(vb0, b1);
     }
 
     // Face Methods
@@ -726,21 +771,21 @@ namespace Bcg {
                     case 1: // prev is new, next is old
                         boundary_prev = get_prev(inner_next);
                         next_cache.emplace_back(boundary_prev, outer_next);
-                        set_halfedge(v, outer_next);
+                        Graph::set_halfedge(v, outer_next);
                         break;
 
                     case 2: // next is new, prev is old
                         boundary_next = get_next(inner_prev);
                         next_cache.emplace_back(outer_prev, boundary_next);
-                        set_halfedge(v, boundary_next);
+                        Graph::set_halfedge(v, boundary_next);
                         break;
 
                     case 3: // both are new
-                        if (!get_halfedge(v).is_valid()) {
-                            set_halfedge(v, outer_next);
+                        if (!Graph::get_halfedge(v).is_valid()) {
+                            Graph::set_halfedge(v, outer_next);
                             next_cache.emplace_back(outer_prev, outer_next);
                         } else {
-                            boundary_next = get_halfedge(v);
+                            boundary_next = Graph::get_halfedge(v);
                             boundary_prev = get_prev(boundary_next);
                             next_cache.emplace_back(boundary_prev, outer_next);
                             next_cache.emplace_back(outer_prev, boundary_next);
@@ -751,7 +796,7 @@ namespace Bcg {
                 // set inner link
                 next_cache.emplace_back(inner_prev, inner_next);
             } else
-                needs_adjust[ii] = (get_halfedge(v) == inner_next);
+                needs_adjust[ii] = (Graph::get_halfedge(v) == inner_next);
 
             // set face handle
             set_face(halfedges[i], f);
@@ -794,8 +839,8 @@ namespace Bcg {
         deletedEdges.reserve(3);
 
         // vertices of face f for updating their outgoing halfedge
-        std::vector<Vertex> vertices;
-        vertices.reserve(3);
+        std::vector<Vertex> vertices_;
+        vertices_.reserve(3);
 
         // for all halfedges of face f do:
         //   1) invalidate face handle.
@@ -807,7 +852,7 @@ namespace Bcg {
             if (is_boundary(get_opposite(hc)))
                 deletedEdges.push_back(get_edge(hc));
 
-            vertices.push_back(get_vertex(hc));
+            vertices_.push_back(get_vertex(hc));
         }
 
         // delete all collected (half)edges
@@ -834,28 +879,28 @@ namespace Bcg {
                 set_next(prev1, next0);
 
                 // mark edge deleted
-                mark_deleted(*delit);
+                Graph::mark_deleted(*delit);
 
                 // update v0
-                if (get_halfedge(v0) == h1) {
+                if (Graph::get_halfedge(v0) == h1) {
                     if (next0 == h1) {
-                        mark_deleted(v0);
+                        PointCloud::mark_deleted(v0);
                     } else
-                        set_halfedge(v0, next0);
+                        Graph::set_halfedge(v0, next0);
                 }
 
                 // update v1
-                if (get_halfedge(v1) == h0) {
+                if (Graph::get_halfedge(v1) == h0) {
                     if (next1 == h0) {
-                        mark_deleted(v1);
+                        PointCloud::mark_deleted(v1);
                     } else
-                        set_halfedge(v1, next1);
+                        Graph::set_halfedge(v1, next1);
                 }
             }
         }
 
         // update outgoing halfedge handles of remaining vertices
-        auto vit(vertices.begin()), vend(vertices.end());
+        auto vit(vertices_.begin()), vend(vertices_.end());
         for (; vit != vend; ++vit) {
             adjust_outgoing_halfedge(*vit);
         }
@@ -866,21 +911,43 @@ namespace Bcg {
         return std::distance(vv.begin(), vv.end());
     }
 
-    // Tet Methods TODO
+    void Mesh::triangulate(const Face &f) {
+        Halfedge h = get_halfedge(f);
+        Vertex v0 = Graph::get_vertex(get_opposite(h));
+        Halfedge nh = Graph::get_next(h);
 
-    Tet Mesh::add_tet(const Vertex &v0, const Vertex &v1, const Vertex &v2, const Vertex &v3) {
-        return {};
-    }
+        while (Graph::get_vertex(Graph::get_next(nh)) != v0) {
+            Halfedge nnh(Graph::get_next(nh));
 
-    void Mesh::mark_deleted(const Tet &t) {
-        if (t_deleted[t]) {
-            return;
+            Face new_f = new_face();
+            set_halfedge(new_f, h);
+
+            Halfedge new_h = Graph::new_edge(Graph::get_vertex(nh), v0);
+
+            Graph::set_next(h, nh);
+            Graph::set_next(nh, new_h);
+            Graph::set_next(new_h, h);
+
+            set_face(h, new_f);
+            set_face(nh, new_f);
+            set_face(new_h, new_f);
+
+            h = Graph::get_opposite(new_h);
+            nh = nnh;
         }
+        set_halfedge(f, h);  //the last face takes the handle _fh
 
-        t_deleted[t] = true;
-        ++tets.num_deleted;
+        Graph::set_next(h, nh);
+        Graph::set_next(Graph::get_next(nh), h);
+
+        set_face(h, f);
     }
 
-    void Mesh::delete_tet(const Tet &t) {
+    void Mesh::triangulate() {
+        for (const auto &f: faces) {
+            if (get_valence(f) != 3) {
+                triangulate(f);
+            }
+        }
     }
 }

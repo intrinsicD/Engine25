@@ -5,21 +5,20 @@
 #ifndef ENGINE25_GRAPH_H
 #define ENGINE25_GRAPH_H
 
-#include "GeometricProperties.h"
+#include "PointCloud.h"
 
 namespace Bcg {
-    class Graph {
+    class Graph : public PointCloud {
     public:
         using VertexAroundVertexCirculator = VertexAroundVertexCirculatorBase<Graph>;
         using HalfedgeAroundVertexCirculator = HalfedgeAroundVertexCirculatorBase<Graph>;
         using EdgeAroundVertexCirculator = EdgeAroundVertexCirculatorBase<Graph>;
 
-        Vertices vertices;
+        using PointCloud::mark_deleted;
+
         Halfedges halfedges;
         Edges edges;
 
-        VertexProperty<Vector<Real, 3>> positions;
-        VertexProperty<bool> v_deleted;
         VertexProperty<VertexConnectivity> v_connectivity;
 
         HalfedgeProperty<bool> h_deleted;
@@ -27,27 +26,74 @@ namespace Bcg {
 
         EdgeProperty<bool> e_deleted;
 
+
+        /**
+         * @brief Default constructor for Graph, initializes vertex, edge, and halfedge properties.
+         * */
         Graph();
 
-        virtual ~Graph() = default;
 
+        /**
+         * @brief Virtual destructor for extensibility.
+         * */
+        ~Graph() override = default;
+
+
+        /**
+         * @brief Copy constructor.
+         * @param rhs Another Graph instance to copy.
+         * */
         Graph(const Graph &rhs) { operator=(rhs); }
 
+
+        /**
+         * @brief Copy assignment operator.
+         * @param rhs Another Graph instance to copy.
+         * @return Reference to this Graph.
+         * */
         Graph &operator=(const Graph &rhs);
 
+
+        /**
+         * @brief Deep copy assignment method.
+         * @param rhs Another Graph instance to copy.
+         * @return Reference to this Graph.
+         * */
         Graph &assign(const Graph &rhs);
 
-        void clear();
 
-        void free_memory();
+        /**
+         * @brief Clear all properties and free memory.
+         * */
+        void clear() override;
 
+
+        /**
+         * @brief Releases unused memory.
+         */
+        void free_memory() override;
+
+
+        /**
+         * @brief Reserve memory for vertices, edges, and faces.
+         * @param nvertices Number of vertices to reserve.
+         * @param nedges Number of edges to reserve.
+         * @param nfaces Number of faces to reserve.
+         * @param ntets Number of tets to reserve.
+         * */
         void reserve(size_t nvertices, size_t nedges);
 
-        void garbage_collection();
 
-        [[nodiscard]] bool is_empty() const { return n_vertices() == 0; }
+        /**
+         * @brief Removes deleted vertices, edges, and faces and compacts the data.
+         * */
+        void garbage_collection() override;
 
-        [[nodiscard]] bool has_garbage() const {
+        /**
+         * @brief Check if the Graph has any deleted vertices, edges, or faces.
+         * @return True if the Graph has any deleted elements, false otherwise.
+         * */
+        [[nodiscard]] bool has_garbage() const override {
             return vertices.has_garbage() ||
                    halfedges.has_garbage() ||
                    edges.has_garbage();
@@ -55,201 +101,440 @@ namespace Bcg {
 
         // Vertex Methods
 
-        [[nodiscard]] size_t n_vertices() const { return vertices.n_vertices(); }
-
-        [[nodiscard]] bool is_deleted(const Vertex &v) const { return vertices.is_deleted(v); }
-
-        [[nodiscard]] bool is_valid(const Vertex &v) const { return vertices.is_valid(v); }
-
+        /**
+         * @brief Check if a vertex is isolated.
+         * @param v Vertex to check.
+         * @return True if isolated, false otherwise.
+         * */
         [[nodiscard]] bool is_isolated(const Vertex &v) const { return !is_valid(get_halfedge(v)); }
 
-        // check only the incoming halfedge because if v is a boundary vertex then the outgoing halfedge is the next
-        // halfedge of the incoming halfedge (its build that way)
-        [[nodiscard]] bool is_boundary(const Vertex &v) const { return is_boundary(get_opposite(get_halfedge(v))); }
 
-        Vertex new_vertex() {
-            vertices.push_back();
-            return Vertex(vertices.size() - 1);
-        }
+        /**
+         * @brief Check if a vertex is on the boundary.
+         * @param v Vertex to check.
+         * @return True if on the boundary, false otherwise.
+         * */
+        [[nodiscard]] virtual bool is_boundary(const Vertex &v) const { return is_boundary(get_opposite(get_halfedge(v))); }
 
-        Vertex add_vertex(const Vector<Real, 3> &p);
 
-        void mark_deleted(const Vertex &v);
+        /**
+         * @brief Delete a vertex.
+         * @param v Vertex to delete.
+         * */
+        void delete_vertex(const Vertex &v) override;
 
-        void delete_vertex(const Vertex &v);
-
-        void set_halfedge(const Vertex &v, const Halfedge &h) {
-            v_connectivity[v].h = h;
-        }
-
+        /**
+         * @brief Retrieve the halfedge of a vertex.
+         * @param v Vertex to retrieve the halfedge for.
+         * @return The halfedge of the vertex.
+         * */
         Halfedge get_halfedge(const Vertex &v) const {
             return v_connectivity[v].h;
         }
 
-        size_t get_valence(const Vertex &v) const;
 
+        /**
+         * @brief Set the halfedge of a vertex.
+         * @param v Vertex to set the halfedge for.
+         * @param h Halfedge to set.
+         * */
+        void set_halfedge(const Vertex &v, const Halfedge &h) {
+            v_connectivity[v].h = h;
+        }
+
+
+        /**
+         * @brief Retrieve the valence of a vertex.
+         * @param v Vertex to retrieve the valence for.
+         * @return The valence of the vertex.
+         * */
+        [[nodiscard]] size_t get_valence(const Vertex &v) const;
+
+
+        /**
+         * @brief Retrieves a circulator for the vertices around a vertex.
+         * @param v Vertex to retrieve the circulator for.
+         * @return Circulator for the vertices around the vertex.
+         */
         VertexAroundVertexCirculator get_vertices(const Vertex &v) const {
             return {this, v};
         }
 
+
+        /**
+         * @brief Retrieves a circulator for the halfedges around a vertex.
+         * @param v Vertex to retrieve the circulator for.
+         * @return Circulator for the halfedges around the vertex.
+         */
         HalfedgeAroundVertexCirculator get_halfedges(const Vertex &v) const {
             return {this, v};
         }
 
+
+        /**
+         * @brief Retrieves a circulator for the edges around a vertex.
+         * @param v Vertex to retrieve the circulator for.
+         * @return Circulator for the edges around the vertex.
+         */
         EdgeAroundVertexCirculator get_edges(const Vertex &v) const {
             return {this, v};
         }
 
-        template<class T>
-        VertexProperty<T> add_vertex_property(const std::string &name,
-                                              const T t = T()) {
-            return VertexProperty<T>(vertices.add<T>(name, t));
-        }
-
-        template<class T>
-        VertexProperty<T> get_vertex_property(const std::string &name) const {
-            return VertexProperty<T>(vertices.get<T>(name));
-        }
-
-        template<class T>
-        VertexProperty<T> vertex_property(const std::string &name, const T t = T()) {
-            return VertexProperty<T>(vertices.get_or_add<T>(name, t));
-        }
-
-        template<class T>
-        void remove_vertex_property(VertexProperty<T> &p) {
-            vertices.remove(p);
-        }
-
-        [[nodiscard]] bool has_vertex_property(const std::string &name) const {
-            return vertices.exists(name);
-        }
-
         // Halfedge Methods
 
+
+        /**
+         * @brief Retrieve the number of halfedges.
+         * @return Number of halfedges.
+         * */
         [[nodiscard]] size_t n_halfedges() const { return halfedges.n_halfedges(); }
 
+
+        /**
+         * @brief Check if a halfedge is deleted.
+         * @param h Halfedge to check.
+         * @return True if deleted, false otherwise.
+         * */
         [[nodiscard]] bool is_deleted(const Halfedge &h) const { return halfedges.is_deleted(h); }
 
+
+        /**
+         * @brief Check if a halfedge is valid.
+         * @param h Halfedge to check.
+         * @return True if valid, false otherwise.
+         * */
         [[nodiscard]] bool is_valid(const Halfedge &h) const { return halfedges.is_valid(h); }
 
-        [[nodiscard]] bool is_boundary(const Halfedge &h) const { return get_next(h) == get_opposite(h); }
 
+        /**
+         * @brief Check if a halfedge is on the boundary.
+         * @param h Halfedge to check.
+         * @return True if on the boundary, false otherwise.
+         * */
+        [[nodiscard]] virtual bool is_boundary(const Halfedge &h) const { return get_next(h) == get_opposite(h); }
+
+
+        /**
+         * @brief Mark a halfedge as deleted.
+         * @param h Halfedge to mark as deleted.
+         * */
         void mark_deleted(const Halfedge &h);
 
+
+        /**
+         * @brief Find a halfedge between two vertices.
+         * @param v0 First vertex.
+         * @param v1 Second vertex.
+         * @return The halfedge between the two vertices.
+         * */
         Halfedge find_halfedge(const Vertex &v0, const Vertex &v1) const;
 
-        Halfedge get_opposite(const Halfedge &h) const {
-            return Halfedge((h.idx() & 1) ? h.idx() - 1 : h.idx() + 1);
-        }
 
+        /**
+         * @brief Sets the vertex of a halfedge.
+         * @param h Halfedge to set the vertex for.
+         * @param v Vertex to set.
+         */
         void set_vertex(const Halfedge &h, const Vertex &v) {
             h_connectivity[h].v = v;
         }
 
+
+        /**
+         * @brief Retrieves the vertex of a halfedge.
+         * @param h Halfedge to retrieve the vertex for.
+         * @return The vertex of the halfedge.
+         */
         Vertex get_vertex(const Halfedge &h) const {
             return h_connectivity[h].v;
         }
 
+
+        /**
+         * @brief Retrieves the next halfedge of a halfedge.
+         * @param h Halfedge to retrieve the next halfedge for.
+         * @return The next halfedge of the halfedge.
+         */
         Halfedge get_next(const Halfedge &h) const {
             return h_connectivity[h].nh;
         }
 
+
+        /**
+         * @brief Sets the next halfedge of a halfedge.
+         * @param h Halfedge to set the next halfedge for.
+         * @param nh Next halfedge to set.
+         */
         void set_next(const Halfedge &h, const Halfedge &nh) {
             h_connectivity[h].nh = nh;
             h_connectivity[nh].ph = h;
         }
 
+
+        /**
+         * @brief Sets the previous halfedge of a halfedge.
+         * @param h Halfedge to set the previous halfedge for.
+         * @param ph Previous halfedge to set.
+         */
+        void set_prev(const Halfedge &h, const Halfedge &ph) {
+            h_connectivity[h].ph = ph;
+            h_connectivity[ph].nh = h;
+        }
+
+
+        /**
+         * @brief Retrieves the previous halfedge of a halfedge.
+         * @param h Halfedge to retrieve the previous halfedge for.
+         * @return The previous halfedge of the halfedge.
+         */
         Halfedge get_prev(const Halfedge &h) const {
             return h_connectivity[h].ph;
         }
 
+
+        /**
+         * @brief Retrieves the opposite halfedge of a halfedge.
+         * @param h Halfedge to retrieve the opposite halfedge for.
+         * @return The opposite halfedge of the halfedge.
+         */
+        Halfedge get_opposite(const Halfedge &h) const {
+            return Halfedge((h.idx() & 1) ? h.idx() - 1 : h.idx() + 1);
+        }
+
+
+        /**
+         * @brief Rotates a halfedge clockwise.
+         * @param h Halfedge to rotate.
+         * @return The rotated halfedge.
+         */
         Halfedge rotate_cw(const Halfedge &h) const {
             return get_next(get_opposite(h));
         }
 
+
+        /**
+         * @brief Rotates a halfedge counterclockwise.
+         * @param h Halfedge to rotate.
+         * @return The rotated halfedge.
+         */
         Halfedge rotate_ccw(const Halfedge &h) const {
             return get_opposite(get_prev(h));
         }
 
+
+        /**
+         * @brief Retrieves the edge of a halfedge.
+         * @param h Halfedge to retrieve the edge for.
+         * @return The edge of the halfedge.
+         */
         Edge get_edge(const Halfedge &h) const {
             return Edge(h.idx() >> 1);
         }
 
+
+        /**
+         * @brief Adds a halfedge property to the Graph.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @param t Default value of the property.
+         * @return The added halfedge property.
+         */
         template<class T>
         HalfedgeProperty<T> add_halfedge_property(const std::string &name,
                                                   const T t = T()) {
             return HalfedgeProperty<T>(halfedges.add<T>(name, t));
         }
 
+
+        /**
+         * @brief Retrieves a halfedge property by name.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @return The halfedge property if it exists.
+         */
         template<class T>
         HalfedgeProperty<T> get_halfedge_property(const std::string &name) const {
             return HalfedgeProperty<T>(halfedges.get<T>(name));
         }
 
+
+        /**
+         * @brief Retrieves or adds a halfedge property.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @param t Default value of the property.
+         * @return The halfedge property.
+         */
         template<class T>
         HalfedgeProperty<T> halfedge_property(const std::string &name, const T t = T()) {
             return HalfedgeProperty<T>(halfedges.get_or_add<T>(name, t));
         }
 
+
+        /**
+         * @brief Removes a halfedge property.
+         * @tparam T Type of the property.
+         * @param p Halfedge property to remove.
+         */
         template<class T>
-        void remove_vertex_property(HalfedgeProperty<T> &p) {
+        void remove_halfedge_property(HalfedgeProperty<T> &p) {
             halfedges.remove(p);
         }
 
+
+        /**
+         * @brief Check if a halfedge property exists.
+         * @param name Name of the property.
+         * @return True if the property exists, false otherwise.
+         */
         [[nodiscard]] bool has_halfedge_property(const std::string &name) const {
             return halfedges.exists(name);
         }
 
         // Edge Methods
 
+
+        /**
+         * @brief Retrieve the number of edges.
+         * @return Number of edges.
+         * */
         [[nodiscard]] size_t n_edges() const { return edges.n_edges(); }
 
+
+        /**
+         * @brief Check if an edge is deleted.
+         * @param e Edge to check.
+         * @return True if deleted, false otherwise.
+         * */
         [[nodiscard]] bool is_deleted(const Edge &e) const { return edges.is_deleted(e); }
 
+
+        /**
+         * @brief Check if an edge is valid.
+         * @param e Edge to check.
+         * @return True if valid, false otherwise.
+         * */
         [[nodiscard]] bool is_valid(const Edge &e) const { return edges.is_valid(e); }
 
+
+        /**
+         * @brief Check if an edge is on the boundary.
+         * @param e Edge to check.
+         * @return True if on the boundary, false otherwise.
+         * */
         [[nodiscard]] bool is_boundary(const Edge &e) const {
             return is_boundary(get_halfedge(e, 0)) || is_boundary(get_halfedge(e, 1));
         }
 
+
+        /**
+         * @brief Create a new edge.
+         * @param v0 First vertex of the edge.
+         * @param v1 Second vertex of the edge.
+         * @return The new edge.
+         * */
         Halfedge new_edge(const Vertex &v0, const Vertex &v1);
 
+
+        /**
+         * @brief Add an edge between two vertices.
+         * @param v0 First vertex of the edge.
+         * @param v1 Second vertex of the edge.
+         * @return The halfedge of the edge.
+         * */
         Halfedge add_edge(const Vertex &v0, const Vertex &v1);
 
+
+        /**
+         * @brief Marks an edge as deleted.
+         * @param e Edge to mark as deleted.
+         */
         void mark_deleted(const Edge &e);
 
-        void delete_edge(const Edge &e);
 
+        /**
+         * @brief Deletes an edge and all incident faces.
+         * @param e Edge to delete.
+         */
+        virtual void delete_edge(const Edge &e);
+
+
+        /**
+         * @brief Retrieves the halfedge of an edge.
+         * @param e Edge to retrieve the halfedge for.
+         * @param i Index of the halfedge.
+         * @return The halfedge of the edge.
+         */
         Halfedge get_halfedge(const Edge &e, int i) const {
             return Halfedge{(e.idx() << 1) + i};
         }
 
+        /**
+         * @brief Retrieves the vertex of an edge.
+         * @param e Edge to retrieve the vertex for.
+         * @param i Index of the vertex.
+         * @return The vertex of the edge.
+         */
         Vertex get_vertex(const Edge &e, int i) const {
             return get_vertex(get_halfedge(e, i));
         }
 
+
+        /**
+         * @brief Adds an edge property to the Mesh.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @param t Default value of the property.
+         * @return The added edge property.
+         */
         template<class T>
         EdgeProperty<T> add_edge_property(const std::string &name,
                                           const T t = T()) {
             return EdgeProperty<T>(edges.add<T>(name, t));
         }
 
+
+        /**
+         * @brief Retrieves an edge property by name.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @return The edge property if it exists.
+         */
         template<class T>
         EdgeProperty<T> get_edge_property(const std::string &name) const {
             return EdgeProperty<T>(edges.get<T>(name));
         }
 
+
+        /**
+         * @brief Retrieves or adds an edge property.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @param t Default value of the property.
+         * @return The edge property.
+         */
         template<class T>
         EdgeProperty<T> edge_property(const std::string &name, const T t = T()) {
             return EdgeProperty<T>(edges.get_or_add<T>(name, t));
         }
 
+
+        /**
+         * @brief Removes an edge property.
+         * @tparam T Type of the property.
+         * @param p Edge property to remove.
+         */
         template<class T>
         void remove_edge_property(HalfedgeProperty<T> &p) {
             edges.remove(p);
         }
 
+
+        /**
+         * @brief Check if an edge property exists.
+         * @param name Name of the property.
+         * @return True if the property exists, false otherwise.
+         */
         [[nodiscard]] bool has_edge_property(const std::string &name) const {
             return edges.exists(name);
         }

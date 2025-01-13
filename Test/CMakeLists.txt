@@ -5,6 +5,7 @@ target_sources(Engine25Tests PRIVATE
         TestSphere.cpp
         TestPointCloud.cpp
         TestGraph.cpp
+        TestMesh.cpp
 )
 
 target_link_libraries(Engine25Tests PUBLIC Engine25 gtest_main gtest)

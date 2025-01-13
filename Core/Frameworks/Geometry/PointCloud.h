@@ -51,23 +51,23 @@ namespace Bcg {
         /**
          * @brief Clears all vertices and properties.
          */
-        void clear();
+        virtual void clear();
 
         /**
          * @brief Releases unused memory.
          */
-        void free_memory();
+        virtual void free_memory();
 
         /**
          * @brief Reserves space for a specified number of vertices.
          * @param nvertices Number of vertices to reserve space for.
          */
-        void reserve(size_t nvertices);
+        virtual void reserve(size_t nvertices);
 
         /**
          * @brief Removes deleted vertices and compacts the data.
          */
-        void garbage_collection();
+        virtual void garbage_collection();
 
         /**
          * @brief Returns the total number of undeleted vertices.
@@ -99,7 +99,7 @@ namespace Bcg {
          * @brief Checks if there is garbage (deleted vertices).
          * @return True if garbage exists, false otherwise.
          */
-        [[nodiscard]] bool has_garbage() const { return vertices.has_garbage(); }
+        [[nodiscard]] virtual bool has_garbage() const { return vertices.has_garbage(); }
 
         /**
          * @brief Adds a property to vertices.
@@ -182,7 +182,7 @@ namespace Bcg {
          * @brief Deletes a vertex.
          * @param v Vertex to delete.
          */
-        void delete_vertex(const Vertex &v);
+        virtual void delete_vertex(const Vertex &v);
     };
 }
 

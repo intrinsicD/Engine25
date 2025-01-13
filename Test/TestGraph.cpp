@@ -17,6 +17,7 @@ protected:
 TEST_F(GraphTest, DefaultConstructor) {
     EXPECT_TRUE(graph.is_empty());
     EXPECT_FALSE(graph.has_garbage());
+    EXPECT_TRUE(graph.positions);
 }
 
 TEST_F(GraphTest, AddVertex) {
@@ -52,6 +53,7 @@ TEST_F(GraphTest, GarbageCollection) {
     graph.garbage_collection();
     EXPECT_FALSE(graph.has_garbage());
     EXPECT_EQ(graph.n_vertices(), 1);
+    EXPECT_EQ(graph.positions[Vertex(0)], (Vector<Real, 3>(0.0, 0.0, 1.0)));
 }
 
 TEST_F(GraphTest, ConnectivityValidation) {
@@ -65,4 +67,25 @@ TEST_F(GraphTest, ConnectivityValidation) {
     EXPECT_EQ(graph.get_valence(v2), 2);
     EXPECT_EQ(graph.get_valence(v1), 1);
     EXPECT_EQ(graph.get_valence(v3), 1);
+
+    // Check if the edges are as expected
+    auto edges = graph.get_edges();
+    EXPECT_EQ(graph.edges.size(), 2);
+    EXPECT_EQ(edges[Edge(0)], (Vector<unsigned int, 2>(1, 0)));
+    EXPECT_EQ(edges[Edge(1)], (Vector<unsigned int, 2>(2, 1)));
+}
+
+TEST_F(GraphTest, EdgeProperty) {
+    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    auto v3 = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+
+    graph.add_edge(v1, v2);
+    graph.add_edge(v2, v3);
+
+    // Check if the edges are as expected
+    auto edges = graph.get_edges();
+    EXPECT_EQ(graph.edges.size(), 2);
+    EXPECT_EQ(edges[Edge(0)], (Vector<unsigned int, 2>(1, 0)));
+    EXPECT_EQ(edges[Edge(1)], (Vector<unsigned int, 2>(2, 1)));
 }

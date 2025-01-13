@@ -5,7 +5,7 @@
 #include "Graph.h"
 
 namespace Bcg {
-    Graph::Graph() : vertices(), halfedges(), edges() {
+    Graph::Graph() : PointCloud(), halfedges(), edges() {
         // link properties to containers
         positions = vertices.vertex_property<Vector<Real, 3>>("v:position");
         v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
@@ -93,7 +93,7 @@ namespace Bcg {
     }
 
     void Graph::reserve(size_t nvertices, size_t nedges) {
-        vertices.reserve(nvertices);
+        PointCloud::reserve(nvertices);
         halfedges.reserve(2 * nedges);
         edges.reserve(nedges);
     }
@@ -199,24 +199,6 @@ namespace Bcg {
 
     // Vertex Methods
 
-    Vertex Graph::add_vertex(const Vector<Real, 3> &p) {
-        Vertex v = new_vertex();
-        if (v.is_valid()) {
-            positions[v] = p;
-        }
-        return v;
-    }
-
-    void Graph::mark_deleted(const Vertex &v) {
-        if (v_deleted[v]) {
-            return;
-        }
-
-        v_deleted[v] = true;
-        ++vertices.num_deleted;
-    }
-
-
     void Graph::delete_vertex(const Vertex &v) {
         if (v_deleted[v]) {
             return;
@@ -226,15 +208,12 @@ namespace Bcg {
             delete_edge(e);
         }
 
-        mark_deleted(v);
+        PointCloud::mark_deleted(v);
     }
 
     size_t Graph::get_valence(const Vertex &v) const {
-        size_t valence = 0;
-        for (const Edge &e: get_edges(v)) {
-            valence++;
-        }
-        return valence;
+        auto vv = get_vertices(v);
+        return std::distance(vv.begin(), vv.end());
     }
 
     // Halfedge Methods
@@ -249,7 +228,7 @@ namespace Bcg {
     }
 
     Halfedge Graph::find_halfedge(const Vertex &v0, const Vertex &v1) const {
-        assert(is_valid(v0) && is_valid(v1));
+        assert(PointCloud::is_valid(v0) && PointCloud::is_valid(v1));
 
         Halfedge h = get_halfedge(v0);
         const Halfedge hh = h;
@@ -282,9 +261,10 @@ namespace Bcg {
         return h;
     }
 
-    /*Halfedge Graph::add_edge(const Vertex &v0, const Vertex &v1) {
+
+    Halfedge Graph::add_edge(const Vertex &v0, const Vertex &v1) {
         //check if edge exists between v0 and v1.
-        Halfedge h01 = find_halfedge(v0, v1);
+        auto h01 = find_halfedge(v0, v1);
         if (h01.is_valid()) {
             //edge exists, so just return it.
             return h01;
@@ -292,16 +272,16 @@ namespace Bcg {
 
         //there is no edge between v0 and v1 jet
         //check if v0 has an outgoing halfedge
-        Halfedge h0 = get_halfedge(v0);
+        auto h0 = get_halfedge(v0);
         //check if v0 has an outgoing halfedge
-        Halfedge h1 = get_halfedge(v1);
+        auto h1 = get_halfedge(v1);
 
         //make new edge between v0 and v1
-        Halfedge new_h = new_edge(v0, v1);
-        Halfedge new_o = get_opposite(new_h);
+        auto new_h = new_edge(v0, v1);
+        auto new_o = get_opposite(new_h);
 
         if (h1.is_valid()) {
-            Halfedge p = get_prev(h1);
+            auto p = get_prev(h1);
             set_next(p, new_o);
             set_next(new_h, h1);
         } else {
@@ -311,7 +291,7 @@ namespace Bcg {
         set_halfedge(v1, new_o);
 
         if (h0.is_valid()) {
-            Halfedge p = get_prev(h0);
+            auto p = get_prev(h0);
             set_next(p, new_h);
             set_next(new_o, h0);
         } else {
@@ -319,55 +299,7 @@ namespace Bcg {
         }
 
         set_halfedge(v0, new_h);
-
         return new_h;
-    }*/
-
-    Halfedge Graph::add_edge(const Vertex &v0, const Vertex &v1) {
-        //check if edge exists between v0 and v1.
-        Halfedge h01 = find_halfedge(v0, v1);
-        if (h01.is_valid()) {
-            //edge exists, so just return it.
-            return h01;
-        }
-
-        //make new edge between v0 and v1
-        Halfedge h = new_edge(v0, v1);
-
-        //there is no edge between v0 and v1 jet
-        //check if v0 has an outgoing halfedge
-        Halfedge h0 = get_halfedge(v0);
-
-        if (h0.is_valid()) {
-            Halfedge p = get_prev(h0);
-            Halfedge n = get_next(h0);
-
-            if (n.is_valid()) {
-                set_next(h, n);
-            }
-            if (p.is_valid()) {
-                set_next(p, h);
-            }
-        }
-        //check if v1 has an outgoing halfedge
-        Halfedge h1 = get_halfedge(v1);
-
-        if (h1.is_valid()) {
-            Halfedge p = get_prev(h1);
-            Halfedge n = get_next(h1);
-
-            if (n.is_valid()) {
-                set_next(h, n);
-            }
-            if (p.is_valid()) {
-                set_next(p, h);
-            }
-        }
-
-        set_halfedge(v0, h);
-        set_halfedge(v1, get_opposite(h));
-
-        return h;
     }
 
     void Graph::mark_deleted(const Edge &e) {
@@ -376,9 +308,9 @@ namespace Bcg {
         }
 
         e_deleted[e] = true;
+        ++edges.num_deleted;
         mark_deleted(get_halfedge(e, 0));
         mark_deleted(get_halfedge(e, 1));
-        ++edges.num_deleted;
     }
 
     /*void Graph::delete_edge(const Edge &e) {
