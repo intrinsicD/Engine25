@@ -525,7 +525,7 @@ namespace Bcg {
          * @param p Edge property to remove.
          */
         template<class T>
-        void remove_edge_property(HalfedgeProperty<T> &p) {
+        void remove_edge_property(EdgeProperty<T> &p) {
             edges.remove(p);
         }
 

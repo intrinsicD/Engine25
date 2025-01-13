@@ -268,11 +268,11 @@ namespace Bcg {
     }
 
     bool Mesh::is_triangle_mesh() const {
-/*
-        for (auto f: faces) {
-            if (get_valence(f) != 3) return false;
-        }
-*/
+        /*
+                for (auto f: faces) {
+                    if (get_valence(f) != 3) return false;
+                }
+        */
 
         return std::all_of(faces.begin(), faces.end(), [this](const Face &f) {
             return get_valence(f) == 3;
@@ -555,6 +555,38 @@ namespace Bcg {
 
     // Edge Methods
 
+    bool Mesh::is_removal_ok(Edge e) const {
+        Halfedge h0 = get_halfedge(e, 0);
+        Halfedge h1 = get_halfedge(e, 1);
+        Vertex v0 = get_vertex(h0);
+        Vertex v1 = get_vertex(h1);
+        Face f0 = get_face(h0);
+        Face f1 = get_face(h1);
+
+        // boundary?
+        if (!f0.is_valid() || !f1.is_valid()) {
+            return false;
+        }
+
+        // same face?
+        if (f0 == f1) {
+            return false;
+        }
+
+        // are the two faces connect through another vertex?
+        for (auto v: get_vertices(f0)) {
+            if (v != v0 && v != v1) {
+                for (auto f: get_faces(v)) {
+                    if (f == f1) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     void Mesh::delete_edge(const Edge &e) {
         if (Graph::is_deleted(e)) {
             return;
@@ -569,6 +601,52 @@ namespace Bcg {
         if (f1.is_valid()) {
             delete_face(f1);
         }
+    }
+
+
+    bool Mesh::remove_edge(Edge e) {
+        if (!is_removal_ok(e))
+            return false;
+
+        Halfedge h0 = get_halfedge(e, 0);
+        Halfedge h1 = get_halfedge(e, 1);
+
+        Vertex v0 = get_vertex(h0);
+        Vertex v1 = get_vertex(h1);
+
+        Face f0 = get_face(h0);
+        Face f1 = get_face(h1);
+
+        Halfedge h0_prev = get_prev(h0);
+        Halfedge h0_next = get_next(h0);
+        Halfedge h1_prev = get_prev(h1);
+        Halfedge h1_next = get_next(h1);
+
+        // adjust vertex->halfedge
+        if (get_halfedge(v0) == h1)
+            Graph::set_halfedge(v0, h0_next);
+        if (get_halfedge(v1) == h0)
+            Graph::set_halfedge(v1, h1_next);
+
+        // adjust halfedge->face
+        for (auto h: get_halfedges(f0)) {
+            set_face(h, f1);
+        }
+
+        // adjust halfedge->halfedge
+        set_next(h1_prev, h0_next);
+        set_next(h0_prev, h1_next);
+
+        // adjust face->halfedge
+        if (get_halfedge(f1) == h1) {
+            set_halfedge(f1, h1_next);
+        }
+
+        // delete face f0 and edge e
+        mark_deleted(f0);
+        Graph::mark_deleted(e);
+
+        return true;
     }
 
     Edge Mesh::find_edge(const Vertex &start, const Vertex &end) const {
@@ -640,6 +718,96 @@ namespace Bcg {
             Graph::set_halfedge(va0, a1);
         if (Graph::get_halfedge(vb0) == a0)
             Graph::set_halfedge(vb0, b1);
+    }
+
+
+    Halfedge Mesh::split(Edge e, Vertex v) {
+        Halfedge h0 = get_halfedge(e, 0);
+        Halfedge o0 = get_halfedge(e, 1);
+
+        Vertex v2 = get_vertex(o0);
+
+        Halfedge e1 = new_edge(v, v2);
+        Halfedge t1 = get_opposite(e1);
+
+        Face f0 = get_face(h0);
+        Face f3 = get_face(o0);
+
+        Graph::set_halfedge(v, h0);
+        set_vertex(o0, v);
+
+        if (!is_boundary(h0)) {
+            Halfedge h1 = get_next(h0);
+            Halfedge h2 = get_next(h1);
+
+            Vertex v1 = get_vertex(h1);
+
+            Halfedge e0 = new_edge(v, v1);
+            Halfedge t0 = get_opposite(e0);
+
+            Face f1 = new_face();
+            set_halfedge(f0, h0);
+            set_halfedge(f1, h2);
+
+            set_face(h1, f0);
+            set_face(t0, f0);
+            set_face(h0, f0);
+
+            set_face(h2, f1);
+            set_face(t1, f1);
+            set_face(e0, f1);
+
+            set_next(h0, h1);
+            set_next(h1, t0);
+            set_next(t0, h0);
+
+            set_next(e0, h2);
+            set_next(h2, t1);
+            set_next(t1, e0);
+        } else {
+            set_next(get_prev(h0), t1);
+            set_next(t1, h0);
+            // halfedge handle of vh already is h0
+        }
+
+        if (!is_boundary(o0)) {
+            Halfedge o1 = get_next(o0);
+            Halfedge o2 = get_next(o1);
+
+            Vertex v3 = get_vertex(o1);
+
+            Halfedge e2 = new_edge(v, v3);
+            Halfedge t2 = get_opposite(e2);
+
+            Face f2 = new_face();
+            set_halfedge(f2, o1);
+            set_halfedge(f3, o0);
+
+            set_face(o1, f2);
+            set_face(t2, f2);
+            set_face(e1, f2);
+
+            set_face(o2, f3);
+            set_face(o0, f3);
+            set_face(e2, f3);
+
+            set_next(e1, o1);
+            set_next(o1, t2);
+            set_next(t2, e1);
+
+            set_next(o0, e2);
+            set_next(e2, o2);
+            set_next(o2, o0);
+        } else {
+            set_next(e1, get_next(o0));
+            set_next(o0, e1);
+            Graph::set_halfedge(v, e1);
+        }
+
+        if (get_halfedge(v2) == h0)
+            Graph::set_halfedge(v2, t1);
+
+        return t1;
     }
 
     // Face Methods
@@ -911,6 +1079,52 @@ namespace Bcg {
         return std::distance(vv.begin(), vv.end());
     }
 
+
+    void Mesh::split(Face f, Vertex v) {
+        // Split an arbitrary face into triangles by connecting each vertex of face
+        // f to vertex v . Face f will remain valid (it will become one of the
+        // triangles). The halfedge handles of the new triangles will point to the
+        // old halfedges.
+
+        Halfedge hend = get_halfedge(f);
+        Halfedge h = get_next(hend);
+
+        Halfedge hold = new_edge(get_vertex(hend), v);
+
+        set_next(hend, hold);
+        set_face(hold, f);
+
+        hold = get_opposite(hold);
+
+        while (h != hend) {
+            Halfedge hnext = get_next(h);
+
+            Face fnew = new_face();
+            set_halfedge(fnew, h);
+
+            Halfedge hnew = new_edge(get_vertex(h), v);
+
+            set_next(hnew, hold);
+            set_next(hold, h);
+            set_next(h, hnew);
+
+            set_face(hnew, fnew);
+            set_face(hold, fnew);
+            set_face(h, fnew);
+
+            hold = get_opposite(hnew);
+
+            h = hnext;
+        }
+
+        set_next(hold, hend);
+        set_next(get_next(hend), hold);
+
+        set_face(hold, f);
+
+        Graph::set_halfedge(v, hold);
+    }
+
     void Mesh::triangulate(const Face &f) {
         Halfedge h = get_halfedge(f);
         Vertex v0 = Graph::get_vertex(get_opposite(h));
@@ -935,7 +1149,7 @@ namespace Bcg {
             h = Graph::get_opposite(new_h);
             nh = nnh;
         }
-        set_halfedge(f, h);  //the last face takes the handle _fh
+        set_halfedge(f, h); //the last face takes the handle _fh
 
         Graph::set_next(h, nh);
         Graph::set_next(Graph::get_next(nh), h);

@@ -287,7 +287,7 @@ namespace Bcg {
         //! pre-increment (rotate counter-clockwise)
         VertexAroundVertexCirculatorBase &operator++() {
             assert(m_data);
-            m_halfedge = m_data->rotate_cw(m_halfedge);
+            m_halfedge = m_data->rotate_ccw(m_halfedge);
             m_is_active = true;
             return *this;
         }
@@ -463,7 +463,7 @@ namespace Bcg {
         //! pre-increment (rotate counter-clockwise)
         EdgeAroundVertexCirculatorBase &operator++() {
             assert(m_data);
-            m_halfedge = m_data->rotate_cw(m_halfedge);
+            m_halfedge = m_data->rotate_ccw(m_halfedge);
             m_is_active = true;
             return *this;
         }
@@ -552,7 +552,7 @@ namespace Bcg {
         FaceAroundVertexCirculatorBase &operator++() {
             assert(m_data && m_halfedge.is_valid());
             do {
-                m_halfedge = m_data->rotate_cw(m_halfedge);
+                m_halfedge = m_data->rotate_ccw(m_halfedge);
             } while (m_data->is_boundary(m_halfedge));
             m_is_active = true;
             return *this;

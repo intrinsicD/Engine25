@@ -8,6 +8,9 @@
 #include "Graph.h"
 
 namespace Bcg {
+    /**
+     * @brief Represents a mesh structure extended from a graph, handling vertices, edges, faces, and circulators.
+     */
     class Mesh : public Graph {
     public:
         using VertexAroundVertexCirculator = VertexAroundVertexCirculatorBase<Mesh>;
@@ -18,6 +21,7 @@ namespace Bcg {
         using FaceAroundVertexCirculator = FaceAroundVertexCirculatorBase<Mesh>;
 
         using Graph::get_halfedge;
+        using Graph::get_valence;
 
         Faces faces;
 
@@ -237,11 +241,26 @@ namespace Bcg {
 
         // Edge Methods
 
+
+        /**
+         * @brief Checks if an edge can be deleted.
+         * @param e Edge to check.
+         * @return True if the edge can be deleted, false otherwise.
+         */
+        bool is_removal_ok(Edge e) const;
+
         /**
          * @brief Deletes an edge and all incident faces.
          * @param e Edge to delete.
          */
         void delete_edge(const Edge &e) override;
+
+        /**
+         * @brief Removes an edge.
+         * @param e Edge to remove.
+         * @return True if the edge was removed, false otherwise.
+         */
+        bool remove_edge(Edge e);
 
 
         /**
@@ -299,6 +318,10 @@ namespace Bcg {
          * @param e Edge to flip.
          */
         void flip(const Edge &e);
+
+        Halfedge split(Edge e, const Vector<Real, 3> &p) { return split(e, add_vertex(p)); }
+
+        Halfedge split(Edge e, Vertex v);
 
         // Face Methods
 
@@ -419,6 +442,28 @@ namespace Bcg {
          * @return The valence of the face.
          */
         [[nodiscard]] size_t get_valence(const Face &f) const;
+
+
+        /**
+         * @brief Split the face \p f by first adding point \p p to the mesh and then inserting edges between \p p and
+         * the vertices of \p f. For a triangle this is a standard one-to-three split.
+         * @param f Face to split.
+         * @param p Position of the point to split the
+         * @return v The new vertex.
+         */
+        Vertex split(Face f, const Vector<Real, 3> &p) {
+            Vertex v = add_vertex(p);
+            split(f, v);
+            return v;
+        }
+
+        /**
+         * @brief Split the face \p f by inserting edges between \p v and the vertices of \p f. For a triangle this is
+         * a standard one-to-three split.
+         * @param f Face to split.
+         * @param v Vertex to split the face with.
+         */
+        void split(Face f, Vertex v);
 
 
         /**
