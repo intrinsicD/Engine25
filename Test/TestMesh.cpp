@@ -291,15 +291,15 @@ TEST_F(MeshTest, edge_properties) {
     auto eidx = mesh.add_edge_property<int>("e:idx");
     auto e = mesh.get_edge(mesh.get_halfedge(v0));
     eidx[e] = 0;
-    EXPECT_EQ(mesh.edges.properties().size(), size_t(2));
+    EXPECT_EQ(mesh.edges.properties().size(), size_t(3));
     mesh.remove_edge_property(eidx);
-    EXPECT_EQ(mesh.edges.properties().size(), size_t(1));
+    EXPECT_EQ(mesh.edges.properties().size(), size_t(2));
 
     // implicit add
     eidx = mesh.edge_property<int>("e:idx2");
-    EXPECT_EQ(mesh.edges.properties().size(), size_t(2));
+    EXPECT_EQ(mesh.edges.properties().size(), size_t(3));
     mesh.remove_edge_property(eidx);
-    EXPECT_EQ(mesh.edges.properties().size(), size_t(1));
+    EXPECT_EQ(mesh.edges.properties().size(), size_t(2));
 }
 
 TEST_F(MeshTest, face_properties) {

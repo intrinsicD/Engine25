@@ -3,16 +3,19 @@
 //
 
 #include "Graph.h"
+#include <queue>
+#include <stack>
 
 namespace Bcg {
-    Graph::Graph() : PointCloud(), halfedges(), edges() {
+    Graph::Graph() : PointCloud() {
         // link properties to containers
-        positions = vertices.vertex_property<Vector<Real, 3>>("v:position");
+        positions = vertices.vertex_property<Vector<Real, 3> >("v:position");
         v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
         v_deleted = vertices.vertex_property<bool>("v:deleted", false);
         h_deleted = halfedges.halfedge_property<bool>("h:deleted", false);
         e_deleted = edges.edge_property<bool>("e:deleted", false);
+        e_direction = edges.edge_property<Halfedge>("e:direction");
     }
 
     Graph &Graph::operator=(const Graph &rhs) {
@@ -23,7 +26,7 @@ namespace Bcg {
             edges = rhs.edges;
 
             // link properties from copied containers
-            positions = vertices.vertex_property<Vector<Real, 3>>("v:position");
+            positions = vertices.vertex_property<Vector<Real, 3> >("v:position");
 
             v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
             h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
@@ -81,7 +84,7 @@ namespace Bcg {
         h_deleted = halfedges.halfedge_property<bool>("h:deleted", false);
         e_deleted = edges.edge_property<bool>("e:deleted", false);
 
-        positions = vertices.vertex_property<Vector<Real, 3>>("v:position", Vector<Real, 3>::Zero());
+        positions = vertices.vertex_property<Vector<Real, 3> >("v:position", Vector<Real, 3>::Zero());
         v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
     }
@@ -216,6 +219,26 @@ namespace Bcg {
         return std::distance(vv.begin(), vv.end());
     }
 
+    size_t Graph::get_indegree(const Vertex &v) const {
+        size_t count = 0;
+        for (auto e: get_edges(v)) {
+            auto h = e_direction[e];
+            if (!h.is_valid() || get_vertex(h) == v) {
+                ++count;
+            }
+        }
+    }
+
+    size_t Graph::get_outdegree(const Vertex &v) const {
+        size_t count = 0;
+        for (auto e: get_edges(v)) {
+            auto h = e_direction[e];
+            if (!h.is_valid() || get_vertex(h) != v) {
+                ++count;
+            }
+        }
+    }
+
     // Halfedge Methods
 
     void Graph::mark_deleted(const Halfedge &h) {
@@ -302,6 +325,44 @@ namespace Bcg {
         return new_h;
     }
 
+    Halfedge Graph::split(const Edge &e, const Vertex &v) {
+        // before:
+        //
+        // v0      h0       v1
+        //  o--------------->o
+        //   <---------------
+        //         o0
+        //
+        // after:
+        //
+        // v0  h0   v   h1   v1
+        //  o------>o------->o
+        //   <------ <-------
+        //     o0       o1
+
+        Halfedge h0 = get_halfedge(e, 0);
+        Halfedge o0 = get_halfedge(e, 1);
+
+        Vertex v1 = get_vertex(h0);
+
+        Halfedge h0_next = get_next(h0);
+        Halfedge o0_prev = get_prev(o0);
+
+        Halfedge h1 = new_edge(v, v1);
+        Halfedge o1 = get_opposite(h1);
+
+        set_vertex(h0, v);
+        set_halfedge(v, h1);
+
+        set_next(h1, h0_next);
+        set_next(h0, h1);
+
+        set_next(o1, o0);
+        set_next(o0_prev, o1);
+
+        return h1;
+    }
+
     void Graph::mark_deleted(const Edge &e) {
         if (e_deleted[e]) {
             return;
@@ -367,6 +428,62 @@ namespace Bcg {
         mark_deleted(e);
     }
 
+    void Graph::dfs_general_with_early_stopping(const Vertex &start,
+                                             std::function<bool(const Vertex &)> vertex_action,
+                                             std::function<bool(const Halfedge &)> halfedge_action) {
+        std::vector<bool> visited(vertices.size(), false); // Vector to track visited vertices.
+        std::stack<Vertex> stack;
+
+        stack.push(start);
+
+        while (!stack.empty()) {
+            Vertex v = stack.top();
+            stack.pop();
+            if (!visited[v.idx()]) {
+                visited[v.idx()] = true; // Mark as visited.
+                if (vertex_action(v)) {
+                    for (const Halfedge &h: get_halfedges(v)) {
+                        if (halfedge_action(h)) {
+                            Vertex neighbor = get_vertex(h);
+                            if (!visited[neighbor.idx()]) {
+                                stack.push(neighbor);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return visited;
+    }
+
+    void Graph::bfs_general_with_early_stopping(const Vertex &start,
+                             std::function<bool(const Vertex &)> vertex_action,
+                             std::function<bool(const Halfedge &)> halfedge_action) {
+        std::vector<bool> visited(vertices.size(), false); // Vector to track visited vertices.
+        std::queue<Vertex> queue;
+
+        queue.push(start);
+        visited[start.idx()] = true;
+
+        while (!queue.empty()) {
+            Vertex v = queue.front();
+            queue.pop();
+
+            if (!vertex_action(v)) return; // Stop traversal if vertex action returns false.
+
+            for (const Halfedge &h : get_halfedges(v)) {
+                if (!halfedge_action(h)) continue; // Skip this edge if halfedge action returns false.
+
+                Vertex neighbor = get_vertex(h);
+                if (!visited[neighbor.idx()]) {
+                    visited[neighbor.idx()] = true; // Mark neighbor as visited.
+                    queue.push(neighbor);
+                }
+            }
+        }
+        return visited;
+    }
+
     //TODO: Move these to separate files
 
     EdgeProperty<Vector<unsigned int, 2> > Graph::get_edges() {
@@ -376,6 +493,4 @@ namespace Bcg {
         }
         return indices;
     }
-
-
 }

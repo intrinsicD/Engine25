@@ -721,7 +721,7 @@ namespace Bcg {
     }
 
 
-    Halfedge Mesh::split(Edge e, Vertex v) {
+    Halfedge Mesh::split(const Edge &e, const Vertex &v) {
         Halfedge h0 = get_halfedge(e, 0);
         Halfedge o0 = get_halfedge(e, 1);
 

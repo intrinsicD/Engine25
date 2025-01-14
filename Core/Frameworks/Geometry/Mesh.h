@@ -9,7 +9,25 @@
 
 namespace Bcg {
     /**
-     * @brief Represents a mesh structure extended from a graph, handling vertices, edges, faces, and circulators.
+     * @class Mesh
+     * @brief A data structure combining graph-based topology with operations for handling polygonal meshes.
+     *
+     * The `Mesh` class inherits from `Graph` and builds on top of it to support polygonal mesh operations such as face
+     * manipulation, vertex splitting, edge collapsing, and mesh triangulation. It provides a halfedge-centric implementation
+     * to represent meshes, allowing efficient queries and modifications of mesh topology.
+     *
+     * It supports:
+     * - Polygonal and triangular meshes.
+     * - Topology changes such as edge flipping, splitting, and collapsing.
+     * - Properties on vertices, halfedges, edges, and faces.
+     *
+     * ### Notable Functionalities
+     * 1. Garbage collection for removing deleted elements.
+     * 2. Triangulation of faces.
+     * 3. Advanced geometric manipulations, including vertex and edge subdivision.
+     *
+     * The class maintains connectivity relationships and deleted status internally
+     * through properties for vertices (`v_connectivity`), edges, and faces.
      */
     class Mesh : public Graph {
     public:
@@ -22,6 +40,7 @@ namespace Bcg {
 
         using Graph::get_halfedge;
         using Graph::get_valence;
+        using Graph::split;
 
         Faces faces;
 
@@ -45,9 +64,10 @@ namespace Bcg {
         Mesh(const Mesh &rhs) { operator=(rhs); }
 
         /**
-         * @brief Copy assignment operator.
-         * @param rhs Another Mesh instance to copy.
-         * @return Reference to this Mesh.
+         * @brief Deep copy assignment operator for `Mesh`.
+         * Copies the topology, geometry, and properties from the provided mesh `rhs` to this instance.
+         * @param rhs The mesh to copy from.
+         * @return Reference to this mesh after assignment.
          */
         Mesh &operator=(const Mesh &rhs);
 
@@ -59,7 +79,7 @@ namespace Bcg {
         Mesh &assign(const Mesh &rhs);
 
         /**
-         * @brief Clears all vertices, edges, faces, and properties.
+         * @brief Deletes all elements (vertices, edges, faces) and their associated properties, resetting the mesh.
          */
         void clear() override;
 
@@ -69,16 +89,15 @@ namespace Bcg {
         void free_memory() override;
 
         /**
-         * @brief Reserves space for a specified number of vertices, edges, faces, and tets.
-         * @param nvertices Number of vertices to reserve space for.
-         * @param nedges Number of edges to reserve space for.
-         * @param nfaces Number of faces to reserve space for.
-         * @param ntets Number of tets to reserve space for.
+         * @brief Reserves memory for vertices, edges, and faces in the mesh.
+         * @param nvertices The number of vertices to reserve space for.
+         * @param nedges The number of edges to reserve space for.
+         * @param nfaces The number of faces to reserve space for.
          */
         void reserve(size_t nvertices, size_t nedges, size_t nfaces);
 
         /**
-         * @brief Removes deleted vertices, edges, faces, and tets and compacts the data.
+         * @brief Compacts the mesh by removing deleted elements and updating connectivity.
          */
         void garbage_collection() override;
 
@@ -94,8 +113,8 @@ namespace Bcg {
         }
 
         /**
-         * @brief Checks if the Mesh is a triangle mesh.
-         * @return True if the Mesh is a triangle mesh, false otherwise.
+         * @brief Checks if the mesh is a pure triangle mesh.
+         * @return True if every face in the mesh has a valence of exactly 3.
          */
         bool is_triangle_mesh() const;
 
@@ -105,7 +124,9 @@ namespace Bcg {
          */
         bool is_quad_mesh() const;
 
+        // -------------------------------------------------------------------------------------------------------------
         // Vertex Methods
+        // -------------------------------------------------------------------------------------------------------------
 
         /**
          * @brief Checks if a vertex is manifold.
@@ -180,7 +201,9 @@ namespace Bcg {
             return {this, v};
         }
 
+        // -------------------------------------------------------------------------------------------------------------
         // Halfedge Methods
+        // -------------------------------------------------------------------------------------------------------------
 
         /**
          * @brief Checks if a halfedge is on the boundary. A halfedge is on the boundary if its face is invalid.
@@ -188,7 +211,6 @@ namespace Bcg {
          * @return True if the halfedge is on the boundary, false otherwise.
          */
         [[nodiscard]] bool is_boundary(const Halfedge &h) const override { return !get_face(h).is_valid(); }
-
 
         /**
          * @brief Retrieves the face of a halfedge.
@@ -204,19 +226,27 @@ namespace Bcg {
          */
         void set_face(const Halfedge &h, const Face &f) { h_connectivity[h].f = f; }
 
-
         /**
-         * @brief Inserts a vertex into a halfedge.
-         * @param h0 Halfedge to insert the vertex into.
-         * @param v Vertex to insert.
-         * @return The new halfedge pointing to the inserted vertex from the target vertex of h0.
+         * @brief Inserts a vertex along an existing halfedge.
+         * @param h The halfedge to split by creating the new vertex.
+         * @param v The vertex to insert.
+         * @return A handle to the newly created opposite halfedge.
+         *
+         * ### Before and After:
+         * ```
+         * Before:
+         *  v0 ----> v1
+         *
+         * After:
+         *  v0 ---> v ---> v1
+         * ```
          */
         Halfedge insert_vertex(const Halfedge &h, const Vertex &v);
 
         /**
-         * @brief Checks if a collapse operation is valid.
-         * @param v0v1 Halfedge to collapse.
-         * @return True if the collapse operation is valid, false otherwise.
+         * @brief Checks if collapsing the given halfedge is allowed.
+         * @param h The halfedge to check.
+         * @return True if collapsing this halfedge does not create non-manifold topology, false otherwise.
          */
         [[nodiscard]] bool is_collapse_ok(const Halfedge &h) const;
 
@@ -238,9 +268,9 @@ namespace Bcg {
          */
         void remove_loop_helper(const Halfedge &h);
 
-
+        // -------------------------------------------------------------------------------------------------------------
         // Edge Methods
-
+        // -------------------------------------------------------------------------------------------------------------
 
         /**
          * @brief Checks if an edge can be deleted.
@@ -262,7 +292,6 @@ namespace Bcg {
          */
         bool remove_edge(Edge e);
 
-
         /**
          * @brief Retrieves the face of an edge.
          * @param e Edge to retrieve the face for.
@@ -272,7 +301,6 @@ namespace Bcg {
         Face get_face(const Edge &e, int i) const {
             return get_face(get_halfedge(e, i));
         }
-
 
         /**
          * @brief Inserts a vertex into an edge.
@@ -284,7 +312,6 @@ namespace Bcg {
             return insert_vertex(e, add_vertex(p));
         }
 
-
         /**
          * @brief Inserts a vertex into an edge.
          * @param e Edge to insert the vertex into.
@@ -295,7 +322,6 @@ namespace Bcg {
             return insert_vertex(get_halfedge(e, 0), v);
         }
 
-
         /**
          * @brief Finds an edge between two vertices.
          * @param start Start vertex of the edge.
@@ -304,7 +330,6 @@ namespace Bcg {
          */
         Edge find_edge(const Vertex &start, const Vertex &end) const;
 
-
         /**
          * @brief Checks if a flip operation is valid.
          * @param e Edge to flip.
@@ -312,26 +337,29 @@ namespace Bcg {
          */
         [[nodiscard]] bool is_flip_ok(const Edge &e) const;
 
-
         /**
          * @brief Flips an edge.
          * @param e Edge to flip.
          */
         void flip(const Edge &e);
 
-        Halfedge split(Edge e, const Vector<Real, 3> &p) { return split(e, add_vertex(p)); }
+        /**
+         *  @brief Splits an edge by inserting a vertex.
+         *  @param e Edge to split.
+         *  @param v Vertex to insert.
+         *  @return The new Halfedge pointing to the inserted vertex from the target vertex of the edge.
+         */
+        Halfedge split(const Edge &e, const Vertex &v) override;
 
-        Halfedge split(Edge e, Vertex v);
-
+        // -------------------------------------------------------------------------------------------------------------
         // Face Methods
-
+        // -------------------------------------------------------------------------------------------------------------
 
         /**
          * @brief Retrieves the number of faces.
          * @return Number of faces.
          */
         [[nodiscard]] size_t n_faces() const { return faces.n_faces(); }
-
 
         /**
          * @brief Checks if a face is deleted.
@@ -340,14 +368,12 @@ namespace Bcg {
          */
         [[nodiscard]] bool is_deleted(const Face &f) const { return faces.is_deleted(f); }
 
-
         /**
          * @brief Checks if a face is valid.
          * @param f Face to check.
          * @return True if valid, false otherwise.
          */
         [[nodiscard]] bool is_valid(const Face &f) const { return faces.is_valid(f); }
-
 
         /**
          * @brief Checks if a face is on the boundary. A face is on the boundary if one of its halfedges is on the boundary.
@@ -366,7 +392,6 @@ namespace Bcg {
             return false;
         }
 
-
         /**
          * @brief Creates a new face.
          * @return The new face.
@@ -376,7 +401,6 @@ namespace Bcg {
             return Face(faces.size() - 1);
         }
 
-
         /**
          * @brief Adds a triangle face.
          * @param v0 First vertex of the face.
@@ -385,7 +409,6 @@ namespace Bcg {
          * @return The new face.
          */
         Face add_triangle(const Vertex &v0, const Vertex &v1, const Vertex &v2);
-
 
         /**
          * @brief Adds a quad face.
@@ -397,14 +420,12 @@ namespace Bcg {
          */
         Face add_quad(const Vertex &v0, const Vertex &v1, const Vertex &v2, const Vertex &v3);
 
-
         /**
-         * @brief Adds a face with a specified number of vertices.
-         * @param f_vertices Vertices of the face.
-         * @return The new face.
+         * @brief Adds a face to the mesh using the given vertices.
+         * @param f_vertices A vector of vertices defining the face. Must have at least 3 vertices.
+         * @return The newly created face handle.
          */
         Face add_face(const std::vector<Vertex> &f_vertices);
-
 
         /**
          * @brief Marks a face as deleted.
@@ -412,13 +433,11 @@ namespace Bcg {
          */
         void mark_deleted(const Face &f);
 
-
         /**
          * @brief Deletes a face.
          * @param f Face to delete.
          */
         void delete_face(const Face &f);
-
 
         /**
          * @brief Retrieves the halfedge of a face.
@@ -427,7 +446,6 @@ namespace Bcg {
          */
         Halfedge get_halfedge(const Face &f) const { return f_connectivity[f].h; }
 
-
         /**
          * @brief Sets the halfedge of a face.
          * @param f Face to set the halfedge for.
@@ -435,14 +453,12 @@ namespace Bcg {
          */
         void set_halfedge(const Face &f, const Halfedge &h) { f_connectivity[f].h = h; }
 
-
         /**
          * @brief Retrieves the valence of a face.
          * @param f Face to retrieve the valence for.
          * @return The valence of the face.
          */
         [[nodiscard]] size_t get_valence(const Face &f) const;
-
 
         /**
          * @brief Split the face \p f by first adding point \p p to the mesh and then inserting edges between \p p and
@@ -465,7 +481,6 @@ namespace Bcg {
          */
         void split(Face f, Vertex v);
 
-
         /**
          * @brief Retrieves a circulator for the vertices around a face.
          * @param f Face to retrieve the circulator for.
@@ -475,7 +490,6 @@ namespace Bcg {
             return {this, f};
         }
 
-
         /**
          * @brief Retrieves a circulator for the halfedges around a face.
          * @param f Face to retrieve the circulator for.
@@ -484,7 +498,6 @@ namespace Bcg {
         HalfedgeAroundFaceCirculator get_halfedges(const Face &f) const {
             return {this, f};
         }
-
 
         /**
          * @brief Adds an edge property to the Mesh.
@@ -499,7 +512,6 @@ namespace Bcg {
             return FaceProperty<T>(faces.add<T>(name, t));
         }
 
-
         /**
          * @brief Retrieves a face property by name.
          * @tparam T Type of the property.
@@ -510,7 +522,6 @@ namespace Bcg {
         FaceProperty<T> get_face_property(const std::string &name) const {
             return FaceProperty<T>(faces.get<T>(name));
         }
-
 
         /**
          * @brief Retrieves or adds a face property.
@@ -524,7 +535,6 @@ namespace Bcg {
             return FaceProperty<T>(faces.get_or_add<T>(name, t));
         }
 
-
         /**
          * @brief Removes a face property.
          * @tparam T Type of the property.
@@ -535,7 +545,6 @@ namespace Bcg {
             faces.remove(p);
         }
 
-
         /**
          * @brief Checks if a face property exists.
          * @param name Name of the property.
@@ -545,8 +554,15 @@ namespace Bcg {
             return faces.exists(name);
         }
 
+        /**
+         * @brief Triangulates a face.
+         * @param f Face to triangulate.
+         */
         void triangulate(const Face &f);
 
+        /**
+         * @brief Triangulates all non-triangular faces in the mesh.
+         */
         void triangulate();
 
     private:

@@ -69,6 +69,10 @@ namespace Bcg {
          */
         virtual void garbage_collection();
 
+        // -------------------------------------------------------------------------------------------------------------
+        // Vertex Methods
+        // -------------------------------------------------------------------------------------------------------------
+
         /**
          * @brief Returns the total number of undeleted vertices.
          * @return Number of undeleted vertices.
