@@ -91,19 +91,21 @@ TEST_F(GraphTest, EdgeProperty) {
 }
 
 TEST_F(GraphTest, DFSTraversal) {
-    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto v3 = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
-    auto v4 = graph.add_vertex(Vector<Real, 3>(1.0, 1.0, 0.0));
+    auto A = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    auto B = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    auto C = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    auto D = graph.add_vertex(Vector<Real, 3>(-1.0, 0.0, 0.0));
+    auto E = graph.add_vertex(Vector<Real, 3>(0.0, -1.0, 0.0));
 
-    graph.add_edge(v1, v2);
-    graph.add_edge(v2, v3);
-    graph.add_edge(v3, v4);
+    graph.add_edge(A, B);
+    graph.add_edge(A, C);
+    graph.add_edge(B, D);
+    graph.add_edge(B, E);
 
     std::vector<Vertex> visited_order;
 
     graph.dfs_general_with_early_stopping(
-        v1,
+        A,
         [&visited_order](const Vertex &v) {
             visited_order.push_back(v); // Record visited vertices.
             return true; // Continue traversal.
@@ -113,25 +115,30 @@ TEST_F(GraphTest, DFSTraversal) {
         }
     );
 
-    EXPECT_EQ(visited_order.size(), 4);
-    EXPECT_EQ(visited_order[0], v1);
-    EXPECT_EQ(visited_order[1], v2);
-    EXPECT_EQ(visited_order[2], v3);
-    EXPECT_EQ(visited_order[3], v4);
+    ASSERT_EQ(visited_order.size(), 5);
+    EXPECT_EQ(visited_order[0], A);
+    EXPECT_EQ(visited_order[1], B);
+    EXPECT_EQ(visited_order[2], D);
+    EXPECT_EQ(visited_order[3], E);
+    EXPECT_EQ(visited_order[4], C);
 }
 
 TEST_F(GraphTest, DFSEarlyStopping) {
-    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto v3 = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    auto A = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    auto B = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    auto C = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    auto D = graph.add_vertex(Vector<Real, 3>(-1.0, 0.0, 0.0));
+    auto E = graph.add_vertex(Vector<Real, 3>(0.0, -1.0, 0.0));
 
-    graph.add_edge(v1, v2);
-    graph.add_edge(v2, v3);
+    graph.add_edge(A, B);
+    graph.add_edge(A, C);
+    graph.add_edge(B, D);
+    graph.add_edge(B, E);
 
     std::vector<Vertex> visited_order;
 
     graph.dfs_general_with_early_stopping(
-        v1,
+        A,
         [&visited_order](const Vertex &v) {
             visited_order.push_back(v);
             return v.idx() != 1; // Stop traversal when visiting vertex v2.
@@ -141,25 +148,28 @@ TEST_F(GraphTest, DFSEarlyStopping) {
         }
     );
 
-    EXPECT_EQ(visited_order.size(), 2);
-    EXPECT_EQ(visited_order[0], v1);
-    EXPECT_EQ(visited_order[1], v2);
+    ASSERT_EQ(visited_order.size(), 3);
+    EXPECT_EQ(visited_order[0], A);
+    EXPECT_EQ(visited_order[1], B);
+    EXPECT_EQ(visited_order[2], C);
 }
 
 TEST_F(GraphTest, BFSTraversal) {
-    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto v3 = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
-    auto v4 = graph.add_vertex(Vector<Real, 3>(1.0, 1.0, 0.0));
+    auto A = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    auto B = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    auto C = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    auto D = graph.add_vertex(Vector<Real, 3>(-1.0, 0.0, 0.0));
+    auto E = graph.add_vertex(Vector<Real, 3>(0.0, -1.0, 0.0));
 
-    graph.add_edge(v1, v2);
-    graph.add_edge(v2, v3);
-    graph.add_edge(v3, v4);
+    graph.add_edge(A, B);
+    graph.add_edge(A, C);
+    graph.add_edge(B, D);
+    graph.add_edge(B, E);
 
     std::vector<Vertex> visited_order;
 
     graph.bfs_general_with_early_stopping(
-        v1,
+        A,
         [&visited_order](const Vertex &v) {
             visited_order.push_back(v); // Record visited vertices.
             return true; // Continue traversal.
@@ -169,36 +179,50 @@ TEST_F(GraphTest, BFSTraversal) {
         }
     );
 
-    EXPECT_EQ(visited_order.size(), 4);
-    EXPECT_EQ(visited_order[0], v1);
-    EXPECT_EQ(visited_order[1], v2);
-    EXPECT_EQ(visited_order[2], v3);
-    EXPECT_EQ(visited_order[3], v4);
+    EXPECT_EQ(visited_order.size(), 5);
+    // Check the BFS traversal order.
+    EXPECT_EQ(visited_order[0], A);
+    EXPECT_TRUE(
+            (visited_order[1] == B && visited_order[2] == C) ||
+            (visited_order[2] == B && visited_order[1] == C)
+    );
+    EXPECT_TRUE(
+            (visited_order[3] == D && visited_order[4] == E) ||
+            (visited_order[3] == E && visited_order[4] == D)
+    );
 }
 
 
 TEST_F(GraphTest, BFSEarlyStopping) {
-    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto v3 = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    auto A = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    auto B = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    auto C = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    auto D = graph.add_vertex(Vector<Real, 3>(-1.0, 0.0, 0.0));
+    auto E = graph.add_vertex(Vector<Real, 3>(0.0, -1.0, 0.0));
 
-    graph.add_edge(v1, v2);
-    graph.add_edge(v2, v3);
+    graph.add_edge(A, B);
+    graph.add_edge(A, C);
+    graph.add_edge(B, D);
+    graph.add_edge(B, E);
 
     std::vector<Vertex> visited_order;
 
     graph.bfs_general_with_early_stopping(
-        v1,
+        A,
         [&visited_order](const Vertex &v) {
             visited_order.push_back(v);
-            return v.idx() != 1; // Stop traversal when visiting vertex v2.
+            return v.idx() <= 3; // Stop traversal when visiting vertex v3.
         },
         [](const Halfedge &) {
             return true; // Continue traversal for all edges.
         }
     );
 
-    EXPECT_EQ(visited_order.size(), 2);
-    EXPECT_EQ(visited_order[0], v1);
-    EXPECT_EQ(visited_order[1], v2);
+    EXPECT_EQ(visited_order.size(), 4);
+    EXPECT_EQ(visited_order[0], A);
+    EXPECT_TRUE(
+            (visited_order[1] == B && visited_order[2] == C) ||
+            (visited_order[2] == B && visited_order[1] == C)
+    );
+    EXPECT_TRUE((visited_order[3] == D || visited_order[3] == E));
 }

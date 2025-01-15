@@ -428,7 +428,7 @@ namespace Bcg {
         mark_deleted(e);
     }
 
-    void Graph::dfs_general_with_early_stopping(const Vertex &start,
+    std::vector<bool> Graph::dfs_general_with_early_stopping(const Vertex &start,
                                              std::function<bool(const Vertex &)> vertex_action,
                                              std::function<bool(const Halfedge &)> halfedge_action) {
         std::vector<bool> visited(vertices.size(), false); // Vector to track visited vertices.
@@ -456,7 +456,7 @@ namespace Bcg {
         return visited;
     }
 
-    void Graph::bfs_general_with_early_stopping(const Vertex &start,
+    std::vector<bool> Graph::bfs_general_with_early_stopping(const Vertex &start,
                              std::function<bool(const Vertex &)> vertex_action,
                              std::function<bool(const Halfedge &)> halfedge_action) {
         std::vector<bool> visited(vertices.size(), false); // Vector to track visited vertices.
@@ -469,7 +469,7 @@ namespace Bcg {
             Vertex v = queue.front();
             queue.pop();
 
-            if (!vertex_action(v)) return; // Stop traversal if vertex action returns false.
+            if (!vertex_action(v)) return visited; // Stop traversal if vertex action returns false.
 
             for (const Halfedge &h : get_halfedges(v)) {
                 if (!halfedge_action(h)) continue; // Skip this edge if halfedge action returns false.
