@@ -6,6 +6,7 @@ target_sources(Engine25Tests PRIVATE
         TestPointCloud.cpp
         TestGraph.cpp
         TestMesh.cpp
+        TestVoxelGridDownsampling.cpp
 )
 
 target_link_libraries(Engine25Tests PUBLIC Engine25 gtest_main gtest)

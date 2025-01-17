@@ -26,6 +26,19 @@ namespace Bcg {
         a = b;
         b = tmp;
     }
+
+    template<typename T, int N>
+    CUDA_HOST_DEVICE
+    Vector<T, N> CumulativeProduct(const Vector<T, N> &input) {
+        Vector<T, N> output = Vector<T, N>::Ones();
+        if (input.size() > 0) {
+            output[0] = input[0];
+            for (int i = 1; i < input.size(); ++i) {
+                output[i] = output[i - 1] * input[i];
+            }
+        }
+        return output;
+    }
 }
 
 #endif //MATH_H
