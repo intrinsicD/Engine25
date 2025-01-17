@@ -7,13 +7,12 @@
 
 #include <vector>
 #include <unordered_map>
-#include "Math.h"
+#include "AABB.h"
 
 namespace Bcg{
     template<typename T, int N>
     struct VoxelGridContext {
-        Vector<T, N> aabb_min;
-        Vector<T, N> aabb_max;
+        AABB<T, N> aabb;
         Vector<int, N> grid_dims;
         Vector<T, N> strides;
         Vector<T, N> voxel_size;
@@ -27,16 +26,11 @@ namespace Bcg{
 
         private:
           void ComputeAABB(const std::vector<Vector<T, N>> &points) {
-            aabb_min = Vector<T, N>::Constant(std::numeric_limits<T>::max());
-            aabb_max = Vector<T, N>::Constant(std::numeric_limits<T>::lowest());
-            for (const auto& point : points) {
-                aabb_min = aabb_min.cwiseMin(point);
-                aabb_max = aabb_max.cwiseMax(point);
-            }
+            aabb = AABB(points.begin(), points.end());
           }
 
           void ComputeGridDims() {
-            grid_dims = ((aabb_max - aabb_min).array() / voxel_size.array()).ceil().template cast<int>();
+            grid_dims = ((aabb.max - aabb.min).array() / voxel_size.array()).ceil().template cast<int>();
           }
 
           void ComputeStrides() {
