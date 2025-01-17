@@ -52,6 +52,11 @@ namespace Bcg {
         using Handle::Handle;
     };
 
+    class Voxel : public Handle {
+    public:
+        using Handle::Handle;
+    };
+
     inline std::ostream &operator<<(std::ostream &os, Vertex v) {
         return (os << 'v' << v.idx());
     }
@@ -193,6 +198,23 @@ namespace Bcg {
 
         typename Property<T>::const_reference operator[](Tet t) const {
             return Property<T>::operator[](t.idx());
+        }
+    };
+
+    template<class T>
+    class VoxelProperty : public Property<T> {
+    public:
+        explicit VoxelProperty() = default;
+
+        explicit VoxelProperty(Property<T> p) : Property<T>(p) {
+        }
+
+        typename Property<T>::reference operator[](Voxel v) {
+            return Property<T>::operator[](v.idx());
+        }
+
+        typename Property<T>::const_reference operator[](Voxel v) const {
+            return Property<T>::operator[](v.idx());
         }
     };
 
@@ -803,7 +825,7 @@ namespace Bcg {
 
         [[nodiscard]] size_t n_vertices() const { return size() - num_deleted; }
 
-        [[nodiscard]] bool is_empty() const override{
+        [[nodiscard]] bool is_empty() const override {
             return n_vertices() == 0;
         }
 
@@ -876,7 +898,7 @@ namespace Bcg {
 
         [[nodiscard]] size_t n_halfedges() const { return size() - num_deleted; }
 
-        [[nodiscard]] bool is_empty() const override{
+        [[nodiscard]] bool is_empty() const override {
             return n_halfedges() == 0;
         }
 
@@ -948,7 +970,7 @@ namespace Bcg {
 
         [[nodiscard]] size_t n_edges() const { return size() - num_deleted; }
 
-        [[nodiscard]] bool is_empty() const override{
+        [[nodiscard]] bool is_empty() const override {
             return n_edges() == 0;
         }
 
@@ -1144,6 +1166,87 @@ namespace Bcg {
         }
 
         [[nodiscard]] std::vector<std::string> tet_properties() const {
+            return properties();
+        }
+    };
+
+
+    class Voxels : public PropertyContainer {
+    public:
+        using VoxelIterator = Iterator<Voxels, Voxel>;
+
+        VoxelProperty<bool> v_deleted;
+        size_t num_deleted;
+
+        Voxels() : v_deleted(voxel_property<bool>("v:deleted", false)), num_deleted(0) {
+        }
+
+        VoxelIterator begin() {
+            return {Voxel(0), this};
+        }
+
+        VoxelIterator end() {
+            return {Voxel(size()), this};
+        }
+
+        VoxelIterator begin() const {
+            return {Voxel(0), this};
+        }
+
+        VoxelIterator end() const {
+            return {Voxel(size()), this};
+        }
+
+        [[nodiscard]] size_t n_voxels() const { return size() - num_deleted; }
+
+        [[nodiscard]] bool is_empty() const override {
+            return n_voxels() == 0;
+        }
+
+        [[nodiscard]] bool is_valid(const Voxel &v) const {
+            return v.idx() < size();
+        }
+
+        [[nodiscard]] bool is_deleted(const Voxel &v) const {
+            return v_deleted[v];
+        }
+
+        [[nodiscard]] bool has_garbage() const {
+            return num_deleted > 0;
+        }
+
+        void clear() override {
+            PropertyContainer::clear();
+            v_deleted = voxel_property<bool>("v:deleted", false);
+            num_deleted = 0;
+        }
+
+        template<class T>
+        VoxelProperty<T> add_voxel_property(const std::string &name,
+                                          const T t = T()) {
+            return VoxelProperty<T>(add<T>(name, t));
+        }
+
+        template<class T>
+        VoxelProperty<T> get_voxel_property(const std::string &name) const {
+            return VoxelProperty<T>(get<T>(name));
+        }
+
+        template<class T>
+        VoxelProperty<T> voxel_property(const std::string &name, const T t = T()) {
+            return VoxelProperty<T>(get_or_add<T>(name, t));
+        }
+
+        template<class T>
+        void remove_voxel_property(VoxelProperty<T> &p) {
+            remove(p);
+        }
+
+        [[nodiscard]] bool has_voxel_property(const std::string &name) const {
+            return exists(name);
+        }
+
+        [[nodiscard]] std::vector<std::string> voxel_properties() const {
             return properties();
         }
     };

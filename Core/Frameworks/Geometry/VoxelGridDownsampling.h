@@ -8,6 +8,7 @@
 #include <vector>
 #include <unordered_map>
 #include "AABB.h"
+#include "VoxelGrid.h"
 
 namespace Bcg{
     template<typename T, int N>
