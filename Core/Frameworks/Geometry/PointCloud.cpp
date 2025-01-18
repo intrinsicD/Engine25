@@ -87,12 +87,6 @@ namespace Bcg {
 
         auto nV = vertices.size();
 
-        // setup handle mapping
-        VertexProperty<Vertex> vmap = vertices.vertex_property<Vertex>("v:garbage_collection");
-
-        for (size_t i = 0; i < nV; ++i)
-            vmap[Vertex(i)] = Vertex(i);
-
         // remove deleted vertices
         if (nV > 0) {
             size_t i0 = 0;
@@ -114,9 +108,6 @@ namespace Bcg {
             // remember new size
             nV = v_deleted[Vertex(i0)] ? i0 : i0 + 1;
         }
-
-        // remove handle maps
-        vertices.remove_vertex_property(vmap);
 
         // finally resize arrays
         vertices.resize(nV);

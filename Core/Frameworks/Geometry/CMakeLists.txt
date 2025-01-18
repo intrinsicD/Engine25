@@ -3,4 +3,5 @@ target_sources(Engine25 PRIVATE
     PointCloud.cpp
     Graph.cpp
     Mesh.cpp
+    VoxelGrid.cpp
 )

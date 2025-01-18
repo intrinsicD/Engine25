@@ -40,8 +40,8 @@ namespace Bcg {
         Eigen::Vector3f voxel_size(0.5f, 0.5f, 0.5f);
         VoxelGridContext<float, 3> context(points, voxel_size);
 
-        EXPECT_EQ(context.aabb_min, Eigen::Vector3f(0.1f, 0.2f, 0.3f));
-        EXPECT_EQ(context.aabb_max, Eigen::Vector3f(1.0f, 1.5f, 1.2f));
+        EXPECT_EQ(context.aabb.min(), Eigen::Vector3f(0.1f, 0.2f, 0.3f));
+        EXPECT_EQ(context.aabb.max(), Eigen::Vector3f(1.0f, 1.5f, 1.2f));
     }
 
     TEST(VoxelGridContextTests, ComputeGridDimsAndStrides) {

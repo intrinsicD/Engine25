@@ -27,11 +27,11 @@ namespace Bcg{
 
         private:
           void ComputeAABB(const std::vector<Vector<T, N>> &points) {
-            aabb = AABB(points.begin(), points.end());
+            aabb = AABB<T, N>(points.begin(), points.end());
           }
 
           void ComputeGridDims() {
-            grid_dims = ((aabb.max - aabb.min).array() / voxel_size.array()).ceil().template cast<int>();
+            grid_dims = ((aabb.max() - aabb.min()).array() / voxel_size.array()).ceil().template cast<int>();
           }
 
           void ComputeStrides() {
