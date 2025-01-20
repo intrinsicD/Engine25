@@ -1208,7 +1208,7 @@ namespace Bcg {
         }
 
         [[nodiscard]] bool is_deleted(const Voxel &v) const {
-            return v_deleted[v];
+            return !v.is_valid() || v_deleted[v];
         }
 
         [[nodiscard]] bool has_garbage() const {

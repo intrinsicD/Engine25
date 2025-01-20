@@ -1,116 +1,64 @@
 //
-// Created by alex on 1/17/25.
+// Created by alex on 20.01.25.
 //
 
-#ifndef VOXELGRIDDOWNSAMPLING_H
-#define VOXELGRIDDOWNSAMPLING_H
+#ifndef ENGINE25_VOXELGRIDDOWNSAMPLING_H
+#define ENGINE25_VOXELGRIDDOWNSAMPLING_H
 
-#include <vector>
-#include <unordered_map>
-#include "AABB.h"
 #include "VoxelGrid.h"
 
-namespace Bcg{
-    template<typename T, int N>
-    struct VoxelGridContext {
-        AABB<T, N> aabb;
-        Vector<int, N> grid_dims;
-        Vector<T, N> strides;
-        Vector<T, N> voxel_size;
+namespace Bcg {
+    class VoxelGridDownsampling {
+    public:
+        explicit VoxelGridDownsampling(const std::vector<Vector<Real, 3>> &positions) : positions(positions),
+                                                                                        grid() {
 
-        VoxelGridContext(const std::vector<Vector<T, N>>& points, const Vector<T, N>& voxel_size)
-            : voxel_size(voxel_size) {
-            ComputeAABB(points);
-            ComputeGridDims();
-            ComputeStrides();
+            integrated_positions = grid.voxel_property<Vector<Real, 3>>("v:integrated_position", Vector<Real, 3>::Zero());
+            counts = grid.voxel_property("v:count", 0);
+            assert(integrated_positions);
+            assert(counts);
         }
 
-        private:
-          void ComputeAABB(const std::vector<Vector<T, N>> &points) {
-            aabb = AABB<T, N>(points.begin(), points.end());
-          }
-
-          void ComputeGridDims() {
-            grid_dims = ((aabb.max() - aabb.min()).array() / voxel_size.array()).ceil().template cast<int>();
-          }
-
-          void ComputeStrides() {
-            strides = Vector<T, N>::Ones();
-              if (grid_dims.size() > 1) {
-                  strides.tail(N - 1) = CumulativeProduct<int, N-1>(grid_dims.head(N - 1)).template cast<T>();
-              }
-          }
-    };
-
-    template<typename T, int N>
-    size_t FlattenVoxelIndexLoop(const Vector<int, N>& idx, const Vector<int, N>& grid_dims) {
-        size_t key = 0;
-        size_t multiplier = 1;
-        for (int i = 0; i < N; ++i) {
-            key += idx[i] * multiplier;
-            multiplier *= grid_dims[i];
-        }
-        return key;
-    }
-
-    template<typename T, int N>
-    size_t FlattenVoxelIndexVectorized(const Vector<int, N>& idx, const Vector<int, N>& grid_dims) {
-        // Compute cumulative strides for flattening
-        Vector<T, N> strides = Vector<T, N>::Ones();
-        if (grid_dims.size() > 1) {
-            strides.tail(N - 1) = CumulativeProduct<int, N-1>(grid_dims.head(N - 1)).template cast<T>();
-        }
-
-        // Flattened index as dot product of idx and strides
-        return idx.dot(strides);
-    }
-
-    template<typename T, int N>
-    Vector<int, N> VoxelIndex(const Vector<T, N> &point, const Vector<T, N> &voxel_size) {
-        return (point.array() / voxel_size.array() + T(1e-6)).template cast<int>();
-    }
-
-    template<typename T, int N>
-    std::unordered_map<size_t, std::pair<Vector<T, N>, int>> FillVoxelMap(const std::vector<Vector<T, N>> &points,
-                                                                          const VoxelGridContext<T, N> &context) {
-        std::unordered_map<size_t, std::pair<Vector<T, N>, int>> voxelMap;
-        voxelMap.reserve(context.grid_dims.prod());
-        for (const auto& point : points) {
-            // Compute voxel index. Points  might be outside the grid. Can be fixed by clamping to the aabb.
-            Vector<int, N> voxelIdx = VoxelIndex(point, context.voxel_size);
-            size_t key = voxelIdx.transpose().template cast<T>() * context.strides; // FlattenVoxelIndexVectorized but with strides precomputed
-            auto [it, inserted] = voxelMap.try_emplace(key, point, 1); // Insert or get iterator
-            if (!inserted) {
-                it->second.first += point; // Accumulate position
-                it->second.second += 1;    // Increment count
+        bool build_grid(const AABB<Real, 3> &aabb, const Vector<Real, 3> &voxel_sizes) {
+            if (voxel_sizes.minCoeff() <= 0) {
+                return false;
             }
-        }
-        return voxelMap;
-    }
 
-    template<typename T, int N>
-    std::vector<Vector<T, N>> ExtractDownsampledPoints(const std::unordered_map<size_t, std::pair<Vector<T, N>, int>> &voxelMap) {
-        std::vector<Vector<T, N>> downsampled_points;
-        downsampled_points.reserve(voxelMap.size());
-        for (const auto& [voxelIdx, data] : voxelMap) {
-            downsampled_points.push_back(data.first / static_cast<T>(data.second)); // Compute average
-        }
-        return downsampled_points;
-    }
+            Vector<int, 3> grid_dims = GridDims(aabb, voxel_sizes);
+            Vector<int, 3> strides = Strides(grid_dims);
 
-    template<typename T, int N>
-    std::vector<Vector<T, N>> VoxelGridDownsampling(const std::vector<Vector<T, N>> &points, const Vector<T, N> &voxel_size) {
-        if(voxel_size.minCoeff() <= 0) {
-            throw std::invalid_argument("voxel_size must be greater than 0 in all dimensions.");
-        }
-        if(points.empty()) {
-            return {};
+            grid.voxels.reserve(grid_dims.prod());
+            for (const auto &point: positions) {
+                Vector<int, 3> voxelIdx = VoxelIndex(point, voxel_sizes);
+                size_t linearIdx = VoxelLinearIndex(voxelIdx, strides);
+                auto v = grid.add_voxel(linearIdx);
+                integrated_positions[v] += point;
+                counts[v] += 1;
+            }
+
+            return true;
         }
 
-        auto context = VoxelGridContext<T, N>(points, voxel_size);
-        auto voxelMap = FillVoxelMap(points, context);
-        return ExtractDownsampledPoints(voxelMap);
-    }
+        std::vector<Vector<Real, 3>> downsampled_positions() {
+            if (grid.is_empty()) {
+                return {};
+            }
+
+            std::vector<Vector<Real, 3>> downsampled_positions;
+            for (const auto &v: grid.voxels) {
+                if (counts[v] > 0) {
+                    downsampled_positions.emplace_back(integrated_positions[v] / counts[v]);
+                }
+            }
+            return downsampled_positions;
+        }
+
+    private:
+        const std::vector<Vector<Real, 3>> positions;
+        VoxelProperty<Vector<Real, 3>> integrated_positions;
+        VoxelProperty<int> counts;
+        VoxelGrid grid;
+    };
 }
 
-#endif //VOXELGRIDDOWNSAMPLING_H
+#endif //ENGINE25_VOXELGRIDDOWNSAMPLING_H

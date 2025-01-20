@@ -22,7 +22,7 @@ namespace Bcg {
      * @return A vector containing the sizes of the voxels in each dimension.
      */
     template<typename T, int N>
-    Vector<T, N> VoxelSizes(const AABB<T, N> &aabb, const Vector<int, N> &grid_dims) {
+    inline Vector<T, N> VoxelSizes(const AABB<T, N> &aabb, const Vector<int, N> &grid_dims) {
         return (aabb.max() - aabb.min()).array() / grid_dims.array().template cast<T>();
     }
 
@@ -39,7 +39,7 @@ namespace Bcg {
      * @return A vector containing the dimensions of the grid.
      */
     template<typename T, int N>
-    Vector<int, N> GridDims(const AABB<T, N> &aabb, const Vector<T, N> &voxel_size) {
+    inline Vector<int, N> GridDims(const AABB<T, N> &aabb, const Vector<T, N> &voxel_size) {
         return ((aabb.max() - aabb.min()).array() / voxel_size.array()).ceil().template cast<int>();
     }
 
@@ -54,12 +54,33 @@ namespace Bcg {
      * @return A vector containing the strides for each dimension.
      */
     template<int N>
-    Vector<int, N> Strides(const Vector<int, N> &grid_dims) {
+    inline Vector<int, N> Strides(const Vector<int, N> &grid_dims) {
         Vector<int, N> strides = Vector<int, N>::Ones();
         if (grid_dims.size() > 1) {
             strides.tail(N - 1) = CumulativeProduct<int, N - 1>(grid_dims.head(N - 1));
         }
         return strides;
+    }
+
+    /**
+     * @brief Computes the voxel index for a given point.
+     *
+     * This function calculates the voxel index for a given point based on the voxel size.
+     * The point coordinates are divided by the voxel size to determine the index, and a small
+     * epsilon value is added to ensure correct rounding.
+     *
+     * @tparam T The type of the coordinates (e.g., float, double).
+     * @tparam N The number of dimensions.
+     * @param point The coordinates of the point.
+     * @param voxel_size The size of the voxels.
+     * @return A vector containing the voxel index in each dimension.
+     */
+    template<typename T, int N>
+    inline Vector<int, N> VoxelIndex(const Vector<T, N> &point, const Vector<T, N> &voxel_size) {
+        if (voxel_size.minCoeff() <= 0) {
+            return Vector<int, N>::Zero();
+        }
+        return (point.array() / voxel_size.array() + T(1e-6)).template cast<int>();
     }
 
     /**
@@ -74,7 +95,7 @@ namespace Bcg {
      * @return The linear index of the voxel.
      */
     template<int N>
-    size_t VoxelLinearIndex(const Vector<int, N> &idx, const Vector<int, N> &strides) {
+    inline size_t VoxelLinearIndex(const Vector<int, N> &idx, const Vector<int, N> &strides) {
         return idx.dot(strides);
     }
 
@@ -90,7 +111,7 @@ namespace Bcg {
      * @return The multi-dimensional index of the voxel.
      */
     template<int N>
-    Vector<int, N> VoxelIndex(size_t linear_index, const Vector<int, N> &strides) {
+    inline Vector<int, N> VoxelIndex(size_t linear_index, const Vector<int, N> &strides) {
         Vector<int, N> idx;
         for (int i = N - 1; i >= 0; --i) {
             idx[i] = linear_index / strides[i];
@@ -165,7 +186,7 @@ namespace Bcg {
          * @brief Returns the total number of undeleted voxels.
          * @return Number of undeleted voxels.
          */
-        [[nodiscard]] size_t n_voxels() const { return voxels.size(); }
+        [[nodiscard]] size_t n_voxels() const { return voxels.n_voxels(); }
 
         /**
          * @brief Checks if the VoxelGrid is empty.
@@ -277,14 +298,19 @@ namespace Bcg {
         template<int N>
         Voxel add_voxel(const Vector<int, N> &idx, const Vector<int, N> &strides) {
             size_t linear_index_key = idx.dot(strides);
-            auto [iter, inserted] = sparse_voxels_map.try_emplace(linear_index_key, Voxel());
-            if (inserted) {
-                Voxel v = new_voxel();
-                iter->second = v;
-                v_linear_index[v] = linear_index_key;
-            }
-            return iter->second;
+            return add_voxel(linear_index_key);
         }
+
+        /**
+         * @brief Adds a voxel at the specified linear index.
+         *
+         * This function adds a voxel to the grid at the given linear index. If a voxel already exists
+         * at the computed index, it is returned. Otherwise, a new voxel is created and added to the grid.
+         *
+         * @param linear_index The linear index of the voxel in the grid.
+         * @return The voxel at the specified index.
+         */
+        Voxel add_voxel(size_t linear_index);
 
         /**
          * @brief Marks a voxel as deleted.

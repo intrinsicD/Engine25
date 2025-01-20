@@ -10,7 +10,6 @@ namespace Bcg {
         v_linear_index = voxel_property<size_t>("v:linear_index", 0);
     }
 
-
     VoxelGrid &VoxelGrid::operator=(const VoxelGrid &rhs) {
         if (this != &rhs) {
             voxels = rhs.voxels;
@@ -102,6 +101,16 @@ namespace Bcg {
     // -------------------------------------------------------------------------------------------------------------
     // Voxel Methods
     // -------------------------------------------------------------------------------------------------------------
+
+    Voxel VoxelGrid::add_voxel(size_t linear_index) {
+        auto [iter, inserted] = sparse_voxels_map.try_emplace(linear_index, Voxel());
+        if (inserted) {
+            Voxel v = new_voxel();
+            iter->second = v;
+            v_linear_index[v] = linear_index;
+        }
+        return iter->second;
+    }
 
     void VoxelGrid::mark_deleted(const Voxel &v) {
         if (v_deleted[v])

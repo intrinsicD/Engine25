@@ -28,7 +28,7 @@ namespace Bcg {
 
         // Constructor to create an AABB enclosing a range of points specified by iterators
         template<typename Iterator>
-        AABB(Iterator first, Iterator last) {
+        void build(Iterator first, Iterator last) {
             for (auto it = first; it != last; ++it) {
                 grow(*it);
             }
