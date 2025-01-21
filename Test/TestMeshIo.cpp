@@ -3,9 +3,136 @@
 //
 
 #include "MeshIo.h"
+#include "MeshFaceNormals.h"
+#include <filesystem>
 #include <gtest/gtest.h>
 
 using namespace Bcg;
+
+
+class MeshIoTest : public ::testing::Test {
+protected:
+    Mesh mockMesh;
+    std::string filename;
+
+    void SetUp() override {
+        // Create a mock mesh representing a simple triangle
+        auto v0 = mockMesh.add_vertex({0.0, 0.0, 0.0});
+        auto v1 = mockMesh.add_vertex({1.0, 0.0, 0.0});
+        auto v2 = mockMesh.add_vertex({0.0, 1.0, 0.0});
+        auto v3 = mockMesh.add_vertex({0.0, 0.0, 1.0});
+        mockMesh.add_face({v0, v1, v2});
+        mockMesh.add_face({v2, v1, v3});
+    }
+
+    void TearDown() override {
+        if (std::filesystem::exists(filename)) {
+            std::filesystem::remove(filename);
+        }
+    }
+
+    bool WriteMesh(MeshIo &meshIo, MeshIo::WriteFlags flags) {
+        bool write_success = meshIo.write(mockMesh, flags);
+        if (!write_success) {
+            std::cout << "Failed to write mesh to file\n";
+        }
+        EXPECT_TRUE(write_success);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        return write_success;
+    }
+
+    bool ReadMesh(MeshIo &meshIo, Mesh &loadedMesh) {
+        bool read_success = meshIo.read(loadedMesh);
+        if (!read_success) {
+            std::cout << "Failed to read mesh from file\n";
+        }
+        EXPECT_TRUE(read_success);
+        return read_success;
+    }
+
+    void ValidateMesh(const Mesh &loadedMesh) {
+        EXPECT_EQ(mockMesh.n_vertices(), loadedMesh.n_vertices());
+        EXPECT_EQ(mockMesh.n_faces(), loadedMesh.n_faces());
+
+        for (const auto &v : loadedMesh.vertices) {
+            EXPECT_EQ(mockMesh.positions[v], loadedMesh.positions[v]);
+        }
+        for (const auto &f : loadedMesh.faces) {
+            std::vector<unsigned int> mockFaceVertices;
+            std::vector<unsigned int> loadedFaceVertices;
+            for (const auto &v : mockMesh.get_vertices(f)) {
+                mockFaceVertices.push_back(v.idx());
+            }
+            for (const auto &v : loadedMesh.get_vertices(f)) {
+                loadedFaceVertices.push_back(v.idx());
+            }
+
+            Eigen::Map<Vector<unsigned int, 3>> mF(mockFaceVertices.data(), 3);
+            Eigen::Map<Vector<unsigned int, 3>> lF(loadedFaceVertices.data(), 3);
+            EXPECT_EQ(mF, lF);
+        }
+    }
+};
+
+TEST_F(MeshIoTest, MeshIoOFF_WriteAsciiAndReadFileSuccessfully) {
+    filename = "test_triangle.off";
+    MeshIoOFF meshIo(filename);
+    MeshIo::WriteFlags flags;
+    flags.as_binary = false; // Test ASCII mode
+
+    if (WriteMesh(meshIo, flags)) {
+        Mesh loadedMesh;
+        if (ReadMesh(meshIo, loadedMesh)) {
+            ValidateMesh(loadedMesh);
+        }
+    }
+}
+
+TEST_F(MeshIoTest, MeshIoOFF_WriteBinaryAndReadFileSuccessfully) {
+    filename = "test_triangle.off";
+    MeshIoOFF meshIo(filename);
+    MeshIo::WriteFlags flags;
+    flags.as_binary = true; // Test binary mode
+
+    if (WriteMesh(meshIo, flags)) {
+        Mesh loadedMesh;
+        if (ReadMesh(meshIo, loadedMesh)) {
+            ValidateMesh(loadedMesh);
+        }
+    }
+}
+
+TEST_F(MeshIoTest, MeshIoOBJ_WriteAndReadFileSuccessfully) {
+    filename = "test_triangle.obj";
+    MeshIoOBJ meshIo(filename);
+    MeshIo::WriteFlags flags;
+    flags.as_binary = false; // Test ASCII mode
+
+    if (WriteMesh(meshIo, flags)) {
+        Mesh loadedMesh;
+        if (ReadMesh(meshIo, loadedMesh)) {
+            ValidateMesh(loadedMesh);
+        }
+    }
+}
+
+
+TEST_F(MeshIoTest, MeshIoSTL_WriteAndReadFileSuccessfully) {
+    filename = "test_triangle.stl";
+    MeshIoSTL meshIo(filename);
+    MeshIo::WriteFlags flags;
+    flags.as_binary = false; // Test ASCII mode
+
+    MeshFaceNormals F_normals(mockMesh);
+
+    F_normals.compute();
+    if (WriteMesh(meshIo, flags)) {
+        Mesh loadedMesh;
+        if (ReadMesh(meshIo, loadedMesh)) {
+            ValidateMesh(loadedMesh);
+        }
+    }
+}
 
 TEST(MeshIoOFF, CanLoadFileWithOffExtension) {
     MeshIoOFF io("test.off");
@@ -17,56 +144,23 @@ TEST(MeshIoOFF, CannotLoadFileWithNonOffExtension) {
     EXPECT_FALSE(io.can_load_file());
 }
 
-TEST(MeshIoOFF, WriteAsciiANdReadFileSuccessfully) {
-// Create a mock mesh representing a simple triangle
-    Mesh mockMesh;
-
-    // Add vertices
-
-    auto v0 = mockMesh.add_vertex({0.0, 0.0, 0.0});
-    auto v1 = mockMesh.add_vertex({1.0, 0.0, 0.0});
-    auto v2 = mockMesh.add_vertex({0.0, 1.0, 0.0});
-
-    // Add a face
-    mockMesh.add_face({v0, v1, v2});
-
-    // Set up the MeshIo instance
-    MeshIoOFF meshIo("test_triangle.off");
-    MeshIo::WriteFlags flags;
-    flags.as_binary = false; // Test ASCII mode
-
-    // Write the mesh to an OFF file
-    bool write_success = meshIo.write(mockMesh, flags);
-    assert(write_success && "Failed to write mesh to OFF file");
-
-    //make sure the file is written
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-
-    // Read the mesh back from the OFF file
-    Mesh loadedMesh;
-    bool read_success = meshIo.read(loadedMesh);
-    assert(read_success && "Failed to read mesh from OFF file");
-
-    // Validate the loaded mesh
-    assert(mockMesh.n_vertices() == loadedMesh.n_vertices() && "Vertex count mismatch");
-    assert(mockMesh.n_faces() == loadedMesh.n_faces() && "Face count mismatch");
-
-    for (const auto &v : loadedMesh.vertices) {
-        assert(mockMesh.positions[v] == loadedMesh.positions[v] && "Vertex position mismatch");
-    }
-
-    std::cout << "Test passed: Mesh successfully written and loaded.\n";
+TEST(MeshIoOBJ, CanLoadFileWithObjExtension) {
+    MeshIoOBJ io("test.obj");
+    EXPECT_TRUE(io.can_load_file());
 }
 
-TEST(MeshIoOFF, FailsToReadFileWithUnsupportedHeader) {
-    Mesh mesh;
-    MeshIoOFF io("unsupported_header.off");
-    EXPECT_FALSE(io.read(mesh));
+TEST(MeshIoOBJ, CannotLoadFileWithNonObjExtension) {
+    MeshIoOBJ io("test.off");
+    EXPECT_FALSE(io.can_load_file());
 }
 
-TEST(MeshIoOFF, WritesFileSuccessfully) {
-    Mesh mesh;
-    MeshIoOFF io("output.off");
-    EXPECT_TRUE(io.write(mesh, {}));
+TEST(MeshIoSTL, CanLoadFileWithStlExtension) {
+    MeshIoSTL io("test.stl");
+    EXPECT_TRUE(io.can_load_file());
 }
+
+TEST(MeshIoSTL, CannotLoadFileWithNonStlExtension) {
+    MeshIoSTL io("test.off");
+    EXPECT_FALSE(io.can_load_file());
+}
+

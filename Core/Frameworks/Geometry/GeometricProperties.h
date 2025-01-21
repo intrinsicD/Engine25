@@ -895,6 +895,14 @@ namespace Bcg {
             return {Halfedge(size()), this};
         }
 
+        HalfEdgeIterator begin() const {
+            return {Halfedge(0), this};
+        }
+
+        HalfEdgeIterator end() const {
+            return {Halfedge(size()), this};
+        }
+
 
         [[nodiscard]] size_t n_halfedges() const { return size() - num_deleted; }
 
@@ -965,6 +973,14 @@ namespace Bcg {
         }
 
         EdgeIterator end() {
+            return {Edge(size()), this};
+        }
+
+        EdgeIterator begin() const {
+            return {Edge(0), this};
+        }
+
+        EdgeIterator end() const {
             return {Edge(size()), this};
         }
 
@@ -1120,6 +1136,14 @@ namespace Bcg {
             return {Tet(size()), this};
         }
 
+        TetIterator begin() const {
+            return {Tet(0), this};
+        }
+
+        TetIterator end() const {
+            return {Tet(size()), this};
+        }
+
         [[nodiscard]] size_t n_tets() const { return size() - num_deleted; }
 
         [[nodiscard]] bool is_valid(const Tet &t) const {
@@ -1223,7 +1247,7 @@ namespace Bcg {
 
         template<class T>
         VoxelProperty<T> add_voxel_property(const std::string &name,
-                                          const T t = T()) {
+                                            const T t = T()) {
             return VoxelProperty<T>(add<T>(name, t));
         }
 

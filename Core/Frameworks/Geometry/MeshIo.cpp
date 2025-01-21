@@ -3,16 +3,45 @@
 //
 
 #include "MeshIo.h"
-#include <filesystem>
+#include <format>
+#include <regex>
+#include <fstream>
+#include <array>
+#include <vector>
+#include <unordered_map>
+#include <string>
+#include <algorithm>
+#include <cctype>
+#include <sstream>
 #include <iostream>
+#include <filesystem>
+
+// Define a custom hash function for Vector<Real, 3>
+namespace std {
+    template<>
+    struct hash<Bcg::Vector<Bcg::Real, 3> > {
+        size_t operator()(const Bcg::Vector<Bcg::Real, 3> &vec) const {
+            size_t h1 = std::hash<Bcg::Real>{}(vec[0]);
+            size_t h2 = std::hash<Bcg::Real>{}(vec[1]);
+            size_t h3 = std::hash<Bcg::Real>{}(vec[2]);
+            return h1 ^ (h2 << 1) ^ (h3 << 2);
+        }
+    };
+}
 
 namespace Bcg {
+    bool is_valid_filename(const std::string &filename) {
+        // Allow only alphanumeric characters, underscores, hyphens, and dots in filenames
+        std::regex valid_filename_regex("^[a-zA-Z0-9._-]+$");
+        return std::regex_match(filename, valid_filename_regex);
+    }
+
     bool MeshIoOFF::can_load_file() {
         return std::filesystem::path(m_filename).extension() == ".off";
     }
 
-    bool ReadOFFBinary(std::ifstream &file, Mesh &mesh, VertexProperty<Vector<Real, 3>> normals,
-                       VertexProperty<Vector<Real, 3>> colors, VertexProperty<Vector<Real, 2>> texcoords) {
+    bool ReadOFFBinary(std::ifstream &file, Mesh &mesh, VertexProperty<Vector<Real, 3> > normals,
+                       VertexProperty<Vector<Real, 3> > colors, VertexProperty<Vector<Real, 2> > texcoords) {
         size_t numVertices, numFaces, numEdges;
         file.read(reinterpret_cast<char *>(&numVertices), sizeof(size_t));
         file.read(reinterpret_cast<char *>(&numFaces), sizeof(size_t));
@@ -53,8 +82,8 @@ namespace Bcg {
         return true;
     }
 
-    bool ReadOFFAscii(std::ifstream &file, Mesh &mesh, VertexProperty<Vector<Real, 3>> normals,
-                      VertexProperty<Vector<Real, 3>> colors, VertexProperty<Vector<Real, 2>> texcoords) {
+    bool ReadOFFAscii(std::ifstream &file, Mesh &mesh, VertexProperty<Vector<Real, 3> > normals,
+                      VertexProperty<Vector<Real, 3> > colors, VertexProperty<Vector<Real, 2> > texcoords) {
         size_t numVertices, numFaces, numEdges;
         file >> numVertices >> numFaces >> numEdges;
 
@@ -103,7 +132,12 @@ namespace Bcg {
     }
 
     bool MeshIoOFF::read(Mesh &mesh) {
-        std::ifstream file("filename.off", std::ios::in | std::ios::binary);
+        if (!is_valid_filename(m_filename)) {
+            std::cerr << "Error: Invalid filename." << std::endl;
+            return false;
+        }
+
+        std::ifstream file(m_filename, std::ios::in | std::ios::binary);
         if (!file.is_open()) {
             std::cerr << "Error: MeshIoOff::read: Could not open file for reading." << std::endl;
             return false;
@@ -148,20 +182,22 @@ namespace Bcg {
             return false;
         }
 
-        VertexProperty<Vector<Real, 3>> normals;
+        VertexProperty<Vector<Real, 3> > normals;
         if (has_normals) {
-            normals = mesh.vertex_property<Vector<Real, 3>>("v:normal");
+            normals = mesh.vertex_property<Vector<Real, 3> >("v:normal");
         }
 
-        VertexProperty<Vector<Real, 3>> colors;
+        VertexProperty<Vector<Real, 3> > colors;
         if (has_colors) {
-            colors = mesh.vertex_property<Vector<Real, 3>>("v:color");
+            colors = mesh.vertex_property<Vector<Real, 3> >("v:color");
         }
 
-        VertexProperty<Vector<Real, 2>> texcoords;
+        VertexProperty<Vector<Real, 2> > texcoords;
         if (has_texcoords) {
-            texcoords = mesh.vertex_property<Vector<Real, 2>>("v:tex");
+            texcoords = mesh.vertex_property<Vector<Real, 2> >("v:tex");
         }
+
+        mesh.clear();
 
         if (is_binary) {
             return ReadOFFBinary(file, mesh, normals, colors, texcoords);
@@ -170,20 +206,22 @@ namespace Bcg {
         }
     }
 
-    bool WriteOffBinary(std::ofstream &out, const Mesh &mesh, const MeshIo::WriteFlags &flags){
-// Determine the presence of optional attributes
-        VertexProperty<Vector<Real, 3>> positions = mesh.get_vertex_property<Vector<Real, 3>>("v:point");
-        VertexProperty<Vector<Real, 3>> normals = mesh.get_vertex_property<Vector<Real, 3>>("v:normal");
-        VertexProperty<Vector<Real, 3>> colors = mesh.get_vertex_property<Vector<Real, 3>>("v:color");
-        VertexProperty<Vector<Real, 2>> texcoords = mesh.get_vertex_property<Vector<Real, 2>>("v:tex");
+    bool WriteOffBinary(std::ofstream &out, const Mesh &mesh, const MeshIo::WriteFlags &flags) {
+        // Determine the presence of optional attributes
+        VertexProperty<Vector<Real, 3> > positions = mesh.get_vertex_property<Vector<Real, 3> >("v:point");
+        VertexProperty<Vector<Real, 3> > normals = mesh.get_vertex_property<Vector<Real, 3> >("v:normal");
+        VertexProperty<Vector<Real, 3> > colors = mesh.get_vertex_property<Vector<Real, 3> >("v:color");
+        VertexProperty<Vector<Real, 2> > texcoords = mesh.get_vertex_property<Vector<Real, 2> >("v:tex");
 
         // Write header
         size_t numVertices = mesh.vertices.size();
         size_t numFaces = mesh.faces.size();
+        size_t numEdges = 0; // OFF format does not require the number of edges
 
-        out.write(reinterpret_cast<const char *>("OFF"), 3);
+        out.write("OFF BINARY\n", 11);
         out.write(reinterpret_cast<const char *>(&numVertices), sizeof(size_t));
         out.write(reinterpret_cast<const char *>(&numFaces), sizeof(size_t));
+        out.write(reinterpret_cast<const char *>(&numEdges), sizeof(size_t));
 
         // Write vertex data
         for (const auto &v: mesh.vertices) {
@@ -205,22 +243,13 @@ namespace Bcg {
         }
 
         // Write face data
-        FaceProperty<Vector<unsigned int, 3>> tris = mesh.get_face_property<Vector<unsigned int, 3>>("f:triangles");
-        if (tris) {
-            for (const auto &f: mesh.faces) {
-                const Vector<unsigned int, 3> &tri = tris[f];
-                out.write(reinterpret_cast<const char *>(&tri), sizeof(Vector<unsigned int, 3>));
-            }
-        } else {
-            for (const auto &f: mesh.faces) {
-                auto valence = mesh.get_valence(f);
-                out.write(reinterpret_cast<const char *>(&valence), sizeof(size_t));
+        for (const auto &f: mesh.faces) {
+            auto valence = mesh.get_valence(f);
+            out.write(reinterpret_cast<const char *>(&valence), sizeof(size_t));
 
-                for (const auto &v: mesh.get_vertices(f)) {
-                    auto idx = v.idx();
-                    out.write(reinterpret_cast<const char *>(&idx), sizeof(size_t));
-                }
-                out << std::endl;
+            for (const auto &v: mesh.get_vertices(f)) {
+                auto idx = v.idx();
+                out.write(reinterpret_cast<const char *>(&idx), sizeof(size_t));
             }
         }
 
@@ -228,12 +257,12 @@ namespace Bcg {
         return true;
     }
 
-    bool WriteOffAscii(std::ofstream &out,const Mesh &mesh, const MeshIo::WriteFlags &flags){
+    bool WriteOffAscii(std::ofstream &out, const Mesh &mesh, const MeshIo::WriteFlags &flags) {
         // Determine the presence of optional attributes
-        VertexProperty<Vector<Real, 3>> positions = mesh.get_vertex_property<Vector<Real, 3>>("v:point");
-        VertexProperty<Vector<Real, 3>> normals = mesh.get_vertex_property<Vector<Real, 3>>("v:normal");
-        VertexProperty<Vector<Real, 3>> colors = mesh.get_vertex_property<Vector<Real, 3>>("v:color");
-        VertexProperty<Vector<Real, 2>> texcoords = mesh.get_vertex_property<Vector<Real, 2>>("v:tex");
+        VertexProperty<Vector<Real, 3> > positions = mesh.get_vertex_property<Vector<Real, 3> >("v:point");
+        VertexProperty<Vector<Real, 3> > normals = mesh.get_vertex_property<Vector<Real, 3> >("v:normal");
+        VertexProperty<Vector<Real, 3> > colors = mesh.get_vertex_property<Vector<Real, 3> >("v:color");
+        VertexProperty<Vector<Real, 2> > texcoords = mesh.get_vertex_property<Vector<Real, 2> >("v:tex");
 
         // Write header
         out << "OFF" << std::endl;
@@ -260,7 +289,7 @@ namespace Bcg {
         }
 
         // Write face data
-        FaceProperty<Vector<unsigned int, 3>> tris = mesh.get_face_property<Vector<unsigned int, 3>>("f:triangles");
+        FaceProperty<Vector<unsigned int, 3> > tris = mesh.get_face_property<Vector<unsigned int, 3> >("f:triangles");
         if (tris) {
             for (const auto &f: mesh.faces) {
                 const Vector<unsigned int, 3> &tri = tris[f];
@@ -279,24 +308,368 @@ namespace Bcg {
         }
 
         out.close();
+
         return true;
     }
 
     bool MeshIoOFF::write(const Mesh &mesh, const WriteFlags &flags) {
-        if(flags.as_binary){
-            std::ofstream out(m_filename, std::ios::out | std::ios::binary);
-            if (!out.is_open()) {
-                std::cerr << "Error: Could not open binary file " << m_filename << " for writing." << std::endl;
-                return false;
-            }
-            return WriteOffBinary(out, mesh, flags);
-        }else{
-            std::ofstream out(m_filename, std::ios::out);
-            if (!out.is_open()) {
-                std::cerr << "Error: Could not open file " << m_filename << " for writing." << std::endl;
-                return false;
-            }
-            return WriteOffAscii(out, mesh, flags);
+        if (!is_valid_filename(m_filename)) {
+            std::cerr << "Error: Invalid filename." << std::endl;
+            return false;
         }
+
+        bool ok = false;
+        bool file_already_exists = std::filesystem::exists(m_filename);
+        auto last_write_time = file_already_exists
+                                   ? std::filesystem::last_write_time(m_filename)
+                                   : std::filesystem::file_time_type{};
+
+        std::ofstream out(m_filename, flags.as_binary ? (std::ios::out | std::ios::binary) : std::ios::out);
+        if (!out.is_open()) {
+            std::cerr << "Error: Could not open file " << m_filename << " for writing." << std::endl;
+            return false;
+        }
+
+        ok = flags.as_binary ? WriteOffBinary(out, mesh, flags) : WriteOffAscii(out, mesh, flags);
+
+        if (ok && file_already_exists) {
+            if (std::filesystem::last_write_time(m_filename) == last_write_time) {
+                std::cerr << "Error: File " << m_filename << " was not written." << std::endl;
+                return false;
+            }
+        } else {
+            return ok && std::filesystem::exists(m_filename);
+        }
+
+        return ok;
+    }
+
+    bool MeshIoOBJ::read(Mesh &mesh) {
+        if (!is_valid_filename(m_filename)) {
+            std::cerr << "Error: Invalid filename." << std::endl;
+            return false;
+        }
+
+        std::ifstream file(m_filename);
+        if (!file.is_open()) {
+            std::cerr << "Error: MeshIoObj::read: Could not open file for reading." << std::endl;
+            return false;
+        }
+
+        std::string line, prefix;
+        float x, y, z;
+        std::vector<Vertex> vertices;
+        std::vector<Vector<Real, 2> > allTexCoords; // Individual texture coordinates
+        std::vector<int> halfedgeTexIdx; // Texture coordinates sorted for halfedges
+        auto normals = mesh.vertex_property<Vector<Real, 3> >("v:normal");
+        auto texCoords = mesh.halfedge_property<Vector<Real, 2> >("h:tex");
+        bool has_tex_coords = false;
+        bool has_normals = false;
+
+        Vertex v;
+        // Parse line by line
+        while (std::getline(file, line)) {
+            // Trim leading spaces
+            line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](unsigned char ch) {
+                return !std::isspace(ch);
+            }));
+
+            if (line.empty() || line[0] == '#') {
+                continue; // Skip comments and empty lines
+            }
+
+            std::istringstream iss(line);
+            iss >> prefix;
+
+            if (prefix == "v" && iss >> x >> y >> z) {
+                v = mesh.add_vertex(Vector<Real, 3>(x, y, z));
+            } else if (prefix == "vn" && iss >> x >> y >> z) {
+                has_normals = true;
+                normals[v] = Vector<Real, 3>(x, y, z);
+            } else if (prefix == "vt" && iss >> x >> y) {
+                allTexCoords.emplace_back(x, y);
+            } else if (prefix == "f") {
+                vertices.clear();
+                halfedgeTexIdx.clear();
+                std::string vertexData;
+
+                while (iss >> vertexData) {
+                    std::istringstream vertexStream(vertexData);
+                    std::string vertexIdx, texIdx;
+
+                    if (std::getline(vertexStream, vertexIdx, '/')) {
+                        vertices.emplace_back(std::stoi(vertexIdx) - 1);
+                    }
+                    if (std::getline(vertexStream, texIdx, '/') && !texIdx.empty()) {
+                        halfedgeTexIdx.push_back(std::stoi(texIdx) - 1);
+                        has_tex_coords = true;
+                    }
+                }
+
+                Face face = mesh.add_face(vertices);
+                if (has_tex_coords && face.is_valid()) {
+                    size_t vIdx = 0;
+                    for (const auto &halfedge: mesh.get_halfedges(face)) {
+                        if (vIdx < halfedgeTexIdx.size() && halfedgeTexIdx[vIdx] < allTexCoords.size()) {
+                            texCoords[halfedge] = allTexCoords[halfedgeTexIdx[vIdx]];
+                        }
+                        ++vIdx;
+                    }
+                }
+            }
+        }
+
+        // Remove texture property if not used
+        if (!has_tex_coords) {
+            mesh.halfedges.remove(texCoords);
+        }
+        if (!has_normals) {
+            mesh.vertices.remove(normals);
+        }
+
+        return true;
+    }
+
+    bool MeshIoOBJ::write(const Mesh &mesh, const WriteFlags &flags) {
+        if (!is_valid_filename(m_filename)) {
+            std::cerr << "Error: Invalid filename." << std::endl;
+            return false;
+        }
+
+        std::ofstream out(m_filename);
+        if (!out.is_open()) {
+            return false;
+        }
+
+        out << "# OBJ export from BCG\n";
+
+        auto positions = mesh.positions;
+        for (const auto &v: mesh.vertices) {
+            out << std::format("v {:.10f} {:.10f} {:.10f}\n", positions[v][0], positions[v][1], positions[v][2]);
+        }
+
+        auto normals = mesh.get_vertex_property<Vector<Real, 3> >("v:normal");
+        if (normals) {
+            for (const auto &v: mesh.vertices) {
+                out << std::format("vn {:.10f} {:.10f} {:.10f}\n", normals[v][0], normals[v][1], normals[v][2]);
+            }
+        }
+
+        auto tex_coord = mesh.get_halfedge_property<Vector<Real, 2> >("h:tex");
+        if (tex_coord) {
+            for (const auto &h: mesh.halfedges) {
+                out << std::format("vt {:.10f} {:.10f}\n", tex_coord[h][0], tex_coord[h][1]);
+            }
+        }
+
+        for (const auto &f: mesh.faces) {
+            out << "f";
+            auto fvit = mesh.get_vertices(f);
+            auto fhit = mesh.get_halfedges(f);
+            do {
+                if (tex_coord) {
+                    out << std::format(" {}/{}/{}", (*fvit).idx() + 1, (*fhit).idx() + 1, (*fvit).idx() + 1);
+                    ++fhit;
+                } else {
+                    out << std::format(" {}/{}", (*fvit).idx() + 1, (*fvit).idx() + 1);
+                }
+            } while (++fvit != mesh.get_vertices(f));
+            out << "\n";
+        }
+
+        return true;
+    }
+
+    bool MeshIoOBJ::can_load_file() {
+        return std::filesystem::path(m_filename).extension() == ".obj";
+    }
+
+
+    bool parse_binary_stl(std::ifstream &file, Mesh &mesh) {
+        std::array<float, 3> p;
+        Vertex v;
+        std::vector<Vertex> vertices(3);
+
+        auto cmp = [](const Vector<Real, 3> &a, const Vector<Real, 3> &b) {
+            return a.minCoeff() < b.minCoeff();
+        };
+        std::unordered_map<Vector<Real, 3>, Vertex> vertex_map;
+
+        // Skip the header
+        file.seekg(80, std::ios::beg);
+
+        // Read the number of triangles
+        uint32_t num_triangles = 0;
+        file.read(reinterpret_cast<char *>(&num_triangles), sizeof(num_triangles));
+
+        for (uint32_t t = 0; t < num_triangles; ++t) {
+            // Skip triangle normal
+            file.seekg(12, std::ios::cur);
+
+            // Process triangle vertices
+            for (size_t i = 0; i < 3; ++i) {
+                file.read(reinterpret_cast<char *>(p.data()), sizeof(float) * 3);
+
+                Vector<Real, 3> point = {p[0], p[1], p[2]};
+                auto [it, inserted] = vertex_map.try_emplace(point, Vertex());
+                if (inserted) {
+                    v = mesh.add_vertex(point);
+                    it->second = v;
+                }
+                vertices[i] = it->second;
+            }
+
+            // Add face if not degenerate
+            if ((vertices[0] != vertices[1]) &&
+                (vertices[0] != vertices[2]) &&
+                (vertices[1] != vertices[2])) {
+                mesh.add_face(vertices);
+            }
+
+            // Skip attribute byte count
+            file.seekg(2, std::ios::cur);
+        }
+
+        return true;
+    }
+
+    bool parse_ascii_stl(std::ifstream &file, Mesh &mesh) {
+        std::array<float, 3> p;
+        Vertex v;
+        std::vector<Vertex> vertices(3);
+
+        auto cmp = [](const Vector<Real, 3> &a, const Vector<Real, 3> &b) {
+            return a.minCoeff() < b.minCoeff();
+        };
+        std::unordered_map<Vector<Real, 3>, Vertex> vertex_map;
+
+        std::string line;
+        while (std::getline(file, line)) {
+            // Trim leading whitespace
+            line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](unsigned char ch) {
+                return !std::isspace(ch);
+            }));
+
+            if (line.rfind("outer", 0) == 0) {
+                // Read three vertices
+                for (size_t i = 0; i < 3; ++i) {
+                    if (!std::getline(file, line)) {
+                        return false;
+                    }
+
+                    // Trim leading whitespace
+                    line.erase(line.begin(), std::find_if(line.begin(), line.end(), [](unsigned char ch) {
+                        return !std::isspace(ch);
+                    }));
+
+                    std::istringstream iss(line);
+                    std::string dummy;
+                    iss >> dummy >> p[0] >> p[1] >> p[2];
+
+                    Vector<Real, 3> point = {p[0], p[1], p[2]};
+                    auto [it, inserted] = vertex_map.try_emplace(point, Vertex());
+                    if (inserted) {
+                        v = mesh.add_vertex(point);
+                        it->second = v;
+                    }
+                    vertices[i] = it->second;
+                }
+
+                // Add face if not degenerate
+                if ((vertices[0] != vertices[1]) &&
+                    (vertices[0] != vertices[2]) &&
+                    (vertices[1] != vertices[2])) {
+                    mesh.add_face(vertices);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool MeshIoSTL::read(Mesh &mesh) {
+        if (!is_valid_filename(m_filename)) {
+            std::cerr << "Error: Invalid filename." << std::endl;
+            return false;
+        }
+
+        std::ifstream file(m_filename, std::ios::in | std::ios::binary);
+        if (!file.is_open()) {
+            return false;
+        }
+
+        // Determine ASCII or binary STL
+        char header[6] = {};
+        file.read(header, 5);
+        file.seekg(0); // Reset file pointer
+        const bool is_binary = (strncmp(header, "solid", 5) != 0);
+
+        if (is_binary) {
+            return parse_binary_stl(file, mesh);
+        } else {
+            file.close(); // Reopen as text
+            file.open(m_filename, std::ios::in);
+            return parse_ascii_stl(file, mesh);
+        }
+    }
+
+    bool MeshIoSTL::write(const Mesh &mesh, const WriteFlags &flags) {
+        // Check if the mesh is a triangle mesh
+        if (!mesh.is_triangle_mesh()) {
+            std::cerr << "write_stl: not a triangle mesh!\n";
+            return false;
+        }
+
+        // Check if face normals are available
+        auto fnormals = mesh.get_face_property<Vector<Real, 3>>("f:normal");
+        if (!fnormals) {
+            std::cerr << "write_stl: no face normals present!\n";
+            return false;
+        }
+
+        // Open the output file
+        std::ofstream ofs(m_filename);
+        if (!ofs.is_open()) {
+            std::cerr << "write_stl: failed to open file for writing: " << m_filename << "\n";
+            return false;
+        }
+
+        // Retrieve vertex positions
+        auto positions = mesh.positions;
+        if (!positions) {
+            std::cerr << "write_stl: no vertex positions available!\n";
+            return false;
+        }
+
+        // Write STL header
+        ofs << "solid stl" << std::endl;
+        ofs.precision(10);
+        ofs.setf(std::ios::fixed);
+
+        // Write facets
+        for (const auto &f : mesh.faces) {
+            const auto &n = fnormals[f];
+            ofs << "  facet normal " << n[0] << " " << n[1] << " " << n[2] << std::endl;
+            ofs << "    outer loop" << std::endl;
+
+            for (const auto &v : mesh.get_vertices(f)) {
+                const auto &p = positions[v];
+                ofs << "      vertex " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+            }
+
+            ofs << "    endloop" << std::endl;
+            ofs << "  endfacet" << std::endl;
+        }
+
+        // Write STL footer
+        ofs << "endsolid" << std::endl;
+
+        // Close the file
+        ofs.close();
+        return true;
+    }
+
+    bool MeshIoSTL::can_load_file() {
+        return std::filesystem::path(m_filename).extension() == ".stl";
     }
 }
