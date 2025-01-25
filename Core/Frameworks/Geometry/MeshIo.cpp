@@ -132,8 +132,8 @@ namespace Bcg {
     }
 
     bool MeshIoOFF::read(Mesh &mesh) {
-        if (!is_valid_filename(m_filename)) {
-            std::cerr << "Error: Invalid filename." << std::endl;
+        if (!is_valid_filename(m_filename) || !can_load_file()) {
+            std::cerr << "Error: MeshIoOff::read: Invalid filename." << std::endl;
             return false;
         }
 
@@ -313,8 +313,8 @@ namespace Bcg {
     }
 
     bool MeshIoOFF::write(const Mesh &mesh, const WriteFlags &flags) {
-        if (!is_valid_filename(m_filename)) {
-            std::cerr << "Error: Invalid filename." << std::endl;
+        if (!is_valid_filename(m_filename) || !can_load_file()) {
+            std::cerr << "Error: MeshIoOff::write: Invalid filename." << std::endl;
             return false;
         }
 
@@ -345,8 +345,8 @@ namespace Bcg {
     }
 
     bool MeshIoOBJ::read(Mesh &mesh) {
-        if (!is_valid_filename(m_filename)) {
-            std::cerr << "Error: Invalid filename." << std::endl;
+        if (!is_valid_filename(m_filename) || !can_load_file()) {
+            std::cerr << "Error: MeshIoObj::read: Invalid filename." << std::endl;
             return false;
         }
 
@@ -431,8 +431,8 @@ namespace Bcg {
     }
 
     bool MeshIoOBJ::write(const Mesh &mesh, const WriteFlags &flags) {
-        if (!is_valid_filename(m_filename)) {
-            std::cerr << "Error: Invalid filename." << std::endl;
+        if (!is_valid_filename(m_filename) || !can_load_file()) {
+            std::cerr << "Error: MeshIoObj::write: Invalid filename." << std::endl;
             return false;
         }
 
@@ -588,8 +588,8 @@ namespace Bcg {
     }
 
     bool MeshIoSTL::read(Mesh &mesh) {
-        if (!is_valid_filename(m_filename)) {
-            std::cerr << "Error: Invalid filename." << std::endl;
+        if (!is_valid_filename(m_filename) || !can_load_file()) {
+            std::cerr << "Error: MeshIoStl::read: Invalid filename." << std::endl;
             return false;
         }
 
@@ -614,6 +614,10 @@ namespace Bcg {
     }
 
     bool MeshIoSTL::write(const Mesh &mesh, const WriteFlags &flags) {
+        if (!is_valid_filename(m_filename) || !can_load_file()) {
+            std::cerr << "Error: MeshIoStl::write: Invalid filename." << std::endl;
+            return false;
+        }
         // Check if the mesh is a triangle mesh
         if (!mesh.is_triangle_mesh()) {
             std::cerr << "write_stl: not a triangle mesh!\n";
@@ -621,7 +625,7 @@ namespace Bcg {
         }
 
         // Check if face normals are available
-        auto fnormals = mesh.get_face_property<Vector<Real, 3>>("f:normal");
+        auto fnormals = mesh.get_face_property<Vector<Real, 3> >("f:normal");
         if (!fnormals) {
             std::cerr << "write_stl: no face normals present!\n";
             return false;
@@ -647,12 +651,12 @@ namespace Bcg {
         ofs.setf(std::ios::fixed);
 
         // Write facets
-        for (const auto &f : mesh.faces) {
+        for (const auto &f: mesh.faces) {
             const auto &n = fnormals[f];
             ofs << "  facet normal " << n[0] << " " << n[1] << " " << n[2] << std::endl;
             ofs << "    outer loop" << std::endl;
 
-            for (const auto &v : mesh.get_vertices(f)) {
+            for (const auto &v: mesh.get_vertices(f)) {
                 const auto &p = positions[v];
                 ofs << "      vertex " << p[0] << " " << p[1] << " " << p[2] << std::endl;
             }
@@ -671,5 +675,277 @@ namespace Bcg {
 
     bool MeshIoSTL::can_load_file() {
         return std::filesystem::path(m_filename).extension() == ".stl";
+    }
+
+
+    bool readBinaryPly(std::ifstream &file, Mesh &mesh, size_t vertexCount, size_t faceCount) {
+        // Read vertex data
+        mesh.vertices.resize(vertexCount);
+        for (size_t i = 0; i < vertexCount; ++i) {
+            file.read(reinterpret_cast<char *>(&mesh.positions[Vertex(i)]),
+                      sizeof(decltype(mesh.positions[Vertex(i)])));
+        }
+
+        // Read face data
+        for (size_t i = 0; i < faceCount; ++i) {
+            unsigned char faceSize;
+            file.read(reinterpret_cast<char *>(&faceSize), sizeof(unsigned char));
+            std::vector<int> indices(faceSize);
+            file.read(reinterpret_cast<char *>(indices.data()), faceSize * sizeof(int));
+            std::vector<Vertex> vertex_handles(faceSize);
+            std::transform(indices.begin(), indices.end(), vertex_handles.begin(), [](int idx) { return Vertex(idx); });
+            mesh.add_face(vertex_handles);
+        }
+
+        return true;
+    }
+
+    bool readAsciiPly(std::ifstream &file, Mesh &mesh, size_t vertexCount, size_t faceCount) {
+        // Read vertex data
+        mesh.vertices.reserve(vertexCount);
+        for (size_t i = 0; i < vertexCount; ++i) {
+            Vector<Real, 3> pos;
+            file >> pos[0] >> pos[1] >> pos[2];
+            mesh.add_vertex(pos);
+        }
+
+        // Read face data
+        for (size_t i = 0; i < faceCount; ++i) {
+            size_t faceSize;
+            file >> faceSize;
+            std::vector<Vertex> indices(faceSize);
+            for (size_t j = 0; j < faceSize; ++j) {
+                size_t index;
+                file >> index;
+                indices[j] = Vertex(index);
+            }
+            mesh.add_face(indices);
+        }
+
+        return true;
+    }
+
+    bool MeshIoPLY::read(Mesh &mesh) {
+        if (!is_valid_filename(m_filename) || !can_load_file()) {
+            std::cerr << "Error: MeshIoPLY::read: Invalid filename." << std::endl;
+            return false;
+        }
+
+        std::ifstream file(m_filename, std::ios::in | std::ios::binary);
+        if (!file.is_open()) {
+            std::cerr << "Error: MeshIoPLY::read: Could not open file for reading." << std::endl;
+            return false;
+        }
+
+        std::string line;
+        bool isBinary = false;
+        std::unordered_map<std::string, size_t> properties;
+        size_t vertexCount = 0;
+        size_t faceCount = 0;
+
+        // Parse the header
+        while (std::getline(file, line)) {
+            std::istringstream iss(line);
+            std::string token;
+            iss >> token;
+
+            if (token == "ply") {
+                continue;
+            } else if (token == "format") {
+                std::string format;
+                iss >> format;
+                if (format == "ascii") {
+                    isBinary = false;
+                } else if (format == "binary_little_endian") {
+                    isBinary = true;
+                } else {
+                    std::cerr << "Error: MeshIoPLY::read: Unsupported PLY format." << std::endl;
+                    return false;
+                }
+            } else if (token == "element") {
+                std::string elementType;
+                size_t count;
+                iss >> elementType >> count;
+                if (elementType == "vertex") {
+                    vertexCount = count;
+                } else if (elementType == "face") {
+                    faceCount = count;
+                }
+            } else if (token == "property") {
+                std::string dataType, propertyName;
+                iss >> dataType >> propertyName;
+                properties[propertyName] = properties.size();
+            } else if (token == "end_header") {
+                break;
+            }
+        }
+
+        if (isBinary) {
+            return readBinaryPly(file, mesh, vertexCount, faceCount);
+        } else {
+            return readAsciiPly(file, mesh, vertexCount, faceCount);
+        }
+    }
+
+    bool MeshIoPLY::write(const Mesh &mesh, const WriteFlags &flags) {
+        if (!is_valid_filename(m_filename) || !can_load_file()) {
+            std::cerr << "Error: MeshIoPly::write: Invalid filename." << std::endl;
+            return false;
+        }
+
+        bool isBinary = flags.as_binary;
+        std::ofstream file(m_filename, std::ios::out | (isBinary ? std::ios::binary : std::ios::out));
+        if (!file.is_open()) {
+            std::cerr << "Error: MeshIoPly::write: Could not open file for writing." << std::endl;
+            return false;
+        }
+
+        // Write header
+        file << "ply\n";
+        file << (isBinary ? "format binary_little_endian 1.0\n" : "format ascii 1.0\n");
+        file << "element vertex " << mesh.vertices.size() << "\n";
+        file << "property float x\n";
+        file << "property float y\n";
+        file << "property float z\n";
+
+        auto normals = mesh.get_vertex_property<Vector<Real, 3> >("v:normal");
+        bool with_normals = flags.with_normals && normals;
+
+        auto colors = mesh.get_vertex_property<Vector<Real, 3> >("v:color");
+        bool with_colors = flags.with_colors && colors;
+
+        if (with_normals) {
+            file << "property float nx\n";
+            file << "property float ny\n";
+            file << "property float nz\n";
+        }
+
+        if (with_colors) {
+            file << "property uchar red\n";
+            file << "property uchar green\n";
+            file << "property uchar blue\n";
+            file << "property uchar alpha\n";
+        }
+
+        file << "element face " << mesh.faces.size() << "\n";
+        file << "property list uchar int vertex_indices\n";
+        file << "end_header\n";
+
+        // Write vertex data
+        for (size_t i = 0; i < mesh.vertices.size(); ++i) {
+            const auto &pos = mesh.positions[Vertex(i)];
+            if (isBinary) {
+                file.write(reinterpret_cast<const char *>(&pos[0]), sizeof(float));
+                file.write(reinterpret_cast<const char *>(&pos[1]), sizeof(float));
+                file.write(reinterpret_cast<const char *>(&pos[2]), sizeof(float));
+            } else {
+                file << pos[0] << " " << pos[1] << " " << pos[2];
+            }
+
+            if (with_normals) {
+                const auto &normal = normals[Vertex(i)];
+                if (isBinary) {
+                    file.write(reinterpret_cast<const char *>(&normal[0]), sizeof(float));
+                    file.write(reinterpret_cast<const char *>(&normal[1]), sizeof(float));
+                    file.write(reinterpret_cast<const char *>(&normal[2]), sizeof(float));
+                } else {
+                    file << " " << normal[0] << " " << normal[1] << " " << normal[2];
+                }
+            }
+
+            if (with_colors) {
+                const auto &color = colors[Vertex(i)];
+                if (isBinary) {
+                    unsigned char r = static_cast<unsigned char>(color[0] * 255);
+                    unsigned char g = static_cast<unsigned char>(color[1] * 255);
+                    unsigned char b = static_cast<unsigned char>(color[2] * 255);
+                    unsigned char a = static_cast<unsigned char>(color[3] * 255);
+                    file.write(reinterpret_cast<const char *>(&r), sizeof(unsigned char));
+                    file.write(reinterpret_cast<const char *>(&g), sizeof(unsigned char));
+                    file.write(reinterpret_cast<const char *>(&b), sizeof(unsigned char));
+                    file.write(reinterpret_cast<const char *>(&a), sizeof(unsigned char));
+                } else {
+                    file << " " << static_cast<int>(color[0] * 255) << " "
+                            << static_cast<int>(color[1] * 255) << " "
+                            << static_cast<int>(color[2] * 255) << " "
+                            << static_cast<int>(color[3] * 255);
+                }
+            }
+
+            if (!isBinary) {
+                file << "\n";
+            }
+        }
+
+        // Write face data
+        for (const auto &f: mesh.faces) {
+            unsigned char faceSize = static_cast<unsigned char>(mesh.get_valence(f));
+            if (isBinary) {
+                file.write(reinterpret_cast<const char *>(&faceSize), sizeof(unsigned char));
+                for (const auto &v: mesh.get_vertices(f)) {
+                    int vertexIndex = v.idx();
+                    file.write(reinterpret_cast<const char *>(&vertexIndex), sizeof(int));
+                }
+            } else {
+                file << static_cast<int>(faceSize);
+                for (const auto &v: mesh.get_vertices(f)) {
+                    file << " " << v.idx();
+                }
+                file << "\n";
+            }
+        }
+
+        file.close();
+        return true;
+    }
+
+    bool MeshIoPLY::can_load_file() {
+        return std::filesystem::path(m_filename).extension() == ".ply";
+    }
+
+
+    void MeshIoManager::add_io(std::shared_ptr<MeshIo> io) {
+        m_ios.push_back(io);
+    }
+
+    std::shared_ptr<MeshIo> MeshIoManager::get_io(const std::string &filename) {
+        for (const auto &io : m_ios) {
+            if (io->can_load_file()) {
+                return io;
+            }
+        }
+        return nullptr;
+    }
+
+    bool MeshIoManager::read(Mesh &mesh) {
+        for (const auto &io : m_ios) {
+            if (io->can_load_file()) {
+                if (io->read(mesh)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+
+    }
+
+    bool MeshIoManager::write(const Mesh &mesh, const MeshIo::WriteFlags &flags) {
+        for (const auto &io : m_ios) {
+            if (io->can_load_file()) {
+                if (io->write(mesh, flags)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    bool MeshIoManager::can_load_file() {
+        for (const auto &io : m_ios) {
+            if (io->can_load_file()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

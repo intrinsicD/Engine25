@@ -157,15 +157,37 @@ namespace Bcg {
         bool can_load_file() override;
     };
 
+    /**
+     * @brief Class for reading and writing PLY mesh files.
+     */
     class MeshIoPLY : public MeshIo {
     public:
+        /**
+         * @brief Constructs a MeshIoPLY object with the given filename.
+         * @param filename The name of the PLY file to read/write.
+         */
         explicit MeshIoPLY(std::string filename) : MeshIo(std::move(filename)) {
         }
 
+        /**
+         * @brief Reads a mesh from a PLY file.
+         * @param mesh The mesh object to populate with data.
+         * @return True if the mesh was successfully read, false otherwise.
+         */
         bool read(Mesh &mesh) override;
 
+        /**
+         * @brief Writes the given mesh to a PLY file with specified flags.
+         * @param mesh The mesh to write.
+         * @param flags The flags to control the writing process.
+         * @return True if the file was successfully written, false otherwise.
+         */
         bool write(const Mesh &mesh, const WriteFlags &flags) override;
 
+        /**
+         * @brief Checks if the file can be loaded.
+         * @return True if the file can be loaded, false otherwise.
+         */
         bool can_load_file() override;
     };
 
@@ -183,7 +205,8 @@ namespace Bcg {
 
     class MeshIoManager {
     public:
-        MeshIoManager() = default;
+        MeshIoManager(std::string filename): m_filename(filename) {
+        }
 
         void add_io(std::shared_ptr<MeshIo> io);
 
@@ -194,6 +217,10 @@ namespace Bcg {
         bool write(const Mesh &mesh, const MeshIo::WriteFlags &flags);
 
         bool can_load_file();
+
+    private:
+        std::string m_filename;
+        std::vector<std::shared_ptr<MeshIo> > m_ios;
     };
 }
 

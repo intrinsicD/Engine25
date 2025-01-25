@@ -117,11 +117,62 @@ TEST_F(MeshIoTest, MeshIoOBJ_WriteAndReadFileSuccessfully) {
 }
 
 
-TEST_F(MeshIoTest, MeshIoSTL_WriteAndReadFileSuccessfully) {
+TEST_F(MeshIoTest, MeshIoSTL_AsciiWriteAndReadFileSuccessfully) {
     filename = "test_triangle.stl";
     MeshIoSTL meshIo(filename);
     MeshIo::WriteFlags flags;
     flags.as_binary = false; // Test ASCII mode
+
+    MeshFaceNormals F_normals(mockMesh);
+
+    F_normals.compute();
+    if (WriteMesh(meshIo, flags)) {
+        Mesh loadedMesh;
+        if (ReadMesh(meshIo, loadedMesh)) {
+            ValidateMesh(loadedMesh);
+        }
+    }
+}
+
+TEST_F(MeshIoTest, MeshIoSTL_BinaryWriteAndReadFileSuccessfully) {
+    filename = "test_triangle.stl";
+    MeshIoSTL meshIo(filename);
+    MeshIo::WriteFlags flags;
+    flags.as_binary = true; // Test Binary mode
+
+    MeshFaceNormals F_normals(mockMesh);
+
+    F_normals.compute();
+    if (WriteMesh(meshIo, flags)) {
+        Mesh loadedMesh;
+        if (ReadMesh(meshIo, loadedMesh)) {
+            ValidateMesh(loadedMesh);
+        }
+    }
+}
+
+TEST_F(MeshIoTest, MeshIoPLY_AsciiWriteAndReadFileSuccessfully) {
+    filename = "test_triangle.ply";
+    MeshIoPLY meshIo(filename);
+    MeshIo::WriteFlags flags;
+    flags.as_binary = false; // Test ASCII mode
+
+    MeshFaceNormals F_normals(mockMesh);
+
+    F_normals.compute();
+    if (WriteMesh(meshIo, flags)) {
+        Mesh loadedMesh;
+        if (ReadMesh(meshIo, loadedMesh)) {
+            ValidateMesh(loadedMesh);
+        }
+    }
+}
+
+TEST_F(MeshIoTest, MeshIoPLY_BinaryWriteAndReadFileSuccessfully) {
+    filename = "test_triangle.ply";
+    MeshIoPLY meshIo(filename);
+    MeshIo::WriteFlags flags;
+    flags.as_binary = true; // Test binary mode
 
     MeshFaceNormals F_normals(mockMesh);
 
