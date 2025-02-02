@@ -5,4 +5,5 @@ target_sources(Engine25 PRIVATE
     Mesh.cpp
     MeshIo.cpp
     VoxelGrid.cpp
+    VoxelGridDownsampling.cpp
 )

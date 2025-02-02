@@ -14,15 +14,17 @@ class MeshIoTest : public ::testing::Test {
 protected:
     Mesh mockMesh;
     std::string filename;
+    Vertex v0, v1, v2, v3;
+    Face f0, f1;
 
     void SetUp() override {
         // Create a mock mesh representing a simple triangle
-        auto v0 = mockMesh.add_vertex({0.0, 0.0, 0.0});
-        auto v1 = mockMesh.add_vertex({1.0, 0.0, 0.0});
-        auto v2 = mockMesh.add_vertex({0.0, 1.0, 0.0});
-        auto v3 = mockMesh.add_vertex({0.0, 0.0, 1.0});
-        mockMesh.add_face({v0, v1, v2});
-        mockMesh.add_face({v2, v1, v3});
+        v0 = mockMesh.add_vertex({0.0, 0.0, 0.0});
+        v1 = mockMesh.add_vertex({1.0, 0.0, 0.0});
+        v2 = mockMesh.add_vertex({0.0, 1.0, 0.0});
+        v3 = mockMesh.add_vertex({0.0, 0.0, 1.0});
+        f0 = mockMesh.add_face({v0, v1, v2});
+        f1 = mockMesh.add_face({v2, v1, v3});
     }
 
     void TearDown() override {
@@ -212,6 +214,16 @@ TEST(MeshIoSTL, CanLoadFileWithStlExtension) {
 
 TEST(MeshIoSTL, CannotLoadFileWithNonStlExtension) {
     MeshIoSTL io("test.off");
+    EXPECT_FALSE(io.can_load_file());
+}
+
+TEST(MeshIoPLY, CanLoadFileWithPLYExtension) {
+    MeshIoPLY io("test.ply");
+    EXPECT_TRUE(io.can_load_file());
+}
+
+TEST(MeshIoPLY, CannotLoadFileWithNonPLYExtension) {
+    MeshIoPLY io("test.off");
     EXPECT_FALSE(io.can_load_file());
 }
 

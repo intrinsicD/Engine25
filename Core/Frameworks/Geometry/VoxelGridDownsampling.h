@@ -8,57 +8,37 @@
 #include "VoxelGrid.h"
 
 namespace Bcg {
-    class VoxelGridDownsampling {
-    public:
-        explicit VoxelGridDownsampling(const std::vector<Vector<Real, 3>> &positions) : positions(positions),
-                                                                                        grid() {
+/**
+ * @brief Class for downsampling a set of 3D positions using a voxel grid.
+ */
+class VoxelGridDownsampling {
+public:
+    /**
+     * @brief Constructs a VoxelGridDownsampling object with the given positions.
+     * @param positions The input positions to be downsampled.
+     */
+    explicit VoxelGridDownsampling(const std::vector<Vector<Real, 3> > &positions);
 
-            integrated_positions = grid.voxel_property<Vector<Real, 3>>("v:integrated_position", Vector<Real, 3>::Zero());
-            counts = grid.voxel_property("v:count", 0);
-            assert(integrated_positions);
-            assert(counts);
-        }
+    /**
+     * @brief Builds the voxel grid based on the given axis-aligned bounding box and voxel sizes.
+     * @param aabb The axis-aligned bounding box defining the grid boundaries.
+     * @param voxel_sizes The sizes of the voxels in each dimension.
+     * @return True if the grid was successfully built, false otherwise.
+     */
+    bool build_grid(const AABB<Real, 3> &aabb, const Vector<Real, 3> &voxel_sizes);
 
-        bool build_grid(const AABB<Real, 3> &aabb, const Vector<Real, 3> &voxel_sizes) {
-            if (voxel_sizes.minCoeff() <= 0) {
-                return false;
-            }
+    /**
+     * @brief Returns the downsampled positions after voxel grid processing.
+     * @return A vector of downsampled positions.
+     */
+    std::vector<Vector<Real, 3> > downsampled_positions();
 
-            Vector<int, 3> grid_dims = GridDims(aabb, voxel_sizes);
-            Vector<int, 3> strides = Strides(grid_dims);
-
-            grid.voxels.reserve(grid_dims.prod());
-            for (const auto &point: positions) {
-                Vector<int, 3> voxelIdx = VoxelIndex(point, voxel_sizes);
-                size_t linearIdx = VoxelLinearIndex(voxelIdx, strides);
-                auto v = grid.add_voxel(linearIdx);
-                integrated_positions[v] += point;
-                counts[v] += 1;
-            }
-
-            return true;
-        }
-
-        std::vector<Vector<Real, 3>> downsampled_positions() {
-            if (grid.is_empty()) {
-                return {};
-            }
-
-            std::vector<Vector<Real, 3>> downsampled_positions;
-            for (const auto &v: grid.voxels) {
-                if (counts[v] > 0) {
-                    downsampled_positions.emplace_back(integrated_positions[v] / counts[v]);
-                }
-            }
-            return downsampled_positions;
-        }
-
-    private:
-        const std::vector<Vector<Real, 3>> positions;
-        VoxelProperty<Vector<Real, 3>> integrated_positions;
-        VoxelProperty<int> counts;
-        VoxelGrid grid;
-    };
+private:
+    const std::vector<Vector<Real, 3> > positions; ///< The input positions to be downsampled.
+    VoxelProperty<Vector<Real, 3> > integrated_positions; ///< Integrated positions within each voxel.
+    VoxelProperty<int> counts; ///< Count of points within each voxel.
+    VoxelGrid grid; ///< The voxel grid used for downsampling.
+};
 }
 
 #endif //ENGINE25_VOXELGRIDDOWNSAMPLING_H

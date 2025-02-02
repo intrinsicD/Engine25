@@ -57,6 +57,11 @@ namespace Bcg {
         using Handle::Handle;
     };
 
+    class Node : public Handle {
+    public:
+        using Handle::Handle;
+    };
+
     inline std::ostream &operator<<(std::ostream &os, Vertex v) {
         return (os << 'v' << v.idx());
     }
@@ -75,6 +80,14 @@ namespace Bcg {
 
     inline std::ostream &operator<<(std::ostream &os, Tet t) {
         return (os << 't' << t.idx());
+    }
+
+    inline std::ostream &operator<<(std::ostream &os, Voxel v) {
+        return (os << 'v' << v.idx());
+    }
+
+    inline std::ostream &operator<<(std::ostream &os, Node n) {
+        return (os << 'n' << n.idx());
     }
 
     struct VertexConnectivity {
@@ -215,6 +228,23 @@ namespace Bcg {
 
         typename Property<T>::const_reference operator[](Voxel v) const {
             return Property<T>::operator[](v.idx());
+        }
+    };
+
+    template<class T>
+    class NodeProperty : public Property<T> {
+    public:
+        explicit NodeProperty() = default;
+
+        explicit NodeProperty(Property<T> p) : Property<T>(p) {
+        }
+
+        typename Property<T>::reference operator[](Node n) {
+            return Property<T>::operator[](n.idx());
+        }
+
+        typename Property<T>::const_reference operator[](Node n) const {
+            return Property<T>::operator[](n.idx());
         }
     };
 
@@ -1271,6 +1301,87 @@ namespace Bcg {
         }
 
         [[nodiscard]] std::vector<std::string> voxel_properties() const {
+            return properties();
+        }
+    };
+
+
+    class Nodes : public PropertyContainer {
+    public:
+        using NodeIterator = Iterator<Nodes, Node>;
+
+        NodeProperty<bool> n_deleted;
+        size_t num_deleted;
+
+        Nodes() : n_deleted(node_property<bool>("n:deleted", false)), num_deleted(0) {
+        }
+
+        NodeIterator begin() {
+            return {Node(0), this};
+        }
+
+        NodeIterator end() {
+            return {Node(size()), this};
+        }
+
+        NodeIterator begin() const {
+            return {Node(0), this};
+        }
+
+        NodeIterator end() const {
+            return {Node(size()), this};
+        }
+
+        [[nodiscard]] size_t n_nodes() const { return size() - num_deleted; }
+
+        [[nodiscard]] bool is_empty() const override {
+            return n_nodes() == 0;
+        }
+
+        [[nodiscard]] bool is_valid(const Node &v) const {
+            return v.idx() < size();
+        }
+
+        [[nodiscard]] bool is_deleted(const Node &n) const {
+            return !n.is_valid() || n_deleted[n];
+        }
+
+        [[nodiscard]] bool has_garbage() const {
+            return num_deleted > 0;
+        }
+
+        void clear() override {
+            PropertyContainer::clear();
+            n_deleted = node_property<bool>("n:deleted", false);
+            num_deleted = 0;
+        }
+
+        template<class T>
+        NodeProperty<T> add_node_property(const std::string &name,
+                                            const T t = T()) {
+            return NodeProperty<T>(add<T>(name, t));
+        }
+
+        template<class T>
+        NodeProperty<T> get_node_property(const std::string &name) const {
+            return NodeProperty<T>(get<T>(name));
+        }
+
+        template<class T>
+        NodeProperty<T> node_property(const std::string &name, const T t = T()) {
+            return NodeProperty<T>(get_or_add<T>(name, t));
+        }
+
+        template<class T>
+        void remove_node_property(NodeProperty<T> &p) {
+            remove(p);
+        }
+
+        [[nodiscard]] bool has_node_property(const std::string &name) const {
+            return exists(name);
+        }
+
+        [[nodiscard]] std::vector<std::string> node_properties() const {
             return properties();
         }
     };
