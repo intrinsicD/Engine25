@@ -15,7 +15,6 @@ namespace Bcg {
 #define CUDA_DEVICE
 #define CUDA_HOST
 #endif
-#define BCG_INVALID_INDEX std::numeric_limits<size_t>::max()
 }
 
 #endif //ENGINE25_MACROS_H

@@ -483,14 +483,4 @@ namespace Bcg {
         }
         return visited;
     }
-
-    //TODO: Move these to separate files
-
-    EdgeProperty<Vector<unsigned int, 2> > Graph::get_edges() {
-        EdgeProperty<Vector<unsigned int, 2> > indices = edge_property<Vector<unsigned int, 2> >("e:indices");
-        for (const Edge &e: edges) {
-            indices[e] = {get_vertex(get_halfedge(e, 0)).idx(), get_vertex(get_halfedge(e, 1)).idx()};
-        }
-        return indices;
-    }
 }

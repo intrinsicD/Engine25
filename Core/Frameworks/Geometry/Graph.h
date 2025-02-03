@@ -6,8 +6,214 @@
 #define ENGINE25_GRAPH_H
 
 #include "PointCloud.h"
+#include <stack>
+#include <queue>
 
 namespace Bcg {
+    //---------------------------------------------------------------------
+    // DFS Iterator for Graph (vertex traversal)
+    //---------------------------------------------------------------------
+    template<class GraphType>
+    class GraphDFSIterator {
+    public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = Vertex;
+        using reference = const Vertex &;
+        using pointer = const Vertex *;
+        using iterator_category = std::forward_iterator_tag;
+
+        // Constructor: initialize with a starting vertex.
+        GraphDFSIterator(const GraphType *graph, const Vertex &start)
+            : graph_(graph), visited_(graph ? graph->n_vertices() : 0, false) {
+            if (graph_ && graph_->is_valid(start)) {
+                stack_.push(start);
+                visited_[start.idx()] = true;
+            }
+        }
+
+        // Default constructor for the end iterator.
+        GraphDFSIterator() : graph_(nullptr) {
+        }
+
+        reference operator*() const {
+            return stack_.top();
+        }
+
+        pointer operator->() const {
+            return &stack_.top();
+        }
+
+        GraphDFSIterator &operator++() {
+            if (stack_.empty()) {
+                graph_ = nullptr;
+                return *this;
+            }
+
+            // Pop the current vertex.
+            Vertex current = stack_.top();
+            stack_.pop();
+
+            // For each neighbor of current (using your get_vertices circulator),
+            // push unvisited neighbors onto the stack.
+            for (const Vertex &nbr: graph_->get_vertices(current)) {
+                if (!visited_[nbr.idx()]) {
+                    visited_[nbr.idx()] = true;
+                    stack_.push(nbr);
+                }
+            }
+
+            if (stack_.empty()) {
+                graph_ = nullptr; // Mark end.
+            }
+            return *this;
+        }
+
+        GraphDFSIterator operator++(int) {
+            GraphDFSIterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        bool operator==(const GraphDFSIterator &other) const {
+            // Both end iterators have graph_ set to nullptr.
+            if (graph_ == nullptr && other.graph_ == nullptr) {
+                return true;
+            }
+            // Compare the graph pointer and the top of the stack.
+            return graph_ == other.graph_ && stack_.top() == other.stack_.top();
+        }
+
+        bool operator!=(const GraphDFSIterator &other) const {
+            return !(*this == other);
+        }
+
+    private:
+        const GraphType *graph_;
+        std::stack<Vertex, std::vector<Vertex> > stack_;
+        std::vector<bool> visited_;
+    };
+
+    //---------------------------------------------------------------------
+    // BFS Iterator for Graph (vertex traversal)
+    //---------------------------------------------------------------------
+    template<class GraphType>
+    class GraphBFSIterator {
+    public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = Vertex;
+        using reference = const Vertex &;
+        using pointer = const Vertex *;
+        using iterator_category = std::forward_iterator_tag;
+
+        // Constructor: initialize with a starting vertex.
+        GraphBFSIterator(const GraphType *graph, const Vertex &start)
+            : graph_(graph), visited_(graph ? graph->n_vertices() : 0, false) {
+            if (graph_ && graph_->is_valid(start)) {
+                queue_.push(start);
+                visited_[start.idx()] = true;
+            }
+        }
+
+        // Default constructor for the end iterator.
+        GraphBFSIterator() : graph_(nullptr) {
+        }
+
+        reference operator*() const {
+            return queue_.front();
+        }
+
+        pointer operator->() const {
+            return &queue_.front();
+        }
+
+        GraphBFSIterator &operator++() {
+            if (queue_.empty()) {
+                graph_ = nullptr;
+                return *this;
+            }
+            Vertex current = queue_.front();
+            queue_.pop();
+
+            // For each neighbor of current, push unvisited neighbors onto the queue.
+            for (const Vertex &nbr: graph_->get_vertices(current)) {
+                if (!visited_[nbr.idx()]) {
+                    visited_[nbr.idx()] = true;
+                    queue_.push(nbr);
+                }
+            }
+            if (queue_.empty()) {
+                graph_ = nullptr;
+            }
+            return *this;
+        }
+
+        GraphBFSIterator operator++(int) {
+            GraphBFSIterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        bool operator==(const GraphBFSIterator &other) const {
+            if (graph_ == nullptr && other.graph_ == nullptr)
+                return true;
+            return graph_ == other.graph_ &&
+                   (!queue_.empty() && !other.queue_.empty() &&
+                    queue_.front() == other.queue_.front());
+        }
+
+        bool operator!=(const GraphBFSIterator &other) const {
+            return !(*this == other);
+        }
+
+    private:
+        const GraphType *graph_;
+        std::queue<Vertex> queue_;
+        std::vector<bool> visited_;
+    };
+
+    //---------------------------------------------------------------------
+    // Range wrappers for Graph DFS and BFS traversals
+    //---------------------------------------------------------------------
+    template<class GraphType>
+    class GraphDFSRange {
+    public:
+        GraphDFSRange(const GraphType *graph, const Vertex &start)
+            : graph_(graph), start_(start) {
+        }
+
+        GraphDFSIterator<GraphType> begin() const {
+            return GraphDFSIterator<GraphType>(graph_, start_);
+        }
+
+        GraphDFSIterator<GraphType> end() const {
+            return GraphDFSIterator<GraphType>();
+        }
+
+    private:
+        const GraphType *graph_;
+        Vertex start_;
+    };
+
+    template<class GraphType>
+    class GraphBFSRange {
+    public:
+        GraphBFSRange(const GraphType *graph, const Vertex &start)
+            : graph_(graph), start_(start) {
+        }
+
+        GraphBFSIterator<GraphType> begin() const {
+            return GraphBFSIterator<GraphType>(graph_, start_);
+        }
+
+        GraphBFSIterator<GraphType> end() const {
+            return GraphBFSIterator<GraphType>();
+        }
+
+    private:
+        const GraphType *graph_;
+        Vertex start_;
+    };
+
     /**
      * @brief A Graph class representing a halfedge-based data structure, inheriting from PointCloud.
      * This class provides mechanisms to store, manipulate, and traverse vertices, edges, and halfedges.
@@ -590,54 +796,26 @@ namespace Bcg {
                                                                         std::function<bool(const Halfedge &)>
                                                                         halfedge_action);
 
-        //TODO: Move these to separate files
-
-        EdgeProperty<Vector<unsigned int, 2> > get_edges();
-
-        template<typename T, int N>
-        Vector<T, N> vector(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) const {
-            return pos[v1] - pos[v0];
+        //todo: add tests for dfs and bfs
+        /**
+         * @brief Returns a DFS range for traversing the graph starting at a given vertex.
+         * @param start The starting vertex.
+         * @return A range that can be used in a range-based for loop.
+         */
+        GraphDFSRange<Graph> dfs(const Vertex &start) const {
+            return GraphDFSRange<Graph>(this, start);
         }
 
-        template<typename T, int N>
-        Vector<T, N> vector(const Edge &e, const VertexProperty<Vector<T, N> > &pos) const {
-            return vector(get_vertex(e, 0), get_vertex(e, 1), pos);
+        /**
+         * @brief Returns a BFS range for traversing the graph starting at a given vertex.
+         * @param start The starting vertex.
+         * @return A range that can be used in a range-based for loop.
+         */
+        GraphBFSRange<Graph> bfs(const Vertex &start) const {
+            return GraphBFSRange<Graph>(this, start);
         }
 
-        template<typename T, int N>
-        Vector<T, N> vector(const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) const {
-            return vector(get_edge(h), pos);
-        }
-
-        template<typename T, int N>
-        Real length(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) const {
-            return vector(v0, v1, pos).norm();
-        }
-
-        template<typename T, int N>
-        Real length(const Edge &e, const VertexProperty<Vector<T, N> > &pos) const {
-            return vector(e, pos).norm();
-        }
-
-        template<typename T, int N>
-        Real length(const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) const {
-            return vector(h, pos).norm();
-        }
-
-        template<typename T, int N>
-        Vector<T, N> center(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) const {
-            return (pos[v0] + pos[v1]) / 2;
-        }
-
-        template<typename T, int N>
-        Vector<T, N> center(const Edge &e, const VertexProperty<Vector<T, N> > &pos) const {
-            return center(get_vertex(e, 0), get_vertex(e, 1), pos);
-        }
-
-        template<typename T, int N>
-        Vector<T, N> center(const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) const {
-            return center(get_edge(h), pos);
-        }
+        //TODO: provide dfs and bfs iterators and range based for loops similar to tree class
     };
 }
 

@@ -1387,4 +1387,13 @@ namespace Bcg {
     };
 }
 
+namespace std {
+    template <>
+    struct hash<Bcg::Node> {
+        size_t operator()(const Bcg::Node &handle) const noexcept {
+            return std::hash<size_t>()(handle.idx());
+        }
+    };
+}
+
 #endif //GEOMETRICPROPERTIES_H

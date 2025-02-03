@@ -7,6 +7,7 @@ target_sources(Engine25Tests PRIVATE
         TestGraph.cpp
         TestMesh.cpp
         TestMeshIo.cpp
+        TestTree.cpp
         TestVoxelGrid.cpp
         TestVoxelGridDownsampling.cpp
 )
