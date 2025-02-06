@@ -4,7 +4,7 @@
 
 // TestGraph.cpp
 #include "gtest/gtest.h"
-#include "Graph.h"
+#include "GraphUtils.h"
 
 using namespace Bcg;
 
@@ -69,7 +69,7 @@ TEST_F(GraphTest, ConnectivityValidation) {
     EXPECT_EQ(graph.get_valence(v3), 1);
 
     // Check if the edges are as expected
-    auto edges = graph.get_edges();
+    auto edges = Edges(graph);
     EXPECT_EQ(graph.edges.size(), 2);
     EXPECT_EQ(edges[Edge(0)], (Vector<unsigned int, 2>(1, 0)));
     EXPECT_EQ(edges[Edge(1)], (Vector<unsigned int, 2>(2, 1)));
@@ -84,7 +84,7 @@ TEST_F(GraphTest, EdgeProperty) {
     graph.add_edge(v2, v3);
 
     // Check if the edges are as expected
-    auto edges = graph.get_edges();
+    auto edges = Edges(graph);
     EXPECT_EQ(graph.edges.size(), 2);
     EXPECT_EQ(edges[Edge(0)], (Vector<unsigned int, 2>(1, 0)));
     EXPECT_EQ(edges[Edge(1)], (Vector<unsigned int, 2>(2, 1)));

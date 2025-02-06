@@ -4,7 +4,7 @@
 
 // TestGraph.cpp
 #include "gtest/gtest.h"
-#include "Mesh.h"
+#include "MeshUtils.h"
 
 using namespace Bcg;
 
@@ -510,4 +510,164 @@ TEST_F(MeshTest, post_decrement) {
     auto vv = mesh.get_vertices(v);
     EXPECT_EQ((*vv--).idx(), 4u);
     EXPECT_EQ((*vv).idx(), 1u);
+}
+
+// Helper: Create a tetrahedron mesh with vertices:
+// v0 = (0,0,0), v1 = (1,0,0), v2 = (0,1,0), v3 = (0,0,1)
+// Faces: (v0, v1, v2), (v0, v1, v3), (v0, v2, v3), (v1, v2, v3)
+Mesh CreateTetrahedronMesh() {
+    Mesh mesh;
+    // Assuming that add_vertex takes a Vector<Real, 3> and returns a Vertex handle.
+    Vertex v0 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 0.0));
+    Vertex v1 = mesh.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    Vertex v2 = mesh.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    Vertex v3 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    // Assuming that add_face takes an initializer list of Vertex handles.
+    mesh.add_face({v0, v1, v2});
+    mesh.add_face({v0, v1, v3});
+    mesh.add_face({v0, v2, v3});
+    mesh.add_face({v1, v2, v3});
+    return mesh;
+}
+
+// Helper: Create a single triangle mesh with vertices (0,0,0), (1,0,0), (0,1,0)
+Mesh CreateSingleTriangleMesh() {
+    Mesh mesh;
+    Vertex v0 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 0.0));
+    Vertex v1 = mesh.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    Vertex v2 = mesh.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    mesh.add_face({v0, v1, v2});
+    return mesh;
+}
+
+//---------------------------------------------------------------
+// Volume and Surface Area Tests
+//---------------------------------------------------------------
+TEST(MeshUtilsTest, VolumeTetrahedralDecomposition_Tetrahedron) {
+    Mesh mesh = CreateTetrahedronMesh();
+    // For the tetrahedron with vertices (0,0,0), (1,0,0), (0,1,0), (0,0,1)
+    // the volume is 1/6.
+    Real volume = VolumeTetrahedralDecomposition(mesh);
+    EXPECT_NEAR(volume, 1.0 / 6.0, 1e-6);
+}
+
+TEST(MeshUtilsTest, VolumeDivergenceTheorem_Tetrahedron) {
+    Mesh mesh = CreateTetrahedronMesh();
+    Real volume = VolumeDivergenceTheorem(mesh);
+    EXPECT_NEAR(volume, 1.0 / 6.0, 1e-6);
+}
+
+TEST(MeshUtilsTest, SurfaceArea_Tetrahedron) {
+    Mesh mesh = CreateTetrahedronMesh();
+    Real surfaceArea = SurfaceArea(mesh);
+    // Expected area:
+    // Three faces are right triangles with area 0.5 each, and the fourth face has area 0.5 * sqrt(3).
+    Real expectedArea = 1.5 + 0.5 * std::sqrt(3.0);
+    EXPECT_NEAR(surfaceArea, expectedArea, 1e-6);
+}
+
+//---------------------------------------------------------------
+// Face Methods Tests (using a single triangle)
+//---------------------------------------------------------------
+TEST(MeshUtilsTest, FaceProperties_SingleTriangle) {
+    Mesh mesh = CreateSingleTriangleMesh();
+    // Assume that mesh.faces() returns a container of faces.
+    const Face &f = *mesh.faces.begin();
+
+    Real area = FaceArea(mesh, f);
+    EXPECT_NEAR(area, 0.5, 1e-6);
+
+    Vector<Real, 3> center = FaceCenter(mesh, f);
+    Vector<Real, 3> expectedCenter(1.0 / 3.0, 1.0 / 3.0, 0.0);
+    EXPECT_NEAR(center[0], expectedCenter[0], 1e-6);
+    EXPECT_NEAR(center[1], expectedCenter[1], 1e-6);
+    EXPECT_NEAR(center[2], expectedCenter[2], 1e-6);
+
+    Vector<Real, 3> areaVector = FaceAreaVector(mesh, f);
+    EXPECT_NEAR(areaVector.norm(), 0.5, 1e-6);
+
+    Vector<Real, 3> normal = FaceNormal(mesh, f);
+    // For this triangle in the XY plane, the normal should be (0,0,±1).
+    EXPECT_NEAR(std::abs(normal[2]), 1.0, 1e-6);
+
+    // Test FaceGradient:
+    // Define a simple scalar field u = x coordinate.
+    VertexProperty<Real> scalarfield(mesh.vertex_property<Real>("v:scalarfield"));
+    for (const Vertex &v: mesh.vertices) {
+        scalarfield[v] = mesh.positions[v][0];
+    }
+    Vector<Real, 3> grad = FaceGradient(mesh, f, scalarfield);
+    // For the triangle with vertices (0,0,0), (1,0,0), (0,1,0), u = x, the gradient is (1, 0, 0).
+    EXPECT_NEAR(grad[0], 1.0, 1e-6);
+    EXPECT_NEAR(grad[1], 0.0, 1e-6);
+    EXPECT_NEAR(grad[2], 0.0, 1e-6);
+}
+
+//---------------------------------------------------------------
+// Vertex Methods Tests
+//---------------------------------------------------------------
+TEST(MeshUtilsTest, VertexAreasSum_Tetrahedron) {
+    Mesh mesh = CreateTetrahedronMesh();
+    Real sumVoronoi = 0.0;
+    for (const Vertex &v: mesh.vertices) {
+        sumVoronoi += VertexVoronoiArea(mesh, v);
+    }
+    Real surfaceArea = SurfaceArea(mesh);
+    // For a proper mixed Voronoi area, the sum should equal the surface area.
+    EXPECT_NEAR(sumVoronoi, surfaceArea, 1e-6);
+
+    Real sumBarycentric = 0.0;
+    for (const Vertex &v: mesh.vertices) {
+        sumBarycentric += VertexBarycentricArea(mesh, v);
+    }
+    EXPECT_NEAR(sumBarycentric, surfaceArea, 1e-6);
+}
+
+TEST(MeshUtilsTest, VertexNormal_Tetrahedron) {
+    Mesh mesh = CreateTetrahedronMesh();
+    for (const Vertex &v: mesh.vertices) {
+        Vector<Real, 3> vn = VertexNormal(mesh, v);
+        EXPECT_NEAR(vn.norm(), 1.0, 1e-6);
+    }
+}
+
+TEST(MeshUtilsTest, VertexStarCenterAndGradient_SingleTriangle) {
+    Mesh mesh = CreateSingleTriangleMesh();
+    // For a single triangle, each vertex's star center should be a weighted average
+    // of the adjacent vertices. We simply test that it is finite.
+    for (const Vertex &v: mesh.vertices) {
+        Vector<Real, 3> starCenter = VertexStarCenter(mesh, v);
+        EXPECT_TRUE(std::isfinite(starCenter[0]));
+        EXPECT_TRUE(std::isfinite(starCenter[1]));
+        EXPECT_TRUE(std::isfinite(starCenter[2]));
+    }
+
+    // For the star gradient, use the scalar field u = x.
+    VertexProperty<Real> scalarfield = mesh.vertex_property<Real>("v:scalarfield");
+    for (const Vertex &v: mesh.vertices) {
+        scalarfield[v] = mesh.positions[v][0];
+    }
+    for (const Vertex &v: mesh.vertices) {
+        Vector<Real, 3> starGrad = VertexStarGradient(mesh, v, scalarfield);
+        // For a linear function u = x, the gradient should be parallel to (1,0,0).
+        if (starGrad.norm() > 1e-6) {
+            Vector<Real, 3> normalized = starGrad / starGrad.norm();
+            EXPECT_NEAR(normalized[0], 1.0, 1e-6);
+            EXPECT_NEAR(normalized[1], 0.0, 1e-6);
+            EXPECT_NEAR(normalized[2], 0.0, 1e-6);
+        }
+    }
+}
+
+//---------------------------------------------------------------
+// Dual Mesh Tests
+//---------------------------------------------------------------
+TEST(MeshUtilsTest, Dual_Tetrahedron) {
+    Mesh mesh = CreateTetrahedronMesh();
+    Mesh dualMesh = Dual(mesh);
+    // For a closed mesh, the dual should have:
+    //   - number of vertices equal to the number of faces of the original,
+    //   - number of faces equal to the number of vertices of the original.
+    EXPECT_EQ(dualMesh.vertices.size(), mesh.faces.size());
+    EXPECT_EQ(dualMesh.faces.size(), mesh.vertices.size());
 }
