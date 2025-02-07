@@ -4,6 +4,7 @@
 
 #include "MeshUtils.h"
 #include "Eigen/Geometry"
+#include <iostream>
 
 namespace Bcg {
     template<typename T>
@@ -32,6 +33,63 @@ namespace Bcg {
     // Mesh Methods
     //------------------------------------------------------------------------------------------------------------------
 
+    [[nodiscard]] bool ValidateMesh(const Mesh &mesh) {
+        // Validate all faces: each face should have a closed halfedge cycle.
+        for (const Face &f : mesh.faces) {
+            Halfedge h0 = mesh.get_halfedge(f);
+            if (!h0.is_valid()) {
+                std::cerr << "Error: Face " << f.idx() << " has no valid starting halfedge.\n";
+                return false;
+            }
+            Halfedge h = h0;
+            int count = 0;
+            const int max_iter = mesh.faces.size() * 10; // a safeguard against infinite loops
+            do {
+                // Check that the halfedge's face pointer matches the current face.
+                auto h_face = mesh.get_face(h);
+                if (h_face != f) {
+                    std::cerr << "Error: Inconsistent face pointer for halfedge " << h.idx()
+                         << " in face " << f.idx()
+                         << ". Expected face " << f.idx()
+                         << " but got face " << h_face.idx() << std::endl;
+
+                    auto opp = mesh.get_opposite(h);
+                    std::cerr << "Info: Halfedge " << h.idx() << " (opp " << opp.idx() << ") in face " << f.idx()
+                              << " has face pointer " << mesh.get_face(h).idx() << std::endl;
+                    std::cerr << "Info: Halfedge opp " << opp.idx() << " in face " << f.idx()
+                     << " has face pointer " << mesh.get_face(opp).idx() << std::endl;
+                    return false;
+                }
+                h = mesh.get_next(h);
+                ++count;
+                if (count > max_iter) {
+                    std::cerr << "Error: Halfedge cycle for face " << f.idx() << " did not close properly (possible infinite loop).\n";
+                    return false;
+                }
+            } while (h != h0);
+        }
+
+        // Validate halfedge opposites.
+        for (const Halfedge &h : mesh.halfedges) {
+            if (!h.is_valid())
+                continue;
+            Halfedge opp = mesh.get_opposite(h);
+            if (!opp.is_valid() || mesh.get_opposite(opp) != h) {
+                std::cerr << "Error: Halfedge " << h.idx() << " has an invalid opposite.\n";
+                return false;
+            }
+        }
+
+        // Validate that each vertex's halfedge pointer is consistent.
+        for (const Vertex &v : mesh.vertices) {
+            Halfedge h = mesh.get_halfedge(v);
+            if (h.is_valid() && mesh.get_vertex(mesh.get_opposite(h)) != v) {
+                std::cerr << "Error: Vertex " << v.idx() << " has an inconsistent halfedge pointer.\n";
+                return false;
+            }
+        }
+        return true;
+    }
 
     [[nodiscard]] Mesh Dual(const Mesh &mesh) {
         Mesh dual;
@@ -209,6 +267,8 @@ namespace Bcg {
 
                 // compute and check triangle area
                 const double triArea = PolygonalFaceAreaVector<double>(mesh, mesh.get_face(h)).norm();
+                const double triArea_check = pq.cross(qr).norm() / 2.0;
+                assert(triArea > 0.0 && std::abs(triArea - triArea_check) < epsilon);
                 if (triArea <= epsilon) {
                     continue;
                 }
@@ -222,7 +282,7 @@ namespace Bcg {
                     area += 0.25 * triArea;
                 } else if (dotq < 0.0 || dotr < 0.0) {
                     // angle at q or r obtuse
-                    area += 0.125 * triArea;
+                    area += 0.5 * triArea;
                 } else {
                     // no obtuse angles
                     // cot(angle) = cos(angle)/sin(angle) = dot(A,B)/norm(cross(A,B))

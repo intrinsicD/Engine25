@@ -12,6 +12,8 @@ namespace Bcg {
     // Mesh Methods
     //------------------------------------------------------------------------------------------------------------------
 
+    [[nodiscard]] bool ValidateMesh(const Mesh &mesh);
+
     [[nodiscard]] Mesh Dual(const Mesh &mesh);
 
     [[nodiscard]] Real VolumeTetrahedralDecomposition(const Mesh &mesh);

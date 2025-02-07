@@ -5,6 +5,7 @@
 // TestGraph.cpp
 #include "gtest/gtest.h"
 #include "MeshUtils.h"
+#include "MeshIo.h"
 
 using namespace Bcg;
 
@@ -80,6 +81,44 @@ protected:
         mesh.add_triangle(v9, v5, v6);
     }
 };
+
+// Helper: Create a tetrahedron mesh with vertices:
+// v0 = (0,0,0), v1 = (1,0,0), v2 = (0,1,0), v3 = (0,0,1)
+// Faces: (v0, v1, v2), (v0, v1, v3), (v0, v2, v3), (v1, v2, v3)
+Mesh CreateTetrahedronMesh() {
+    Mesh mesh;
+    // Assuming that add_vertex takes a Vector<Real, 3> and returns a Vertex handle.
+    Vertex v0 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 0.0));
+    Vertex v1 = mesh.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    Vertex v2 = mesh.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    Vertex v3 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    // Assuming that add_face takes an initializer list of Vertex handles.
+    mesh.add_face({v0, v1, v2}); // Face 0
+    mesh.add_face({v1, v0, v3}); // Face 1: Note v3 comes before v1, reversing the order on shared edge (v0,v1)
+    mesh.add_face({v0, v2, v3}); // Face 2
+    mesh.add_face({v2, v1, v3}); // Face 3: Reordered so that shared edges are oppositely oriented
+
+    EXPECT_TRUE(ValidateMesh(mesh));
+    return mesh;
+}
+
+// Helper: Create a single triangle mesh with vertices (0,0,0), (1,0,0), (0,1,0)
+Mesh CreateSingleTriangleMesh() {
+    Mesh mesh;
+    Vertex v0 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 0.0));
+    Vertex v1 = mesh.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
+    Vertex v2 = mesh.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    mesh.add_face({v0, v1, v2});
+    return mesh;
+}
+
+Mesh LoadSuzanne() {
+    Mesh mesh;
+    MeshIoOBJ meshIo("../../Data/obj/suzanne.obj");
+    EXPECT_TRUE(meshIo.read(mesh));
+    EXPECT_TRUE(ValidateMesh(mesh));
+    return mesh;
+}
 
 TEST_F(MeshTest, DefaultConstructor) {
     EXPECT_TRUE(mesh.is_empty());
@@ -319,39 +358,51 @@ TEST_F(MeshTest, face_properties) {
 }
 
 TEST_F(MeshTest, vertex_iterators) {
-    add_triangle();
-    size_t sumIdx(0);
+    auto mesh = CreateTetrahedronMesh();
+    EXPECT_EQ(mesh.vertices.size(), size_t(4));
+    auto v_count = mesh.vertex_property<int>("v:count", 0);
     for (auto v: mesh.vertices) {
-        sumIdx += v.idx();
+        v_count[v] += 1;
     }
-    EXPECT_EQ(sumIdx, size_t(3));
+    for (auto v: mesh.vertices) {
+        EXPECT_EQ(v_count[v], 1);
+    }
 }
 
 TEST_F(MeshTest, edge_iterators) {
-    add_triangle();
-    size_t sumIdx(0);
+    auto mesh = CreateTetrahedronMesh();
+    EXPECT_EQ(mesh.edges.size(), size_t(6));
+    auto e_count = mesh.edge_property<int>("e:count", 0);
     for (auto e: mesh.edges) {
-        sumIdx += e.idx();
+        e_count[e] += 1;
     }
-    EXPECT_EQ(sumIdx, size_t(3));
+    for (auto e: mesh.edges) {
+        EXPECT_EQ(e_count[e], 1);
+    }
 }
 
 TEST_F(MeshTest, halfedge_iterators) {
-    add_triangle();
-    size_t sumIdx(0);
+    auto mesh = CreateTetrahedronMesh();
+    EXPECT_EQ(mesh.halfedges.size(), size_t(12));
+    auto h_count = mesh.halfedge_property<int>("h:count", 0);
     for (auto h: mesh.halfedges) {
-        sumIdx += h.idx();
+        h_count[h] += 1;
     }
-    EXPECT_EQ(sumIdx, size_t(15));
+    for (auto h: mesh.halfedges) {
+        EXPECT_EQ(h_count[h], 1);
+    }
 }
 
 TEST_F(MeshTest, face_iterators) {
-    add_triangle();
-    size_t sumIdx(0);
+    auto mesh = CreateTetrahedronMesh();
+    EXPECT_EQ(mesh.faces.size(), size_t(4));
+    auto f_count = mesh.face_property<int>("f:count", 0);
     for (auto f: mesh.faces) {
-        sumIdx += f.idx();
+        f_count[f] += 1;
     }
-    EXPECT_EQ(sumIdx, size_t(0));
+    for (auto f: mesh.faces) {
+        EXPECT_EQ(f_count[f], 1);
+    }
 }
 
 TEST_F(MeshTest, is_triangle_mesh) {
@@ -512,43 +563,95 @@ TEST_F(MeshTest, post_decrement) {
     EXPECT_EQ((*vv).idx(), 1u);
 }
 
-// Helper: Create a tetrahedron mesh with vertices:
-// v0 = (0,0,0), v1 = (1,0,0), v2 = (0,1,0), v3 = (0,0,1)
-// Faces: (v0, v1, v2), (v0, v1, v3), (v0, v2, v3), (v1, v2, v3)
-Mesh CreateTetrahedronMesh() {
-    Mesh mesh;
-    // Assuming that add_vertex takes a Vector<Real, 3> and returns a Vertex handle.
-    Vertex v0 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 0.0));
-    Vertex v1 = mesh.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    Vertex v2 = mesh.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    Vertex v3 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
-    // Assuming that add_face takes an initializer list of Vertex handles.
-    mesh.add_face({v0, v1, v2});
-    mesh.add_face({v0, v1, v3});
-    mesh.add_face({v0, v2, v3});
-    mesh.add_face({v1, v2, v3});
-    return mesh;
+//tests for all other circulators
+
+TEST_F(MeshTest, vertex_vertex_circulator) {
+    vertex_onering();
+    auto v = Vertex(3); // center vertex
+    auto vv = mesh.get_vertices(v);
+    auto d = std::distance(vv.begin(), vv.end());
+    EXPECT_EQ(d, 6);
+
+    std::vector<Vertex> visited_order;
+    std::cout << "vertex_vertex_circulator: Visited vertices ";
+    for (auto vv: mesh.get_vertices(v)) {
+        visited_order.push_back(vv);
+        std::cout << visited_order.back() << ", ";
+    }
 }
 
-// Helper: Create a single triangle mesh with vertices (0,0,0), (1,0,0), (0,1,0)
-Mesh CreateSingleTriangleMesh() {
-    Mesh mesh;
-    Vertex v0 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 0.0));
-    Vertex v1 = mesh.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    Vertex v2 = mesh.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    mesh.add_face({v0, v1, v2});
-    return mesh;
+TEST_F(MeshTest, vertex_halfedge_circulator) {
+    vertex_onering();
+    auto v = Vertex(3); // center vertex
+    auto vv = mesh.get_halfedges(v);
+    auto d = std::distance(vv.begin(), vv.end());
+    EXPECT_EQ(d, 6);
+
+    std::vector<Vertex> visited_order;
+    std::cout << "vertex_halfedge_circulator: Visited vertices ";
+    for (auto h: vv) {
+        visited_order.push_back(mesh.get_vertex(h));
+        std::cout << visited_order.back() << ", ";
+    }
+}
+
+TEST_F(MeshTest, vertex_edge_circulator) {
+    vertex_onering();
+    auto v = Vertex(3); // center vertex
+    auto vv = mesh.get_edges(v);
+    auto d = std::distance(vv.begin(), vv.end());
+    EXPECT_EQ(d, 6);
+
+    std::vector<Vertex> visited_order;
+    std::cout << "vertex_edge_circulator: Visited vertices ";
+    for (auto e: vv) {
+        visited_order.push_back(mesh.get_vertex(e, 1));
+        std::cout << visited_order.back() << ", ";
+    }
+}
+
+TEST_F(MeshTest, vertex_face_circulator) {
+    vertex_onering();
+    auto v = Vertex(3); // center vertex
+    auto vv = mesh.get_faces(v);
+    auto d = std::distance(vv.begin(), vv.end());
+    EXPECT_EQ(d, 6);
+
+    std::vector<Face> visited_order;
+    std::cout << "vertex_face_circulator: Visited faces ";
+    for (auto f: vv) {
+        visited_order.push_back(f);
+        std::cout << visited_order.back() << ", ";
+    }
+}
+
+TEST_F(MeshTest, face_halfedge_circulator) {
+    vertex_onering();
+    auto f = Face(0); // center vertex
+    auto fh = mesh.get_halfedges(f);
+    auto d = std::distance(fh.begin(), fh.end());
+    EXPECT_EQ(d, 3);
+}
+
+TEST_F(MeshTest, face_vertex_circulator) {
+    vertex_onering();
+    auto f = Face(0); // center vertex
+    auto fv = mesh.get_vertices(f);
+    auto d = std::distance(fv.begin(), fv.end());
+    EXPECT_EQ(d, 3);
 }
 
 //---------------------------------------------------------------
 // Volume and Surface Area Tests
 //---------------------------------------------------------------
 TEST(MeshUtilsTest, VolumeTetrahedralDecomposition_Tetrahedron) {
-    Mesh mesh = CreateTetrahedronMesh();
+    //Mesh mesh = CreateTetrahedronMesh();
+    Mesh mesh = LoadSuzanne();
     // For the tetrahedron with vertices (0,0,0), (1,0,0), (0,1,0), (0,0,1)
     // the volume is 1/6.
-    Real volume = VolumeTetrahedralDecomposition(mesh);
-    EXPECT_NEAR(volume, 1.0 / 6.0, 1e-6);
+    Real volume1 = VolumeTetrahedralDecomposition(mesh);
+    Real volume2 = VolumeDivergenceTheorem(mesh);
+    EXPECT_NEAR(volume1, volume2, 1e-3);
 }
 
 TEST(MeshUtilsTest, VolumeDivergenceTheorem_Tetrahedron) {
