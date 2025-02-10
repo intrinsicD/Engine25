@@ -855,16 +855,23 @@ namespace Bcg {
         // test for topological errors
         for (i = 0, ii = 1; i < n; ++i, ++ii, ii %= n) {
             if (!is_boundary(f_vertices[i])) {
-                auto what = "Mesh::add_face: Complex vertex.";
-                LOG_ERROR(what);
+                std::ostringstream oss;
+                oss << "Mesh::add_face: Complex vertex at index " << f_vertices[i].idx() << ". ";
+                oss << "Vertex connectivity: halfedge = " << Graph::get_halfedge(f_vertices[i]).idx();
+                LOG_ERROR(oss.str());
+                throw std::logic_error(oss.str());
             }
 
             halfedges[i] = find_halfedge(f_vertices[i], f_vertices[ii]);
             is_new[i] = !halfedges[i].is_valid();
 
             if (!is_new[i] && !is_boundary(halfedges[i])) {
-                auto what = "Mesh::add_face: Complex edge.";
-                LOG_ERROR(what);
+                std::ostringstream oss;
+                oss << "Mesh::add_face: Complex edge between vertices "
+                        << f_vertices[i].idx() << " and " << f_vertices[ii].idx() << ". ";
+                oss << "Found halfedge: " << halfedges[i].idx() << ", which is not a boundary.";
+                LOG_ERROR(oss.str());
+                throw std::logic_error(oss.str());
             }
         }
 
@@ -891,8 +898,18 @@ namespace Bcg {
 
                     // ok ?
                     if (boundary_next == inner_next) {
-                        auto what = "Mesh::add_face: Patch re-linking failed.";
-                        LOG_ERROR(what);
+                        std::ostringstream oss;
+                        oss << "Mesh::add_face: Patch re-linking failed.\n";
+                        oss << "inner_prev: " << inner_prev.idx() << ", inner_next: " << inner_next.idx() << "\n";
+                        oss << "outer_prev: " << outer_prev.idx() << ", outer_next: " << outer_next.idx() << "\n";
+                        oss << "boundary_prev: " << boundary_prev.idx() << ", boundary_next: " << boundary_next.idx() <<
+                                "\n";
+                        // Optionally, add more info, for example:
+                        oss << "Face connectivity: inner_prev->face: " << get_face(inner_prev).idx()
+                                << ", inner_next->face: " << get_face(inner_next).idx() << "\n";
+                        // Log and/or throw an exception
+                        LOG_ERROR(oss.str());
+                        throw std::logic_error(oss.str());
                     }
 
                     // other halfedges' handles

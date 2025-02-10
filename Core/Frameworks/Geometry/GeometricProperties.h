@@ -365,6 +365,15 @@ namespace Bcg {
             return tmp;
         }
 
+        Vertex get_next() const{
+            return m_data->get_vertex(m_data->rotate_ccw(m_halfedge));
+        }
+
+
+        Vertex get_prev() const{
+            return m_data->get_vertex(m_data->rotate_cw(m_halfedge));
+        }
+
         //! get the vertex the circulator refers to
         Vertex operator*() const {
             assert(m_data);
@@ -456,6 +465,15 @@ namespace Bcg {
             return tmp;
         }
 
+        Halfedge get_next() const{
+            return m_data->rotate_ccw(m_halfedge);
+        }
+
+
+        Halfedge get_prev() const{
+            return m_data->rotate_cw(m_halfedge);
+        }
+
         //! get the halfedge the circulator refers to
         Halfedge operator*() const { return m_halfedge; }
 
@@ -539,6 +557,16 @@ namespace Bcg {
             auto tmp = *this;
             --(*this);
             return tmp;
+        }
+
+
+        Edge get_next() const{
+            return m_data->rotate_ccw(m_halfedge);
+        }
+
+
+        Edge get_prev() const{
+            return m_data->rotate_cw(m_halfedge);
         }
 
         //! get the halfedge the circulator refers to
@@ -633,6 +661,16 @@ namespace Bcg {
             return tmp;
         }
 
+
+        Face get_next() const{
+            return m_data->get_face(m_data->rotate_ccw(m_halfedge));
+        }
+
+
+        Face get_prev() const{
+            return m_data->get_face(m_data->rotate_cw(m_halfedge));
+        }
+
         //! get the face the circulator refers to
         Face operator*() const {
             assert(m_data && m_halfedge.is_valid());
@@ -719,6 +757,15 @@ namespace Bcg {
             auto tmp = *this;
             --(*this);
             return tmp;
+        }
+
+        Vertex get_next() const{
+            return m_data->get_vertex(m_data->get_next(m_halfedge));
+        }
+
+
+        Vertex get_prev() const{
+            return m_data->get_vertex(m_data->get_prev(m_halfedge));
         }
 
         //! get the vertex the circulator refers to

@@ -710,7 +710,8 @@ TEST(MeshUtilsTest, FaceProperties_SingleTriangle) {
 // Vertex Methods Tests
 //---------------------------------------------------------------
 TEST(MeshUtilsTest, VertexAreasSum_Tetrahedron) {
-    Mesh mesh = CreateTetrahedronMesh();
+    //Mesh mesh = CreateTetrahedronMesh();
+    Mesh mesh = LoadSuzanne();
     Real sumVoronoi = 0.0;
     for (const Vertex &v: mesh.vertices) {
         sumVoronoi += VertexVoronoiArea(mesh, v);

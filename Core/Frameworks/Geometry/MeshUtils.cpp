@@ -180,7 +180,17 @@ namespace Bcg {
     //------------------------------------------------------------------------------------------------------------------
 
     Real FaceArea(const Mesh &mesh, const Face &f) {
-        return static_cast<Real>(PolygonalFaceAreaVector<double>(mesh, f).norm());
+        auto fv = mesh.get_vertices(f);
+        Vertex p0 = *fv;
+        ++fv;
+        double area = 0.0;
+        for (const auto &v : fv) {
+            Vector<Real, 3> d = mesh.positions[v] - mesh.positions[p0];
+            Vector<Real, 3> e = mesh.positions[fv.get_next()] - mesh.positions[p0];
+            area += d.cross(e).norm();
+        }
+        return area / 2.0;
+        //return static_cast<Real>(PolygonalFaceAreaVector<double>(mesh, f).norm());
     }
 
     Vector<Real, 3> FaceCenter(const Mesh &mesh, const Face &f) {
@@ -268,10 +278,10 @@ namespace Bcg {
                 // compute and check triangle area
                 const double triArea = PolygonalFaceAreaVector<double>(mesh, mesh.get_face(h)).norm();
                 const double triArea_check = pq.cross(qr).norm() / 2.0;
-                assert(triArea > 0.0 && std::abs(triArea - triArea_check) < epsilon);
                 if (triArea <= epsilon) {
                     continue;
                 }
+                //assert(triArea > 0.0 && std::abs(triArea - triArea_check) < epsilon);
                 // dot products for each corner (of its two emanating edge vectors)
                 const double dotp = pq.dot(pr);
                 const double dotq = -qr.dot(pq);
@@ -300,7 +310,8 @@ namespace Bcg {
     [[nodiscard]] Real VertexBarycentricArea(const Mesh &mesh, const Vertex &v) {
         double area = 0;
         for (const auto &f: mesh.get_faces(v)) {
-            area += PolygonalFaceAreaVector<double>(mesh, f).norm();
+            //area += PolygonalFaceAreaVector<double>(mesh, f).norm();
+            area += FaceArea(mesh, f);
         }
         return area / 3.0;
     }

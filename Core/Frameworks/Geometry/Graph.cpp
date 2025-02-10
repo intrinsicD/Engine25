@@ -258,13 +258,19 @@ namespace Bcg {
 
         if (h.is_valid()) {
             do {
-                if (get_vertex(h) == v1)
+                if (get_vertex(h) == v1) {
                     return h;
+                }
                 h = rotate_cw(h);
             } while (h != hh);
         }
 
         return {};
+    }
+
+    Edge Graph::find_edge(const Vertex &v0, const Vertex &v1) const {
+        Halfedge h = find_halfedge(v0, v1);
+        return h.is_valid() ? get_edge(h) : Edge();
     }
 
     // Edge Methods
@@ -429,8 +435,8 @@ namespace Bcg {
     }
 
     std::vector<bool> Graph::dfs_general_with_early_stopping(const Vertex &start,
-                                             std::function<bool(const Vertex &)> vertex_action,
-                                             std::function<bool(const Halfedge &)> halfedge_action) {
+                                                             std::function<bool(const Vertex &)> vertex_action,
+                                                             std::function<bool(const Halfedge &)> halfedge_action) {
         std::vector<bool> visited(vertices.size(), false); // Vector to track visited vertices.
         std::stack<Vertex> stack;
 
@@ -457,8 +463,8 @@ namespace Bcg {
     }
 
     std::vector<bool> Graph::bfs_general_with_early_stopping(const Vertex &start,
-                             std::function<bool(const Vertex &)> vertex_action,
-                             std::function<bool(const Halfedge &)> halfedge_action) {
+                                                             std::function<bool(const Vertex &)> vertex_action,
+                                                             std::function<bool(const Halfedge &)> halfedge_action) {
         std::vector<bool> visited(vertices.size(), false); // Vector to track visited vertices.
         std::queue<Vertex> queue;
 
@@ -471,7 +477,7 @@ namespace Bcg {
 
             if (!vertex_action(v)) return visited; // Stop traversal if vertex action returns false.
 
-            for (const Halfedge &h : get_halfedges(v)) {
+            for (const Halfedge &h: get_halfedges(v)) {
                 if (!halfedge_action(h)) continue; // Skip this edge if halfedge action returns false.
 
                 Vertex neighbor = get_vertex(h);
