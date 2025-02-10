@@ -35,7 +35,7 @@ namespace Bcg {
 
     [[nodiscard]] bool ValidateMesh(const Mesh &mesh) {
         // Validate all faces: each face should have a closed halfedge cycle.
-        for (const Face &f : mesh.faces) {
+        for (const Face &f: mesh.faces) {
             Halfedge h0 = mesh.get_halfedge(f);
             if (!h0.is_valid()) {
                 std::cerr << "Error: Face " << f.idx() << " has no valid starting halfedge.\n";
@@ -49,28 +49,29 @@ namespace Bcg {
                 auto h_face = mesh.get_face(h);
                 if (h_face != f) {
                     std::cerr << "Error: Inconsistent face pointer for halfedge " << h.idx()
-                         << " in face " << f.idx()
-                         << ". Expected face " << f.idx()
-                         << " but got face " << h_face.idx() << std::endl;
+                            << " in face " << f.idx()
+                            << ". Expected face " << f.idx()
+                            << " but got face " << h_face.idx() << std::endl;
 
                     auto opp = mesh.get_opposite(h);
                     std::cerr << "Info: Halfedge " << h.idx() << " (opp " << opp.idx() << ") in face " << f.idx()
-                              << " has face pointer " << mesh.get_face(h).idx() << std::endl;
+                            << " has face pointer " << mesh.get_face(h).idx() << std::endl;
                     std::cerr << "Info: Halfedge opp " << opp.idx() << " in face " << f.idx()
-                     << " has face pointer " << mesh.get_face(opp).idx() << std::endl;
+                            << " has face pointer " << mesh.get_face(opp).idx() << std::endl;
                     return false;
                 }
                 h = mesh.get_next(h);
                 ++count;
                 if (count > max_iter) {
-                    std::cerr << "Error: Halfedge cycle for face " << f.idx() << " did not close properly (possible infinite loop).\n";
+                    std::cerr << "Error: Halfedge cycle for face " << f.idx() <<
+                            " did not close properly (possible infinite loop).\n";
                     return false;
                 }
             } while (h != h0);
         }
 
         // Validate halfedge opposites.
-        for (const Halfedge &h : mesh.halfedges) {
+        for (const Halfedge &h: mesh.halfedges) {
             if (!h.is_valid())
                 continue;
             Halfedge opp = mesh.get_opposite(h);
@@ -81,7 +82,7 @@ namespace Bcg {
         }
 
         // Validate that each vertex's halfedge pointer is consistent.
-        for (const Vertex &v : mesh.vertices) {
+        for (const Vertex &v: mesh.vertices) {
             Halfedge h = mesh.get_halfedge(v);
             if (h.is_valid() && mesh.get_vertex(mesh.get_opposite(h)) != v) {
                 std::cerr << "Error: Vertex " << v.idx() << " has an inconsistent halfedge pointer.\n";
@@ -175,6 +176,15 @@ namespace Bcg {
         return area;
     }
 
+
+    [[nodiscard]] Vector<Real, 3> Centroid(const Mesh &mesh) {
+        Vector<double, 3> center = Vector<double, 3>::Zero();
+        for (const auto &v: mesh.vertices) {
+            center += mesh.positions[v].cast<double>();
+        }
+        return center.cast<Real>() / mesh.vertices.size();
+    }
+
     //------------------------------------------------------------------------------------------------------------------
     // Face Methods
     //------------------------------------------------------------------------------------------------------------------
@@ -184,7 +194,7 @@ namespace Bcg {
         Vertex p0 = *fv;
         ++fv;
         double area = 0.0;
-        for (const auto &v : fv) {
+        for (const auto &v: fv) {
             Vector<Real, 3> d = mesh.positions[v] - mesh.positions[p0];
             Vector<Real, 3> e = mesh.positions[fv.get_next()] - mesh.positions[p0];
             area += d.cross(e).norm();
@@ -225,15 +235,77 @@ namespace Bcg {
     }
 
     //------------------------------------------------------------------------------------------------------------------
+    // Edge Methods
+    //------------------------------------------------------------------------------------------------------------------
+
+    [[nodiscard]] Real EdgeLength(const Mesh &mesh, const Edge &e) {
+        return static_cast<Real>((mesh.positions[mesh.get_vertex(e, 1)].cast<double>() - mesh.positions[mesh.
+                                      get_vertex(e, 0)].cast<double>()).norm());
+    }
+
+    [[nodiscard]] Vector<Real, 3> EdgeVector(const Mesh &mesh, const Edge &e) {
+        return (mesh.positions[mesh.get_vertex(e, 1)].cast<double>() - mesh.positions[mesh.get_vertex(e, 0)].cast<
+                    double>()).cast<Real>();
+    }
+
+    [[nodiscard]] Vector<Real, 3> EdgeMidpoint(const Mesh &mesh, const Edge &e) {
+        return ((mesh.positions[mesh.get_vertex(e, 0)].cast<double>() + mesh.positions[mesh.get_vertex(e, 1)].cast<
+                     double>())
+                / 2.0).cast<Real>();
+    }
+
+    [[nodiscard]] Real EdgeCotan(const Mesh &mesh, const Edge &e) {
+        double weight = 0.0;
+
+        const auto h0 = mesh.get_halfedge(e, 0);
+        const auto h1 = mesh.get_halfedge(e, 1);
+
+        const Vector<double, 3> p0 = mesh.positions[mesh.get_vertex(h0)].cast<double>();
+        const Vector<double, 3> p1 = mesh.positions[mesh.get_vertex(h1)].cast<double>();
+
+        if (!mesh.is_boundary(h0)) {
+            const Vector<double, 3> p2 = mesh.positions[mesh.get_vertex(mesh.get_next(h0))].cast<double>();
+            const Vector<double, 3> d0 = p0 - p2;
+            const Vector<double, 3> d1 = p1 - p2;
+            const double area = d0.cross(d1).norm(); //triangle area * 2
+            if (area > std::numeric_limits<double>::min()) {
+                const double cot = d0.dot(d1) / area;
+                // weight += clamp_cot(cot);
+                weight += cot;
+            }
+        }
+
+        if (!mesh.is_boundary(h1)) {
+            const Vector<double, 3> p2 = mesh.positions[mesh.get_vertex(mesh.get_next(h1))].cast<double>();
+            const Vector<double, 3> d0 = p0 - p2;
+            const Vector<double, 3> d1 = p1 - p2;
+            const double area = d0.cross(d1).norm(); //triangle area * 2
+            if (area > std::numeric_limits<double>::min()) {
+                const double cot = d0.dot(d1) / area;
+                // weight += clamp_cot(cot);
+                weight += cot;
+            }
+        }
+
+        assert(!std::isnan(weight));
+        assert(!std::isinf(weight));
+
+        return weight;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
     // Vertex Methods
     //------------------------------------------------------------------------------------------------------------------
 
     [[nodiscard]] Vector<Real, 3> VertexNormal(const Mesh &mesh, const Vertex &v) {
         Vector<double, 3> v_normal = Vector<double, 3>::Zero();
-        for (const auto &f: mesh.get_faces(v)) {
-            v_normal += PolygonalFaceAreaVector<double>(mesh, f);
+        if (!mesh.is_isolated(v)) {
+            for (const auto &f: mesh.get_faces(v)) {
+                v_normal += PolygonalFaceAreaVector<double>(mesh, f);
+            }
+            v_normal /= v_normal.norm();
         }
-        return v_normal.normalized().cast<Real>();
+        return v_normal.cast<Real>();
     }
 
     inline double Cot(double angle) {
@@ -251,22 +323,22 @@ namespace Bcg {
         return (v < -bound ? -bound : (v > bound ? bound : v));
     }
 
-    [[nodiscard]] Real VertexVoronoiArea(const Mesh &mesh, const Vertex &v) {
+    [[nodiscard]] Real VertexVoronoiMixedArea(const Mesh &mesh, const Vertex &v) {
         double area = 0.0;
         constexpr double epsilon = std::numeric_limits<double>::epsilon();
 
         if (!mesh.is_isolated(v)) {
+            const Vector<double, 3> p = mesh.positions[v].cast<double>();
+
             for (const auto &h: mesh.Graph::get_halfedges(v)) {
                 const Halfedge h0 = h;
                 const Halfedge h1 = mesh.get_next(h0);
-                const Halfedge h2 = mesh.get_next(h1);
 
                 if (mesh.is_boundary(h0)) {
                     continue;
                 }
 
                 // three vertex positions
-                const Vector<double, 3> p = mesh.positions[mesh.get_vertex(h2)].cast<double>();
                 const Vector<double, 3> q = mesh.positions[mesh.get_vertex(h0)].cast<double>();
                 const Vector<double, 3> r = mesh.positions[mesh.get_vertex(h1)].cast<double>();
 
@@ -276,31 +348,31 @@ namespace Bcg {
                 const Vector<double, 3> pr = r - p;
 
                 // compute and check triangle area
-                const double triArea = PolygonalFaceAreaVector<double>(mesh, mesh.get_face(h)).norm();
-                const double triArea_check = pq.cross(qr).norm() / 2.0;
-                if (triArea <= epsilon) {
+                //const double triArea = PolygonalFaceAreaVector<double>(mesh, mesh.get_face(h)).norm();
+                const double twiceTriArea = pq.cross(pr).norm(); // its twice the triangle area to avoid computation here and in the following...
+                if (twiceTriArea <= epsilon) {
                     continue;
                 }
                 //assert(triArea > 0.0 && std::abs(triArea - triArea_check) < epsilon);
                 // dot products for each corner (of its two emanating edge vectors)
                 const double dotp = pq.dot(pr);
-                const double dotq = -qr.dot(pq);
+                const double dotq = -pq.dot(qr);
                 const double dotr = qr.dot(pr);
 
                 if (dotp < 0.0) {
                     // angle at p is obtuse
-                    area += 0.25 * triArea;
+                    area += twiceTriArea / 4.0; // corresponds to triArea / 2.0
                 } else if (dotq < 0.0 || dotr < 0.0) {
                     // angle at q or r obtuse
-                    area += 0.5 * triArea;
+                    area += twiceTriArea / 8.0; // corresponds to triArea / 4.0
                 } else {
                     // no obtuse angles
                     // cot(angle) = cos(angle)/sin(angle) = dot(A,B)/norm(cross(A,B))
-                    const double cotq = dotq / triArea;
-                    const double cotr = dotr / triArea;
+                    const double cotq = dotq / twiceTriArea;
+                    const double cotr = dotr / twiceTriArea;
 
                     // clamp cot(angle) by clamping angle to [1,179]
-                    area += 0.125 * (pr.squaredNorm() * ClampCotan(cotq) + pq.squaredNorm() * ClampCotan(cotr));
+                    area += (pr.squaredNorm() * ClampCotan(cotq) + pq.squaredNorm() * ClampCotan(cotr)) / 8.0;
                 }
             }
         }
@@ -309,33 +381,64 @@ namespace Bcg {
 
     [[nodiscard]] Real VertexBarycentricArea(const Mesh &mesh, const Vertex &v) {
         double area = 0;
-        for (const auto &f: mesh.get_faces(v)) {
-            //area += PolygonalFaceAreaVector<double>(mesh, f).norm();
-            area += FaceArea(mesh, f);
+        if (!mesh.is_isolated(v)) {
+            for (const auto &f: mesh.get_faces(v)) {
+                //area += PolygonalFaceAreaVector<double>(mesh, f).norm();
+                area += FaceArea(mesh, f);
+            }
+            area /= 3.0;
         }
-        return area / 3.0;
+        return area;
     }
 
     [[nodiscard]] Vector<Real, 3> VertexStarCenter(const Mesh &mesh, const Vertex &v) {
         Vector<double, 3> center = Vector<double, 3>::Zero();
-        int count = 0;
-        for (const auto &vv: mesh.get_vertices(v)) {
-            center += mesh.positions[vv].cast<double>();
-            ++count;
+
+        if (!mesh.is_isolated(v)) {
+            int count = 0;
+            for (const auto &vv: mesh.get_vertices(v)) {
+                center += mesh.positions[vv].cast<double>();
+                ++count;
+            }
+            center /= count;
         }
-        return (center / count).cast<Real>();
+        return center.cast<Real>();
     }
 
     [[nodiscard]] Vector<Real, 3> VertexStarGradient(const Mesh &mesh, const Vertex &v,
                                                      VertexProperty<Real> scalarfield) {
-        Vector<double, 3> sum_gradients = Vector<double, 3>::Zero();
-        double sum_areas = 0;
-        for (const auto &f: mesh.get_faces(v)) {
-            Vector<double, 3> gradient = FaceGradient(mesh, f, scalarfield).cast<double>();
-            double area = PolygonalFaceAreaVector<double>(mesh, f).norm();
-            sum_gradients += gradient * area;
-            sum_areas += area;
+        Vector<double, 3> gradient = Vector<double, 3>::Zero();
+
+        if (!mesh.is_isolated(v)) {
+            double sum_areas = 0;
+            for (const auto &f: mesh.get_faces(v)) {
+                Vector<double, 3> gradient = FaceGradient(mesh, f, scalarfield).cast<double>();
+                double area = PolygonalFaceAreaVector<double>(mesh, f).norm();
+                gradient += gradient * area;
+                sum_areas += area;
+            }
+
+            gradient /= sum_areas;
         }
-        return (sum_gradients / sum_areas).cast<Real>();
+        return gradient.cast<Real>();
+    }
+
+    [[nodiscard]] Vector<Real, 3> VertexLaplace(const Mesh &mesh, const Vertex &v, Real vertex_area) {
+        Vector<double, 3> laplace(0.0, 0.0, 0.0);
+
+        if (!mesh.is_isolated(v)) {
+            double sum_weights(0.0);
+
+            for (auto h: mesh.get_halfedges(v)) {
+                const auto weight = EdgeCotan(mesh, mesh.get_edge(h));
+                sum_weights += weight;
+                laplace += weight * mesh.positions[mesh.get_vertex(h)].cast<double>();
+            }
+
+            laplace -= sum_weights * mesh.positions[v].cast<double>();
+            laplace /= 2.0 * (vertex_area > 0 ? vertex_area : VertexBarycentricArea(mesh, v));
+        }
+
+        return laplace.cast<Real>();
     }
 }

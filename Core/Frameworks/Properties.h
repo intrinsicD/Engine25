@@ -69,16 +69,16 @@ namespace Bcg {
         using const_reference = typename VectorType::const_reference;
 
         explicit PropertyArray(std::string name, T t = T())
-                : m_name(std::move(name)), m_value(std::move(t)) {
+            : m_name(std::move(name)), m_value(std::move(t)) {
         }
 
-         void reserve(size_t n) override { m_data.reserve(n); }
+        void reserve(size_t n) override { m_data.reserve(n); }
 
-         void resize(size_t n) override { m_data.resize(n, m_value); }
+        void resize(size_t n) override { m_data.resize(n, m_value); }
 
-         void push_back() override { m_data.push_back(m_value); }
+        void push_back() override { m_data.push_back(m_value); }
 
-         void free_memory() override { m_data.shrink_to_fit(); }
+        void free_memory() override { m_data.shrink_to_fit(); }
 
         void swap(size_t i0, size_t i1) override {
             T d(m_data[i0]);
@@ -87,12 +87,14 @@ namespace Bcg {
         }
 
         //! Get pointer to array (does not work for T==bool)
-        [[nodiscard]]  const T *data() const { return &m_data[0]; }
+        [[nodiscard]] T *data() { return &m_data[0]; }
+
+        [[nodiscard]] const T *data() const { return &m_data[0]; }
 
         //! Get reference to the underlying vector
-         std::vector<T> &vector() { return m_data; }
+        std::vector<T> &vector() { return m_data; }
 
-         [[nodiscard]] const std::vector<T> &vector() const { return m_data; }
+        [[nodiscard]] const std::vector<T> &vector() const { return m_data; }
 
         //! Access the i'th element. No range check is performed!
         reference operator[](size_t idx) {
@@ -107,11 +109,11 @@ namespace Bcg {
         }
 
         //! Return the name of the property
-        [[nodiscard]]  const std::string &name() const override { return m_name; }
+        [[nodiscard]] const std::string &name() const override { return m_name; }
 
-        [[nodiscard]]  size_t size() const override { return m_data.size(); }
+        [[nodiscard]] size_t size() const override { return m_data.size(); }
 
-        [[nodiscard]]  size_t dims() const override { return GetDimensions(m_value); }
+        [[nodiscard]] size_t dims() const override { return GetDimensions(m_value); }
 
     private:
         [[nodiscard]] BasePropertyArray *clone() const override {
@@ -140,8 +142,6 @@ namespace Bcg {
 
         friend class PropertyContainer;
 
-        friend class SurfaceMesh;
-
         friend class Mesh;
 
         friend class Graph;
@@ -151,11 +151,11 @@ namespace Bcg {
         explicit Property(PropertyArray<T> *p = nullptr) : m_parray(p) {
         }
 
-         void reset() { m_parray = nullptr; }
+        void reset() { m_parray = nullptr; }
 
-         explicit operator bool() const { return m_parray != nullptr; }
+        explicit operator bool() const { return m_parray != nullptr; }
 
-        [[nodiscard]]  const std::string &name() const { return m_parray->name(); }
+        [[nodiscard]] const std::string &name() const { return m_parray->name(); }
 
         reference operator[](size_t i) {
             assert(m_parray != nullptr);
@@ -182,7 +182,11 @@ namespace Bcg {
             return m_parray->vector();
         }
 
-        [[nodiscard]]  const BasePropertyArray *base() const { return m_parray; }
+        [[nodiscard]] const BasePropertyArray *base() const { return m_parray; }
+
+        [[nodiscard]] const size_t size() const { return m_parray->size(); }
+
+        [[nodiscard]] const size_t dims() const { return m_parray->dims(); }
 
     private:
         PropertyArray<T> *m_parray;
@@ -211,13 +215,13 @@ namespace Bcg {
             return *this;
         }
 
-        [[nodiscard]] virtual  bool is_empty() const { return m_size == 0; }
+        [[nodiscard]] virtual bool is_empty() const { return m_size == 0; }
 
         // returns the current size of the property arrays
-        [[nodiscard]]  size_t size() const { return m_size; }
+        [[nodiscard]] size_t size() const { return m_size; }
 
         // returns the number of property arrays
-        [[nodiscard]]  size_t num_props() const { return m_parrays.size(); }
+        [[nodiscard]] size_t num_props() const { return m_parrays.size(); }
 
         // returns a vector of all property names
         [[nodiscard]] std::vector<std::string> properties(std::initializer_list<int> filter_dims = {}) const {
@@ -255,7 +259,7 @@ namespace Bcg {
         }
 
         // do we have a property with a given name?
-        [[nodiscard]]  bool exists(const std::string &name) const {
+        [[nodiscard]] bool exists(const std::string &name) const {
             return m_parrays.contains(name);
         }
 
@@ -347,7 +351,7 @@ namespace Bcg {
             }
         }
 
-        [[nodiscard]]  const std::unordered_map<std::string, BasePropertyArray *> &get_array() const {
+        [[nodiscard]] const std::unordered_map<std::string, BasePropertyArray *> &get_array() const {
             return m_parrays;
         }
 
