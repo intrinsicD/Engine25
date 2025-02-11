@@ -227,6 +227,7 @@ namespace Bcg {
                 ++count;
             }
         }
+        return count;
     }
 
     size_t Graph::get_outdegree(const Vertex &v) const {
@@ -237,6 +238,8 @@ namespace Bcg {
                 ++count;
             }
         }
+
+        return count;
     }
 
     // Halfedge Methods
@@ -374,33 +377,6 @@ namespace Bcg {
         mark_deleted(get_halfedge(e, 1));
     }
 
-    /*void Graph::delete_edge(const Edge &e) {
-        if (e_deleted[e]) return;
-
-        Halfedge h0 = get_halfedge(e, 0);
-        Halfedge h1 = get_halfedge(e, 1);
-
-        Vertex from_v = get_vertex(h1);
-        Vertex to_v = get_vertex(h0);
-
-        if (halfedges.is_valid(h0)) {
-            Halfedge p = get_prev(h0);
-            Halfedge n = get_next(h1);
-            if (find_halfedge(get_vertex(n), from_v).is_valid()) {
-                set_next(p, n);
-            }
-        }
-        if (halfedges.is_valid(h1)) {
-            Halfedge p = get_prev(h1);
-            Halfedge n = get_next(h0);
-            if (find_halfedge(get_vertex(n), to_v).is_valid()) {
-                set_next(p, n);
-            }
-        }
-
-        mark_deleted(e);
-    }*/
-
     void Graph::delete_edge(const Edge &e) {
         if (e_deleted[e]) return;
 
@@ -426,61 +402,5 @@ namespace Bcg {
         }
 
         mark_deleted(e);
-    }
-
-    std::vector<bool> Graph::dfs_general_with_early_stopping(const Vertex &start,
-                                             std::function<bool(const Vertex &)> vertex_action,
-                                             std::function<bool(const Halfedge &)> halfedge_action) {
-        std::vector<bool> visited(vertices.size(), false); // Vector to track visited vertices.
-        std::stack<Vertex> stack;
-
-        stack.push(start);
-
-        while (!stack.empty()) {
-            Vertex v = stack.top();
-            stack.pop();
-            if (!visited[v.idx()]) {
-                visited[v.idx()] = true; // Mark as visited.
-                if (vertex_action(v)) {
-                    for (const Halfedge &h: get_halfedges(v)) {
-                        if (halfedge_action(h)) {
-                            Vertex neighbor = get_vertex(h);
-                            if (!visited[neighbor.idx()]) {
-                                stack.push(neighbor);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return visited;
-    }
-
-    std::vector<bool> Graph::bfs_general_with_early_stopping(const Vertex &start,
-                             std::function<bool(const Vertex &)> vertex_action,
-                             std::function<bool(const Halfedge &)> halfedge_action) {
-        std::vector<bool> visited(vertices.size(), false); // Vector to track visited vertices.
-        std::queue<Vertex> queue;
-
-        queue.push(start);
-        visited[start.idx()] = true;
-
-        while (!queue.empty()) {
-            Vertex v = queue.front();
-            queue.pop();
-
-            if (!vertex_action(v)) return visited; // Stop traversal if vertex action returns false.
-
-            for (const Halfedge &h : get_halfedges(v)) {
-                if (!halfedge_action(h)) continue; // Skip this edge if halfedge action returns false.
-
-                Vertex neighbor = get_vertex(h);
-                if (!visited[neighbor.idx()]) {
-                    visited[neighbor.idx()] = true; // Mark neighbor as visited.
-                    queue.push(neighbor);
-                }
-            }
-        }
-        return visited;
     }
 }

@@ -225,6 +225,7 @@ namespace Bcg {
         using EdgeAroundVertexCirculator = EdgeAroundVertexCirculatorBase<Graph>;
 
         using PointCloud::mark_deleted;
+        using PointCloud::is_valid;
 
         Halfedges halfedges;
         Edges edges;
@@ -767,36 +768,6 @@ namespace Bcg {
             return edges.exists(name);
         }
 
-
-        /**
-         * @brief Perform a depth-first search traversal of the Graph.
-         * @param start Vertex to start the traversal from.
-         * @param vertex_action Function to execute on each vertex.
-         * @param halfedge_action Function to execute on each halfedge.
-         * @return bool vector of visited vertices.
-         * @details early stopping is supported by returning false from the vertex_action or halfedge_action.
-         */
-        [[nodiscard]] std::vector<bool> dfs_general_with_early_stopping(const Vertex &start,
-                                                                        std::function<bool(const Vertex &)>
-                                                                        vertex_action,
-                                                                        std::function<bool(const Halfedge &)>
-                                                                        halfedge_action);
-
-        /**
-         * @brief Perform a breadth-first search traversal of the Graph.
-         * @param start Vertex to start the traversal from.
-         * @param vertex_action Function to execute on each vertex.
-         * @param halfedge_action Function to execute on each halfedge.
-         * @return bool vector of visited vertices.
-         * @details early stopping is supported by returning false from the vertex_action or halfedge_action.
-         */
-        [[nodiscard]] std::vector<bool> bfs_general_with_early_stopping(const Vertex &start,
-                                                                        std::function<bool(const Vertex &)>
-                                                                        vertex_action,
-                                                                        std::function<bool(const Halfedge &)>
-                                                                        halfedge_action);
-
-        //todo: add tests for dfs and bfs
         /**
          * @brief Returns a DFS range for traversing the graph starting at a given vertex.
          * @param start The starting vertex.

@@ -3,7 +3,6 @@
 //
 
 #include "MeshIo.h"
-#include <format>
 #include <regex>
 #include <fstream>
 #include <array>
@@ -15,6 +14,7 @@
 #include <sstream>
 #include <iostream>
 #include <filesystem>
+#include <fmt/core.h>
 
 // Define a custom hash function for Vector<Real, 3>
 namespace std {
@@ -445,20 +445,20 @@ namespace Bcg {
 
         auto positions = mesh.positions;
         for (const auto &v: mesh.vertices) {
-            out << std::format("v {:.10f} {:.10f} {:.10f}\n", positions[v][0], positions[v][1], positions[v][2]);
+            out << fmt::format("v {:.10f} {:.10f} {:.10f}\n", positions[v][0], positions[v][1], positions[v][2]);
         }
 
         auto normals = mesh.get_vertex_property<Vector<Real, 3> >("v:normal");
         if (normals) {
             for (const auto &v: mesh.vertices) {
-                out << std::format("vn {:.10f} {:.10f} {:.10f}\n", normals[v][0], normals[v][1], normals[v][2]);
+                out << fmt::format("vn {:.10f} {:.10f} {:.10f}\n", normals[v][0], normals[v][1], normals[v][2]);
             }
         }
 
         auto tex_coord = mesh.get_halfedge_property<Vector<Real, 2> >("h:tex");
         if (tex_coord) {
             for (const auto &h: mesh.halfedges) {
-                out << std::format("vt {:.10f} {:.10f}\n", tex_coord[h][0], tex_coord[h][1]);
+                out << fmt::format("vt {:.10f} {:.10f}\n", tex_coord[h][0], tex_coord[h][1]);
             }
         }
 
@@ -468,10 +468,10 @@ namespace Bcg {
             auto fhit = mesh.get_halfedges(f);
             do {
                 if (tex_coord) {
-                    out << std::format(" {}/{}/{}", (*fvit).idx() + 1, (*fhit).idx() + 1, (*fvit).idx() + 1);
+                    out << fmt::format(" {}/{}/{}", (*fvit).idx() + 1, (*fhit).idx() + 1, (*fvit).idx() + 1);
                     ++fhit;
                 } else {
-                    out << std::format(" {}/{}", (*fvit).idx() + 1, (*fvit).idx() + 1);
+                    out << fmt::format(" {}/{}", (*fvit).idx() + 1, (*fvit).idx() + 1);
                 }
             } while (++fvit != mesh.get_vertices(f));
             out << "\n";
