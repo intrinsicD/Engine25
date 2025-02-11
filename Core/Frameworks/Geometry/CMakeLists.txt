@@ -4,6 +4,13 @@ target_sources(Engine25 PRIVATE
         PointCloud.cpp
         Graph.cpp
         GraphUtils.cpp
+        GraphDijkstra.cpp
+        GraphBellmanFord.cpp
+        GraphAStar.cpp
+        GraphFloydWarshall.cpp
+        GraphPrim.cpp
+        GraphKruskal.cpp
+        GraphConnectedComponents.cpp
         Mesh.cpp
         MeshIo.cpp
         MeshUtils.cpp

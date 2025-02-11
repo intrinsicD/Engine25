@@ -8,48 +8,142 @@
 #include "Graph.h"
 
 namespace Bcg {
+    /**
+     * @brief Retrieves the edges of the graph.
+     * @param graph The graph from which to retrieve edges.
+     * @return An EdgeProperty containing the edges of the graph.
+     */
     EdgeProperty<Vector<unsigned int, 2> > Edges(Graph &graph);
 
+    /**
+     * @brief Computes the lengths of the edges in the graph.
+     * @param graph The graph containing the edges.
+     * @param positions The positions of the vertices in the graph.
+     * @return An EdgeProperty containing the lengths of the edges.
+     */
+    EdgeProperty<Real> EdgeLengths(Graph &graph, const VertexProperty<Vector<Real, 3> > &positions);
+
+    /**
+     * @brief Computes the vector representation of an edge given two vertices.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param v0 The first vertex of the edge.
+     * @param v1 The second vertex of the edge.
+     * @param pos The positions of the vertices.
+     * @return The vector representation of the edge.
+     */
     template<typename T, int N>
     Vector<T, N> EdgeVector(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) {
         return pos[v1] - pos[v0];
     }
 
+    /**
+     * @brief Computes the vector representation of an edge given the graph and an edge.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param graph The graph containing the edge.
+     * @param e The edge.
+     * @param pos The positions of the vertices.
+     * @return The vector representation of the edge.
+     */
     template<typename T, int N>
     Vector<T, N> EdgeVector(const Graph &graph, const Edge &e, const VertexProperty<Vector<T, N> > &pos) {
         return EdgeVector(graph.get_vertex(e, 0), graph.get_vertex(e, 1), pos);
     }
 
+    /**
+     * @brief Computes the vector representation of an edge given the graph and a halfedge.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param graph The graph containing the halfedge.
+     * @param h The halfedge.
+     * @param pos The positions of the vertices.
+     * @return The vector representation of the edge.
+     */
     template<typename T, int N>
     Vector<T, N> EdgeVector(const Graph &graph, const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) {
         return EdgeVector(graph.get_edge(h), pos);
     }
 
+    /**
+     * @brief Computes the length of an edge given two vertices.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param v0 The first vertex of the edge.
+     * @param v1 The second vertex of the edge.
+     * @param pos The positions of the vertices.
+     * @return The length of the edge.
+     */
     template<typename T, int N>
     Real Length(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) {
         return EdgeVector(v0, v1, pos).norm();
     }
 
+    /**
+     * @brief Computes the length of an edge given the graph and an edge.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param graph The graph containing the edge.
+     * @param e The edge.
+     * @param pos The positions of the vertices.
+     * @return The length of the edge.
+     */
     template<typename T, int N>
     Real Length(const Graph &graph, const Edge &e, const VertexProperty<Vector<T, N> > &pos) {
         return EdgeVector(graph, e, pos).norm();
     }
 
+    /**
+     * @brief Computes the length of an edge given the graph and a halfedge.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param graph The graph containing the halfedge.
+     * @param h The halfedge.
+     * @param pos The positions of the vertices.
+     * @return The length of the edge.
+     */
     template<typename T, int N>
     Real Length(const Graph &graph, const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) {
         return EdgeVector(graph, h, pos).norm();
     }
 
+    /**
+     * @brief Computes the center of an edge given two vertices.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param v0 The first vertex of the edge.
+     * @param v1 The second vertex of the edge.
+     * @param pos The positions of the vertices.
+     * @return The center of the edge.
+     */
     template<typename T, int N>
     Vector<T, N> Center(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) {
         return (pos[v0] + pos[v1]) / 2;
     }
 
+    /**
+     * @brief Computes the center of an edge given the graph and an edge.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param graph The graph containing the edge.
+     * @param e The edge.
+     * @param pos The positions of the vertices.
+     * @return The center of the edge.
+     */
     template<typename T, int N>
     Vector<T, N> Center(const Graph &graph, const Edge &e, const VertexProperty<Vector<T, N> > &pos) {
         return Center(graph.get_vertex(e, 0), graph.get_vertex(e, 1), pos);
     }
 
+    /**
+     * @brief Computes the center of an edge given the graph and a halfedge.
+     * @tparam T The type of the vector components.
+     * @tparam N The dimension of the vector.
+     * @param graph The graph containing the halfedge.
+     * @param h The halfedge.
+     * @param pos The positions of the vertices.
+     * @return The center of the edge.
+     */
     template<typename T, int N>
     Vector<T, N> Center(const Graph &graph, const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) {
         return Center(graph.get_edge(h), pos);
@@ -59,153 +153,12 @@ namespace Bcg {
     // Shortest Path Algorithms
     //------------------------------------------------------------------------------
 
-    EdgeProperty<Real> EdgeLengths(Graph &graph, const VertexProperty<Vector<Real, 3>> &positions);
+    std::vector<Halfedge> BacktracePathSinkToSource(const Graph &graph, VertexProperty<Halfedge> vertex_predecessors,
+                                                    const Vertex &sink, bool reverse = false);
 
-    // Dijkstra: Computes shortest paths from a source (or multiple sources)
-    // for graphs with non-negative edge weights.
-    class Dijkstra {
-    public:
-        explicit Dijkstra(Graph &graph);
-
-        void compute(const Vertex &source, const Vertex &sink = Vertex());
-
-        void compute(const std::vector<Vertex> &sources, const Vertex &sink = Vertex());
-
-        void set_custom_edge_weights(const EdgeProperty<Real> &weights);
-
-        void clear_custom_edge_weights();
-
-        std::vector<Halfedge> backtrace_sink_to_source(const Vertex &sink);
-
-        EdgeProperty<Real> edge_weights;
-        VertexProperty<Real> vertex_distances;
-        VertexProperty<Halfedge> vertex_predecessors;
-    private:
-        void clear();
-
-        Graph &graph;
-    };
-
-    // Bellman-Ford: Computes shortest paths even when negative edge weights exist.
-    // Returns false if a negative cycle is detected.
-    class BellmanFord {
-    public:
-        explicit BellmanFord(Graph &graph) : graph(graph), negative_cycle_found(false) {}
-
-        // distances and predecessors are passed by reference to be filled.
-        // Returns true if computation succeeded, false if a negative cycle was found.
-        bool compute(const Vertex &source,
-                     VertexProperty<Real> &distances,
-                     VertexProperty<Vertex> &predecessors);
-
-        bool has_negative_cycle() const;
-
-        void set_custom_edge_weights(const EdgeProperty<Real> &weights);
-
-        EdgeProperty<Real> edge_weights;
-        bool negative_cycle_found;
-    private:
-        Graph &graph;
-    };
-
-    // A*: An informed search algorithm that uses a heuristic function.
-    class AStar {
-    public:
-        explicit AStar(Graph &graph) : graph(graph) {}
-
-        // The heuristic function estimates the cost from a given vertex to the target.
-        // Returns the computed vertex distances.
-        void compute(const Vertex &source, const Vertex &target, std::function<Real(const Vertex &)> heuristic);
-
-        void set_custom_edge_weights(const EdgeProperty<Real> &weights);
-
-        EdgeProperty<Real> edge_weights;
-        VertexProperty<Real> vertex_distances;
-    private:
-        Graph &graph;
-    };
-
-    // Floyd-Warshall: Computes all-pairs shortest paths.
-    // Returns a 2D vector where result[i][j] is the distance from vertex i to vertex j.
-    class FloydWarshall {
-    public:
-        explicit FloydWarshall(Graph &graph) : graph(graph) {}
-
-        void compute();
-
-        void set_custom_edge_weights(const EdgeProperty<Real> &weights);
-
-        EdgeProperty<Real> edge_weights;
-        Matrix<Real, -1, -1> vertex_vertex_distances;
-    private:
-        Graph &graph;
-    };
-
-    //------------------------------------------------------------------------------
-    // Spanning Tree Algorithms
-    //------------------------------------------------------------------------------
-
-    // Prim: Computes a minimum spanning tree (MST) starting from a given vertex.
-    class Prim {
-    public:
-        explicit Prim(Graph &graph) : graph(graph) {}
-
-        // Returns a vector of edges that form the MST.
-        void compute(const Vertex &start);
-
-        void set_custom_edge_weights(const EdgeProperty<Real> &weights);
-
-        EdgeProperty<Real> edge_weights;
-        std::vector<Edge> mst_edges;
-    private:
-        Graph &graph;
-    };
-
-    // Kruskal: Computes a minimum spanning tree by processing edges in sorted order.
-    class Kruskal {
-    public:
-        explicit Kruskal(Graph &graph) : graph(graph) {}
-
-        // Returns a vector of edges that form the MST.
-        void compute();
-
-        void set_custom_edge_weights(const EdgeProperty<Real> &weights);
-
-        EdgeProperty<Real> edge_weights;
-        std::vector<Edge> mst_edges;
-    private:
-        Graph &graph;
-    };
-
-    //------------------------------------------------------------------------------
-    // Connectivity and Component Analysis
-    //------------------------------------------------------------------------------
-
-    // ConnectedComponents: Computes connected components in an undirected graph.
-    // Returns a vertex property mapping each vertex to its component id.
-    class ConnectedComponents {
-    public:
-        explicit ConnectedComponents(Graph &graph) : graph(graph) {}
-
-        void compute();
-
-        VertexProperty<int> connected_components;
-    private:
-        Graph &graph;
-    };
-
-    // StronglyConnectedComponents: Computes strongly connected components in a directed graph.
-    // Returns a vertex property mapping each vertex to its component id.
-    class StronglyConnectedComponents {
-    public:
-        explicit StronglyConnectedComponents(Graph &graph) : graph(graph) {}
-
-        void compute();
-
-        VertexProperty<int> strongly_connected_components;
-    private:
-        Graph &graph;
-    };
+    std::vector<Halfedge> BacktracePathSinkToSource(const Graph &graph,
+                                           const Matrix<Halfedge, -1, -1> &vertex_vertex_predecessors,
+                                           const Vertex &source, const Vertex &sink, bool reverse = false);
 
     //------------------------------------------------------------------------------
     // Cycle Detection and Topological Ordering
@@ -214,7 +167,8 @@ namespace Bcg {
     // CycleDetection: Provides functionality to detect cycles in the graph.
     class CycleDetection {
     public:
-        explicit CycleDetection(Graph &graph) : graph(graph) {}
+        explicit CycleDetection(Graph &graph) : graph(graph) {
+        }
 
         // Returns true if the graph contains a cycle.
         bool has_cycle();
@@ -223,6 +177,7 @@ namespace Bcg {
         void compute_cycle();
 
         std::vector<Vertex> cycle;
+
     private:
         Graph &graph;
     };
@@ -231,11 +186,13 @@ namespace Bcg {
     // Returns an empty vector if the graph is not acyclic.
     class TopologicalSort {
     public:
-        explicit TopologicalSort(Graph &graph) : graph(graph) {}
+        explicit TopologicalSort(Graph &graph) : graph(graph) {
+        }
 
         void compute();
 
         std::vector<Vertex> topological_order;
+
     private:
         Graph &graph;
     };
@@ -247,7 +204,8 @@ namespace Bcg {
     // EdmondsKarp: Implements the Edmonds-Karp algorithm for maximum flow.
     class EdmondsKarp {
     public:
-        explicit EdmondsKarp(Graph &graph) : graph(graph) {}
+        explicit EdmondsKarp(Graph &graph) : graph(graph) {
+        }
 
         // Computes the maximum flow from source to sink.
         void compute(const Vertex &source, const Vertex &sink);
@@ -261,6 +219,7 @@ namespace Bcg {
         EdgeProperty<Real> flows;
         Real max_flow;
         Graph residual_graph;
+
     private:
         Graph &graph;
     };
@@ -268,7 +227,8 @@ namespace Bcg {
     // Dinic: Implements Dinic's algorithm for maximum flow.
     class Dinic {
     public:
-        explicit Dinic(Graph &graph) : graph(graph) {}
+        explicit Dinic(Graph &graph) : graph(graph) {
+        }
 
         // Computes the maximum flow from source to sink.
         void compute(const Vertex &source, const Vertex &sink);
@@ -282,6 +242,7 @@ namespace Bcg {
         EdgeProperty<Real> flows;
         Real max_flow;
         Graph residual_graph;
+
     private:
         Graph &graph;
     };
@@ -294,11 +255,13 @@ namespace Bcg {
     // Returns a vertex property mapping each vertex to its match (or an invalid vertex if unmatched).
     class BipartiteMatching {
     public:
-        explicit BipartiteMatching(Graph &graph) : graph(graph) {}
+        explicit BipartiteMatching(Graph &graph) : graph(graph) {
+        }
 
         void compute();
 
         VertexProperty<Vertex> matching;
+
     private:
         Graph &graph;
     };
@@ -307,11 +270,13 @@ namespace Bcg {
     // Returns a vector of vertices that form the vertex cover.
     class BipartiteVertexCover {
     public:
-        explicit BipartiteVertexCover(Graph &graph) : graph(graph) {}
+        explicit BipartiteVertexCover(Graph &graph) : graph(graph) {
+        }
 
         void compute();
 
         std::vector<Vertex> vertex_cover;
+
     private:
         Graph &graph;
     };
