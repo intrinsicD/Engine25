@@ -8,7 +8,7 @@
 
 namespace Bcg {
     Mesh::Mesh() : Graph() {
-        positions = vertex_property<Vector<Real, 3> >("v:point");
+        positions = vertex_property<Vector<Real, 3> >("v:position");
         v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
         f_connectivity = face_property<FaceConnectivity>("f:connectivity");
@@ -28,7 +28,7 @@ namespace Bcg {
             faces = rhs.faces;
 
             // property handles contain pointers, have to be reassigned
-            positions = vertex_property<Vector<Real, 3> >("v:point");
+            positions = vertex_property<Vector<Real, 3> >("v:position");
             v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
             h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
             f_connectivity = face_property<FaceConnectivity>("f:connectivity");
@@ -55,7 +55,7 @@ namespace Bcg {
             faces.clear();
 
             // allocate standard properties
-            positions = vertex_property<Vector<Real, 3> >("v:point");
+            positions = vertex_property<Vector<Real, 3> >("v:position");
             v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
             h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
             f_connectivity = face_property<FaceConnectivity>("f:connectivity");
@@ -99,7 +99,7 @@ namespace Bcg {
         free_memory();
 
         // add the standard properties back
-        positions = vertex_property<Vector<Real, 3> >("v:point");
+        positions = vertex_property<Vector<Real, 3> >("v:position");
         v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
         f_connectivity = face_property<FaceConnectivity>("f:connectivity");

@@ -3,6 +3,7 @@
 //
 
 #include "GraphUtils.h"
+#include <queue>
 
 namespace Bcg {
     EdgeProperty<Vector<unsigned int, 2> > Edges(Graph &graph) {
@@ -14,100 +15,175 @@ namespace Bcg {
         return indices;
     }
 
-    // A helper constant representing infinity.
-    constexpr Real INF = std::numeric_limits<Real>::infinity();
+    EdgeProperty<Real> EdgeLengths(Graph &graph, const VertexProperty<Vector<Real, 3>> &positions) {
+        auto lengths = graph.edge_property<Real>("e:length");
+        for (const Edge &e: graph.edges) {
+            lengths[e] = Length(graph, e, positions);
+        }
+        return lengths;
+    }
 
-    // A type alias for the elements stored in the priority queue.
-    // Each element is a pair of (distance, vertex).
-    using PQElement = std::pair<Real, Vertex>;
+    Dijkstra::Dijkstra(Bcg::Graph &graph) : graph(graph) {
+        edge_weights = graph.get_edge_property<Real>("e:length");
+        vertex_distances = graph.vertex_property<Real>("v:dijkstra:distances");
+        vertex_predecessors = graph.vertex_property<Halfedge>("v:dijkstra:predecessors");
+    }
 
+    struct PQItem{
+        Vertex v;
+        Real distance;
+    };
 
-    // Computes shortest paths from a single source.
-    void Dijkstra::compute(const Vertex &source) {
-        // Initialize the vertex properties.
-        const size_t n = graph.n_vertices();
+    struct PQCompare{
+        bool operator()(const PQItem &a, const PQItem &b) const {
+            return a.distance > b.distance;
+        }
+    };
 
-        // Distance from source to itself is 0.
+    void Dijkstra::compute(const Vertex &source, const Vertex &sink) {
+        clear();
+
         vertex_distances[source] = 0;
 
-        // Min-heap priority queue ordered by distance.
-        std::priority_queue<PQElement, std::vector<PQElement>, std::greater<PQElement>> queue;
-        queue.push({0, source});
+        std::priority_queue<PQItem, std::vector<PQItem>, PQCompare> queue;
+        queue.push({source, 0});
 
         while (!queue.empty()) {
-            auto [current_distance, current] = queue.top();
+            PQItem current_item = queue.top();
             queue.pop();
 
-            // If we already found a better path, skip.
-            if (current_distance > vertex_distances[current])
+            Vertex v_current = current_item.v;
+            Real current_distance = current_item.distance;
+
+            // If this is an outdated entry, skip.
+            if (current_distance > vertex_distances[v_current])
                 continue;
 
-            // Iterate over all neighbor vertices of 'current'.
-            for (const Vertex &neighbor: graph.get_vertices(current)) {
-                // Retrieve the halfedge connecting current and neighbor.
-                Halfedge h = graph.find_halfedge(current, neighbor);
+            // Optional early stopping: if we reached the sink, we can stop.
+            if (sink.is_valid() && v_current == sink)
+                break;
+
+            // Iterate over all neighbors of the current vertex.
+            for (const auto &h : graph.get_halfedges(v_current)) {
+                // Retrieve the halfedge connecting current to neighbor.
+
                 Edge e = graph.get_edge(h);
+                Real weight = edge_weights[e];
 
-                // Retrieve the weight for this edge.
-                Real weight = 1.0;
-                // Check if the custom edge_weights property contains a value for this edge.
-                // (Assumes that if an edge is not assigned a weight in edge_weights, it defaults to 1.0.)
-                if (e.idx() < graph.edges.size()) {
-                    weight = edge_weights[e];
-                }
-
-                // Dijkstra's algorithm does not support negative weights.
+                // Optionally, you may want to handle negative weights here.
                 if (weight < 0)
                     continue;
 
-                // Relaxation step.
-                Real new_distance = vertex_distances[current] + weight;
-                if (new_distance < vertex_distances[neighbor]) {
-                    vertex_distances[neighbor] = new_distance;
-                    vertex_predecessors[neighbor] = current;
-                    queue.push({new_distance, neighbor});
+                Vertex v_neighbor = graph.get_vertex(h);
+                Real new_distance = vertex_distances[v_current] + weight;
+                // If a shorter path is found, update the distance and predecessor.
+                if (new_distance < vertex_distances[v_neighbor]) {
+                    vertex_distances[v_neighbor] = new_distance;
+                    // Store the predecessor as the opposite of h,
+                    // which is the halfedge from v_neighbor back to v_current.
+                    vertex_predecessors[v_neighbor] = graph.get_opposite(h);
+                    queue.push({v_neighbor, new_distance});
                 }
             }
         }
     }
 
-    // Computes shortest paths from multiple sources.
-    void Dijkstra::compute(const std::vector<Vertex> &sources) {
-        // Initialize the vertex properties.
-        const size_t n = graph.n_vertices();
+    void Dijkstra::compute(const std::vector<Vertex> &sources, const Vertex &sink) {
+        clear();
 
-        std::priority_queue<PQElement, std::vector<PQElement>, std::greater<PQElement>> queue;
-        // Set the distance for each source to 0.
-        for (const Vertex &s: sources) {
-            vertex_distances[s] = 0;
-            queue.push({0, s});
+        std::priority_queue<PQItem, std::vector<PQItem>, PQCompare> queue;
+
+        // Initialize the priority queue with all source vertices.
+        for (const Vertex &source : sources) {
+            vertex_distances[source] = 0;
+            queue.push({source, 0});
         }
 
         while (!queue.empty()) {
-            auto [current_distance, current] = queue.top();
+            PQItem current_item = queue.top();
             queue.pop();
 
-            if (current_distance > vertex_distances[current])
+            Vertex v_current = current_item.v;
+            Real current_distance = current_item.distance;
+
+            // If this is an outdated entry, skip.
+            if (current_distance > vertex_distances[v_current])
                 continue;
 
-            for (const Vertex &neighbor: graph.get_vertices(current)) {
-                Halfedge h = graph.find_halfedge(current, neighbor);
-                Edge e = graph.get_edge(h);
+            // Optional early stopping: if we reached the sink, we can stop.
+            if (sink.is_valid() && v_current == sink)
+                break;
 
-                Real weight = 1.0;
-                if (e.idx() < graph.edges.size()) {
-                    weight = edge_weights[e];
-                }
+            for (const auto &h : graph.get_halfedges(v_current)) {
+                Edge e = graph.get_edge(h);
+                Real weight = edge_weights[e];
+
                 if (weight < 0)
                     continue;
 
-                Real new_distance = vertex_distances[current] + weight;
-                if (new_distance < vertex_distances[neighbor]) {
-                    vertex_distances[neighbor] = new_distance;
-                    vertex_predecessors[neighbor] = current;
-                    queue.push({new_distance, neighbor});
+                Vertex v_neighbor = graph.get_vertex(h);
+                Real new_distance = vertex_distances[v_current] + weight;
+                if (new_distance < vertex_distances[v_neighbor]) {
+                    vertex_distances[v_neighbor] = new_distance;
+                    // Store the predecessor as the opposite of h,
+                    // which is the halfedge from v_neighbor back to v_current.
+                    vertex_predecessors[v_neighbor] = graph.get_opposite(h);
+                    queue.push({v_neighbor, new_distance});
                 }
             }
         }
     }
+
+    void Dijkstra::set_custom_edge_weights(const EdgeProperty<Real> &weights) {
+        edge_weights = weights;
+    }
+
+    void Dijkstra::clear_custom_edge_weights() {
+        edge_weights = EdgeLengths(graph, graph.get_vertex_property<Vector<Real, 3>>("v:position"));
+    }
+
+    std::vector<Halfedge> Dijkstra::backtrace_sink_to_source(const Vertex &sink){
+        std::vector<Halfedge> path;
+
+        // If the sink is unreachable (i.e., its distance remains infinity),
+        // return an empty path.
+        if (vertex_distances[sink] == std::numeric_limits<Real>::max())
+            return path;
+
+        Vertex current = sink;
+        // Trace back from the sink to the source using the predecessor mapping.
+        while (true) {
+            Halfedge h_pred = vertex_predecessors[current];
+            // If no valid predecessor exists, we have reached the source.
+            if (!h_pred.is_valid())
+                break;
+
+            path.push_back(h_pred);
+            current = graph.get_vertex(h_pred);
+        }
+
+        // The path is currently from sink to source. Reverse it to obtain a source-to-sink path.
+        std::reverse(path.begin(), path.end());
+        return path;
+    }
+
+    void Dijkstra::clear() {
+        if (!edge_weights) {
+            edge_weights = EdgeLengths(graph, graph.get_vertex_property<Vector<Real, 3>>("v:position"));
+        }
+
+        if (!vertex_distances) {
+            vertex_distances = graph.vertex_property<Real>("v:dijkstra:distances", std::numeric_limits<Real>::max());
+        } else {
+            std::fill(vertex_distances.vector().begin(), vertex_distances.vector().end(),
+                      std::numeric_limits<Real>::max());
+        }
+
+        if (!vertex_predecessors) {
+            vertex_predecessors = graph.vertex_property<Halfedge>("v:dijkstra:predecessors");
+        } else {
+            std::fill(vertex_predecessors.vector().begin(), vertex_predecessors.vector().end(), Halfedge());
+        }
+    }
+
 }

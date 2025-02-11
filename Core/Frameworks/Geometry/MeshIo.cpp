@@ -208,7 +208,7 @@ namespace Bcg {
 
     bool WriteOffBinary(std::ofstream &out, const Mesh &mesh, const MeshIo::WriteFlags &flags) {
         // Determine the presence of optional attributes
-        VertexProperty<Vector<Real, 3> > positions = mesh.get_vertex_property<Vector<Real, 3> >("v:point");
+        VertexProperty<Vector<Real, 3> > positions = mesh.get_vertex_property<Vector<Real, 3> >("v:position");
         VertexProperty<Vector<Real, 3> > normals = mesh.get_vertex_property<Vector<Real, 3> >("v:normal");
         VertexProperty<Vector<Real, 3> > colors = mesh.get_vertex_property<Vector<Real, 3> >("v:color");
         VertexProperty<Vector<Real, 2> > texcoords = mesh.get_vertex_property<Vector<Real, 2> >("v:tex");
@@ -259,7 +259,7 @@ namespace Bcg {
 
     bool WriteOffAscii(std::ofstream &out, const Mesh &mesh, const MeshIo::WriteFlags &flags) {
         // Determine the presence of optional attributes
-        VertexProperty<Vector<Real, 3> > positions = mesh.get_vertex_property<Vector<Real, 3> >("v:point");
+        VertexProperty<Vector<Real, 3> > positions = mesh.get_vertex_property<Vector<Real, 3> >("v:position");
         VertexProperty<Vector<Real, 3> > normals = mesh.get_vertex_property<Vector<Real, 3> >("v:normal");
         VertexProperty<Vector<Real, 3> > colors = mesh.get_vertex_property<Vector<Real, 3> >("v:color");
         VertexProperty<Vector<Real, 2> > texcoords = mesh.get_vertex_property<Vector<Real, 2> >("v:tex");

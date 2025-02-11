@@ -31,13 +31,13 @@ namespace Bcg {
     }
 
     template<typename T, int N>
-    Real Length(const Edge &e, const VertexProperty<Vector<T, N> > &pos) {
-        return EdgeVector(e, pos).norm();
+    Real Length(const Graph &graph, const Edge &e, const VertexProperty<Vector<T, N> > &pos) {
+        return EdgeVector(graph, e, pos).norm();
     }
 
     template<typename T, int N>
-    Real Length(const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) {
-        return EdgeVector(h, pos).norm();
+    Real Length(const Graph &graph, const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) {
+        return EdgeVector(graph, h, pos).norm();
     }
 
     template<typename T, int N>
@@ -59,26 +59,30 @@ namespace Bcg {
     // Shortest Path Algorithms
     //------------------------------------------------------------------------------
 
+    EdgeProperty<Real> EdgeLengths(Graph &graph, const VertexProperty<Vector<Real, 3>> &positions);
+
     // Dijkstra: Computes shortest paths from a source (or multiple sources)
     // for graphs with non-negative edge weights.
     class Dijkstra {
     public:
-        explicit Dijkstra(Graph &graph) : graph(graph) {
-            edge_weights = graph.edge_property<Real>("e:weights");
-            vertex_distances = graph.vertex_property<Real>("v:dijkstra:distances");
-            vertex_predecessors = graph.vertex_property<Vertex>("v:dijkstra:predecessors");
-        }
+        explicit Dijkstra(Graph &graph);
 
-        void compute(const Vertex &source);
+        void compute(const Vertex &source, const Vertex &sink = Vertex());
 
-        void compute(const std::vector<Vertex> &sources);
+        void compute(const std::vector<Vertex> &sources, const Vertex &sink = Vertex());
 
         void set_custom_edge_weights(const EdgeProperty<Real> &weights);
 
+        void clear_custom_edge_weights();
+
+        std::vector<Halfedge> backtrace_sink_to_source(const Vertex &sink);
+
         EdgeProperty<Real> edge_weights;
         VertexProperty<Real> vertex_distances;
-        VertexProperty<Vertex> vertex_predecessors;
+        VertexProperty<Halfedge> vertex_predecessors;
     private:
+        void clear();
+
         Graph &graph;
     };
 

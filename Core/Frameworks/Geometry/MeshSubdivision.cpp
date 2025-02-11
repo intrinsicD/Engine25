@@ -7,7 +7,7 @@
 
 namespace Bcg::Subdivision {
     void CatmullClark(Mesh &mesh, BoundaryHandling boundary_handling) {
-        auto points_ = mesh.vertex_property<Vector<Real, 3> >("v:point");
+        auto points_ = mesh.vertex_property<Vector<Real, 3> >("v:position");
         auto vfeature_ = mesh.get_vertex_property<bool>("v:feature");
         auto efeature_ = mesh.get_edge_property<bool>("e:feature");
 
@@ -164,7 +164,7 @@ namespace Bcg::Subdivision {
     }
 
     void Loop(Mesh &mesh, BoundaryHandling boundary_handling) {
-        auto points_ = mesh.vertex_property<Vector<Real, 3> >("v:point");
+        auto points_ = mesh.vertex_property<Vector<Real, 3> >("v:position");
         auto vfeature_ = mesh.get_vertex_property<bool>("v:feature");
         auto efeature_ = mesh.get_edge_property<bool>("e:feature");
 
@@ -310,7 +310,7 @@ namespace Bcg::Subdivision {
     }
 
     void QuadTri(Mesh &mesh, BoundaryHandling boundary_handling) {
-        auto points_ = mesh.vertex_property<Vector<Real, 3> >("v:point");
+        auto points_ = mesh.vertex_property<Vector<Real, 3> >("v:position");
 
         // split each edge evenly into two parts
         for (auto e: mesh.edges) {

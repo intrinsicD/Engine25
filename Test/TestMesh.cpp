@@ -192,6 +192,16 @@ TEST_F(DifferentialGeometryTest, centroid) {
     EXPECT_LT(center.norm(), 1e-5);
 }
 
+TEST_F(DifferentialGeometryTest, barycentric_coords) {
+    add_triangle();
+    Vector<Real, 3> bc_center = Vector<Real, 3>(1. / 3., 1. / 3., 1. / 3.);
+    Vector<Real, 3> result = FaceFromBarycentricCoordinates(mesh, f0, bc_center);
+    Vector<Real, 3> bc = FaceToBarycentricCoordinates(mesh, f0, result);
+    for (int i = 0; i < 3; ++i) {
+        EXPECT_NEAR(bc_center[i], bc[i], 1e-7);
+    }
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 // Mesh Subdivision Tests
 //----------------------------------------------------------------------------------------------------------------------

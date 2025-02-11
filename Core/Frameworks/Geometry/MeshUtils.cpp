@@ -3,6 +3,7 @@
 //
 
 #include "MeshUtils.h"
+#include "TriangleUtils.h"
 #include "Eigen/Geometry"
 #include <iostream>
 
@@ -232,6 +233,26 @@ namespace Bcg {
             grad += normal.cross(ev) * u / max_mag;
         }
         return ((grad / (2.0 * f_area)) * max_mag).cast<Real>();
+    }
+
+    [[nodiscard]] Vector<Real, 3> FaceToBarycentricCoordinates(const Mesh &mesh, const Face &f, const Vector<Real, 3> &p){
+        const Halfedge h = mesh.get_halfedge(f);
+        const Halfedge hn = mesh.get_next(h);
+        const Halfedge hnn = mesh.get_next(hn);
+        const Vector<Real, 3> &u = mesh.positions[mesh.get_vertex(h)];
+        const Vector<Real, 3> &v = mesh.positions[mesh.get_vertex(hn)];
+        const Vector<Real, 3> &w = mesh.positions[mesh.get_vertex(hnn)];
+        return ToBarycentricCoordinates(p, u, v, w);
+    }
+
+    [[nodiscard]] Vector<Real, 3> FaceFromBarycentricCoordinates(const Mesh &mesh, const Face &f, const Vector<Real, 3> &bc){
+        const Halfedge h = mesh.get_halfedge(f);
+        const Halfedge hn = mesh.get_next(h);
+        const Halfedge hnn = mesh.get_next(hn);
+        const Vector<Real, 3> &u = mesh.positions[mesh.get_vertex(h)];
+        const Vector<Real, 3> &v = mesh.positions[mesh.get_vertex(hn)];
+        const Vector<Real, 3> &w = mesh.positions[mesh.get_vertex(hnn)];
+        return FromBarycentric(bc, u, v, w);
     }
 
     //------------------------------------------------------------------------------------------------------------------

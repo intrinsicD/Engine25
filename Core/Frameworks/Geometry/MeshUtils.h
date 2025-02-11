@@ -38,6 +38,10 @@ namespace Bcg {
 
     [[nodiscard]] Vector<Real, 3> FaceGradient(const Mesh &mesh, const Face &f, VertexProperty<Real> scalarfield);
 
+    [[nodiscard]] Vector<Real, 3> FaceToBarycentricCoordinates(const Mesh &mesh, const Face &f, const Vector<Real, 3> &p);
+
+    [[nodiscard]] Vector<Real, 3> FaceFromBarycentricCoordinates(const Mesh &mesh, const Face &f, const Vector<Real, 3> &bc);
+
     //------------------------------------------------------------------------------------------------------------------
     // Edge Methods
     //------------------------------------------------------------------------------------------------------------------
