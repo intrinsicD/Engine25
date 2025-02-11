@@ -41,6 +41,7 @@ namespace Bcg {
         using Graph::get_halfedge;
         using Graph::get_valence;
         using Graph::split;
+        using Graph::is_boundary;
 
         Faces faces;
 
@@ -242,6 +243,14 @@ namespace Bcg {
          * ```
          */
         Halfedge insert_vertex(const Halfedge &h, const Vertex &v);
+
+        /**
+         * @brief Inserts an edge between two halfedges.
+         * @param h0 The first halfedge.
+         * @param h1 The second halfedge.
+         * @return A handle to the newly created halfedge.
+         */
+        Halfedge insert_edge(const Halfedge &h0, const Halfedge &h1);
 
         /**
          * @brief Checks if collapsing the given halfedge is allowed.

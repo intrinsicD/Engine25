@@ -2,18 +2,132 @@
 // Created by alex on 13.01.25.
 //
 
-// TestGraph.cpp
+#include <MeshFeatures.h>
+#include <MeshSubdivision.h>
+
 #include "gtest/gtest.h"
-#include "Mesh.h"
+#include "MeshShapes.h"
+#include "MeshUtils.h"
+#include "TriangleUtils.h"
 
 using namespace Bcg;
 
-// Test fixture for Graph
-class MeshTest : public ::testing::Test {
-protected:
+using It = Vertices::VertexIterator;
+
+// Note: These are partial tests only used for development. They are not meant
+// to fully cover iterators and their functionality,
+
+TEST(VertexIteratorTest, default_constructible) {
+    It a;
+    EXPECT_FALSE((*a).is_valid());
+}
+
+TEST(VertexIteratorTest, copy_constructible) {
+    It a;
+    It b(a);
+    EXPECT_FALSE((*b).is_valid());
+}
+
+TEST(VertexIteratorTest, assignable) {
+    It a;
+    auto b = a;
+    EXPECT_FALSE((*b).is_valid());
+}
+
+TEST(VertexIteratorTest, insert) {
+    auto mesh = Mesh{};
+    auto vertices = std::vector<Vertex>{};
+    mesh.add_vertex(Vector<Real, 3>::Zero());
+    vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
+    EXPECT_EQ(vertices.size(), 1u);
+}
+
+TEST(VertexCirculatorTest, std_distance) {
+    auto mesh = VertexOneRing();
+    auto v = Vertex(3); // center vertex
+    auto vv = mesh.get_vertices(v);
+    auto d = std::distance(vv.begin(), vv.end());
+    EXPECT_EQ(d, 6);
+}
+
+TEST(VertexCirculatorTest, post_increment) {
+    auto mesh = VertexOneRing();
+    auto v = Vertex(3); // center vertex
+    auto vv = mesh.get_vertices(v);
+    EXPECT_EQ((*vv++).idx(), 4u);
+    EXPECT_EQ((*vv).idx(), 6u);
+}
+
+TEST(VertexCirculatorTest, post_decrement) {
+    auto mesh = VertexOneRing();
+    auto v = Vertex(3); // center vertex
+    auto vv = mesh.get_vertices(v);
+    EXPECT_EQ((*vv--).idx(), 4u);
+    EXPECT_EQ((*vv).idx(), 1u);
+}
+
+
+TEST(CirculatorTest, vertex_vertex_circulator) {
+    auto mesh = VertexOneRing();
+    auto v = Vertex(3); // center vertex
+    auto vv = mesh.get_vertices(v);
+    auto d = std::distance(vv.begin(), vv.end());
+    EXPECT_EQ(d, 6);
+}
+
+TEST(CirculatorTest, vertex_halfedge_circulator) {
+    auto mesh = VertexOneRing();
+    auto v = Vertex(3); // center vertex
+    auto vh = mesh.get_halfedges(v);
+    auto d = std::distance(vh.begin(), vh.end());
+    EXPECT_EQ(d, 6);
+}
+
+TEST(CirculatorTest, vertex_edge_circulator) {
+    auto mesh = VertexOneRing();
+    auto v = Vertex(3); // center vertex
+    auto ve = mesh.get_edges(v);
+    auto d = std::distance(ve.begin(), ve.end());
+    EXPECT_EQ(d, 6);
+}
+
+TEST(CirculatorTest, vertex_face_circulator) {
+    auto mesh = VertexOneRing();
+    auto v = Vertex(3); // center vertex
+    auto vf = mesh.get_faces(v);
+    auto d = std::distance(vf.begin(), vf.end());
+    EXPECT_EQ(d, 6);
+}
+
+TEST(CirculatorTest, face_halfedge_circulator) {
+    auto mesh = VertexOneRing();
+    auto f = Face(0); // center vertex
+    auto fh = mesh.get_halfedges(f);
+    auto d = std::distance(fh.begin(), fh.end());
+    EXPECT_EQ(d, 3);
+}
+
+TEST(CirculatorTest, face_vertex_circulator) {
+    auto mesh = VertexOneRing();
+    auto f = Face(0); // center vertex
+    auto fv = mesh.get_vertices(f);
+    auto d = std::distance(fv.begin(), fv.end());
+    EXPECT_EQ(d, 3);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+// Differential Geometry Tests
+//----------------------------------------------------------------------------------------------------------------------
+
+class DifferentialGeometryTest : public ::testing::Test {
+public:
     Mesh mesh;
+    static Mesh sphere;
+
     Vertex v0, v1, v2, v3;
-    Face f0, f1;
+    Face f0;
+
+    Vertex central_vertex;
 
     void add_triangle() {
         v0 = mesh.add_vertex(Vector<Real, 3>(0, 0, 0));
@@ -22,492 +136,119 @@ protected:
         f0 = mesh.add_triangle(v0, v1, v2);
     }
 
-    void add_triangles() {
-        v0 = mesh.add_vertex(Vector<Real, 3>(0, 0, 0));
-        v1 = mesh.add_vertex(Vector<Real, 3>(1, 0, 0));
-        v2 = mesh.add_vertex(Vector<Real, 3>(0, 1, 0));
-        v3 = mesh.add_vertex(Vector<Real, 3>(1, 1, 0));
-        f0 = mesh.add_triangle(v0, v1, v2);
-        f1 = mesh.add_triangle(v1, v3, v2);
-    }
-
-    void add_quad() {
-        v0 = mesh.add_vertex(Vector<Real, 3>(0, 0, 0));
-        v1 = mesh.add_vertex(Vector<Real, 3>(1, 0, 0));
-        v2 = mesh.add_vertex(Vector<Real, 3>(1, 1, 0));
-        v3 = mesh.add_vertex(Vector<Real, 3>(0, 1, 0));
-        f0 = mesh.add_quad(v0, v1, v2, v3);
-    }
-
-    void vertex_onering() {
-        auto v0 = mesh.add_vertex(Vector<Real, 3>(0.4499998093, 0.5196152329, 0.0000000000));
-        auto v1 = mesh.add_vertex(Vector<Real, 3>(0.2999998033, 0.5196152329, 0.0000000000));
-        auto v2 = mesh.add_vertex(Vector<Real, 3>(0.5249998569, 0.3897114396, 0.0000000000));
-        auto v3 = mesh.add_vertex(Vector<Real, 3>(0.3749998510, 0.3897114396, 0.0000000000));
-        auto v4 = mesh.add_vertex(Vector<Real, 3>(0.2249998450, 0.3897114396, 0.0000000000));
-        auto v5 = mesh.add_vertex(Vector<Real, 3>(0.4499999285, 0.2598076165, 0.0000000000));
-        auto v6 = mesh.add_vertex(Vector<Real, 3>(0.2999999225, 0.2598076165, 0.0000000000));
-
-        mesh.add_triangle(v3, v0, v1);
-        mesh.add_triangle(v3, v2, v0);
-        mesh.add_triangle(v4, v3, v1);
-        mesh.add_triangle(v5, v2, v3);
-        mesh.add_triangle(v6, v5, v3);
-        mesh.add_triangle(v6, v3, v4);
-    }
-
-    void edge_onering() {
-        auto v0 = mesh.add_vertex(Vector<Real, 3>(0.5999997854, 0.5196152329, 0.0000000000));
-        auto v1 = mesh.add_vertex(Vector<Real, 3>(0.4499998093, 0.5196152329, 0.0000000000));
-        auto v2 = mesh.add_vertex(Vector<Real, 3>(0.2999998033, 0.5196152329, 0.0000000000));
-        auto v3 = mesh.add_vertex(Vector<Real, 3>(0.6749998331, 0.3897114396, 0.0000000000));
-        auto v4 = mesh.add_vertex(Vector<Real, 3>(0.5249998569, 0.3897114396, 0.0000000000));
-        auto v5 = mesh.add_vertex(Vector<Real, 3>(0.3749998510, 0.3897114396, 0.0000000000));
-        auto v6 = mesh.add_vertex(Vector<Real, 3>(0.2249998450, 0.3897114396, 0.0000000000));
-        auto v7 = mesh.add_vertex(Vector<Real, 3>(0.5999999046, 0.2598076165, 0.0000000000));
-        auto v8 = mesh.add_vertex(Vector<Real, 3>(0.4499999285, 0.2598076165, 0.0000000000));
-        auto v9 = mesh.add_vertex(Vector<Real, 3>(0.2999999225, 0.2598076165, 0.0000000000));
-
-        mesh.add_triangle(v4, v0, v1);
-        mesh.add_triangle(v4, v3, v0);
-        mesh.add_triangle(v5, v1, v2);
-        mesh.add_triangle(v5, v4, v1);
-        mesh.add_triangle(v6, v5, v2);
-        mesh.add_triangle(v7, v3, v4);
-        mesh.add_triangle(v8, v7, v4);
-        mesh.add_triangle(v8, v4, v5);
-        mesh.add_triangle(v9, v8, v5);
-        mesh.add_triangle(v9, v5, v6);
+    void one_ring() {
+        mesh = VertexOneRing();
+        central_vertex = Vertex(3); // the central vertex
+        mesh.positions[central_vertex][2] = 0.1; // lift central vertex
     }
 };
 
-TEST_F(MeshTest, DefaultConstructor) {
-    EXPECT_TRUE(mesh.is_empty());
-    EXPECT_FALSE(mesh.has_garbage());
-}
+Mesh DifferentialGeometryTest::sphere = Icosphere(5);
 
-// Unit Test Examples
-TEST_F(MeshTest, AddRemoveVertexTest) {
-    auto v = mesh.add_vertex({1.0, 2.0, 3.0});
-    ASSERT_TRUE(v.is_valid());
-    EXPECT_EQ(mesh.n_vertices(), 1);
-    EXPECT_EQ(mesh.positions[v], (Vector<Real, 3>(1.0, 2.0, 3.0)));
-    mesh.delete_vertex(v);
-    EXPECT_EQ(mesh.n_vertices(), 0);
-    EXPECT_TRUE(mesh.has_garbage());
-    mesh.garbage_collection();
-    EXPECT_EQ(mesh.n_vertices(), 0);
-    EXPECT_FALSE(mesh.has_garbage());
-}
-
-TEST_F(MeshTest, AddTriangleTest) {
-    auto v0 = mesh.add_vertex({0.0, 0.0, 0.0});
-    auto v1 = mesh.add_vertex({1.0, 0.0, 0.0});
-    auto v2 = mesh.add_vertex({0.0, 1.0, 0.0});
-
-    auto f = mesh.add_triangle(v0, v1, v2);
-    ASSERT_TRUE(f.is_valid());
-
-    EXPECT_EQ(mesh.n_faces(), 1);
-    EXPECT_EQ(mesh.n_edges(), 3);
-    EXPECT_EQ(mesh.n_vertices(), 3);
-}
-
-TEST_F(MeshTest, IsTriangleMeshTest) {
-    auto v0 = mesh.add_vertex({0.0, 0.0, 0.0});
-    auto v1 = mesh.add_vertex({1.0, 0.0, 0.0});
-    auto v2 = mesh.add_vertex({0.0, 1.0, 0.0});
-
-    mesh.add_triangle(v0, v1, v2);
-    ASSERT_TRUE(mesh.is_triangle_mesh());
-}
-
-TEST_F(MeshTest, FindEdgeTest) {
-    auto v0 = mesh.add_vertex({0.0, 0.0, 0.0});
-    auto v1 = mesh.add_vertex({1.0, 0.0, 0.0});
-    auto v2 = mesh.add_vertex({0.0, 1.0, 0.0});
-
-    mesh.add_triangle(v0, v1, v2);
-    auto edge01 = mesh.find_edge(v0, v1);
-    auto edge12 = mesh.find_edge(v1, v2);
-    auto edge20 = mesh.find_edge(v2, v0);
-
-    ASSERT_TRUE(edge01.is_valid());
-    ASSERT_TRUE(edge12.is_valid());
-    ASSERT_TRUE(edge20.is_valid());
-}
-
-TEST_F(MeshTest, IsFlipOkTest) {
-    auto v0 = mesh.add_vertex({0.0, 0.0, 0.0});
-    auto v1 = mesh.add_vertex({1.0, 0.0, 0.0});
-    auto v2 = mesh.add_vertex({0.0, 1.0, 0.0});
-    auto v3 = mesh.add_vertex({1.0, 1.0, 0.0});
-
-    auto f = mesh.add_quad(v0, v1, v2, v3);
-    mesh.triangulate(f);
-
-    ASSERT_TRUE(mesh.is_flip_ok(mesh.get_edge(mesh.get_halfedge(f))));
-}
-
-
-TEST_F(MeshTest, emptyMesh) {
-    EXPECT_EQ(mesh.n_vertices(), size_t(0));
-    EXPECT_EQ(mesh.n_edges(), size_t(0));
-    EXPECT_EQ(mesh.n_faces(), size_t(0));
-}
-
-TEST_F(MeshTest, insert_remove_single_vertex) {
-    auto v = mesh.add_vertex(Vector<Real, 3>(0, 0, 0));
-    EXPECT_EQ(mesh.n_vertices(), size_t(1));
-    mesh.delete_vertex(v);
-    mesh.garbage_collection();
-    EXPECT_EQ(mesh.n_vertices(), size_t(0));
-}
-
-TEST_F(MeshTest, insert_remove_single_triangle) {
+TEST_F(DifferentialGeometryTest, area_points) {
     add_triangle();
-    EXPECT_EQ(mesh.n_vertices(), size_t(3));
-    EXPECT_EQ(mesh.n_edges(), size_t(3));
-    EXPECT_EQ(mesh.n_faces(), size_t(1));
-    mesh.delete_face(f0);
-    mesh.garbage_collection();
-    EXPECT_EQ(mesh.n_vertices(), size_t(0));
-    EXPECT_EQ(mesh.n_edges(), size_t(0));
-    EXPECT_EQ(mesh.n_faces(), size_t(0));
+    Real a = TriangleArea(mesh.positions[v0], mesh.positions[v1], mesh.positions[v2]);
+    EXPECT_EQ(a, 0.5);
 }
 
-TEST_F(MeshTest, insert_remove_single_quad) {
-    add_quad();
-    EXPECT_EQ(mesh.n_vertices(), size_t(4));
-    EXPECT_EQ(mesh.n_edges(), size_t(4));
-    EXPECT_EQ(mesh.n_faces(), size_t(1));
-    mesh.delete_face(f0);
-    mesh.garbage_collection();
-    EXPECT_EQ(mesh.n_vertices(), size_t(0));
-    EXPECT_EQ(mesh.n_edges(), size_t(0));
-    EXPECT_EQ(mesh.n_faces(), size_t(0));
-}
-
-TEST_F(MeshTest, insert_remove_single_polygonal_face) {
-    std::vector<Vertex> vertices(4);
-    vertices[0] = mesh.add_vertex(Vector<Real, 3>(0, 0, 0));
-    vertices[1] = mesh.add_vertex(Vector<Real, 3>(1, 0, 0));
-    vertices[2] = mesh.add_vertex(Vector<Real, 3>(1, 1, 0));
-    vertices[3] = mesh.add_vertex(Vector<Real, 3>(0, 1, 0));
-
-    auto f = mesh.add_face(vertices);
-    EXPECT_EQ(mesh.n_vertices(), size_t(4));
-    EXPECT_EQ(mesh.n_edges(), size_t(4));
-    EXPECT_EQ(mesh.n_faces(), size_t(1));
-    mesh.delete_face(f);
-    mesh.garbage_collection();
-    EXPECT_EQ(mesh.n_vertices(), size_t(0));
-    EXPECT_EQ(mesh.n_edges(), size_t(0));
-    EXPECT_EQ(mesh.n_faces(), size_t(0));
-}
-
-TEST_F(MeshTest, delete_center_vertex) {
-    vertex_onering();
-    EXPECT_EQ(mesh.n_vertices(), size_t(7));
-    EXPECT_EQ(mesh.n_faces(), size_t(6));
-    Vertex v(3); // the central vertex
-    mesh.delete_vertex(v);
-    mesh.garbage_collection();
-    EXPECT_EQ(mesh.n_vertices(), size_t(0));
-    EXPECT_EQ(mesh.n_faces(), size_t(0));
-}
-
-TEST_F(MeshTest, delete_center_edge) {
-    edge_onering();
-    EXPECT_EQ(mesh.n_vertices(), size_t(10));
-    EXPECT_EQ(mesh.n_faces(), size_t(10));
-    // the two vertices of the center edge
-    v0 = Vertex(4);
-    v1 = Vertex(5);
-
-    auto e = mesh.find_edge(v0, v1);
-    mesh.delete_edge(e);
-    mesh.garbage_collection();
-    EXPECT_EQ(mesh.n_vertices(), size_t(10));
-    EXPECT_EQ(mesh.n_faces(), size_t(8));
-}
-
-TEST_F(MeshTest, copy) {
+TEST_F(DifferentialGeometryTest, area_face) {
     add_triangle();
-    Mesh m2 = mesh;
-    EXPECT_EQ(m2.n_vertices(), size_t(3));
-    EXPECT_EQ(m2.n_edges(), size_t(3));
-    EXPECT_EQ(m2.n_faces(), size_t(1));
+    Real a = FaceArea(mesh, f0);
+    EXPECT_EQ(a, 0.5);
 }
 
-TEST_F(MeshTest, assignment) {
-    add_triangle();
-    Mesh m2;
-    m2.assign(mesh);
-    EXPECT_EQ(m2.n_vertices(), size_t(3));
-    EXPECT_EQ(m2.n_edges(), size_t(3));
-    EXPECT_EQ(m2.n_faces(), size_t(1));
+TEST_F(DifferentialGeometryTest, area_vertex) {
+    one_ring();
+    Real a = VertexBarycentricArea(mesh, central_vertex);
+    EXPECT_FLOAT_EQ(a, 0.024590395);
 }
 
-TEST_F(MeshTest, vertex_properties) {
-    add_triangle();
-
-    auto osize = mesh.vertices.properties().size();
-
-    // explicit add
-    auto vidx = mesh.add_vertex_property<int>("v:idx");
-    vidx[v0] = 0;
-    EXPECT_EQ(mesh.vertices.properties().size(), osize + 1);
-    mesh.remove_vertex_property(vidx);
-    EXPECT_EQ(mesh.vertices.properties().size(), osize);
-
-    // implicit add
-    vidx = mesh.vertex_property<int>("v:idx2");
-    EXPECT_EQ(mesh.vertices.properties().size(), osize + 1);
-    mesh.remove_vertex_property(vidx);
-    EXPECT_EQ(mesh.vertices.properties().size(), osize);
+TEST_F(DifferentialGeometryTest, laplace) {
+    one_ring();
+    auto lv = VertexLaplace(mesh, central_vertex);
+    EXPECT_GT(lv.norm(), 0);
 }
 
-TEST_F(MeshTest, halfedge_properties) {
-    add_triangle();
-    // explicit add
-    auto hidx = mesh.add_halfedge_property<int>("h:idx");
-    auto h = mesh.get_halfedge(v0);
-    hidx[h] = 0;
-    EXPECT_EQ(mesh.halfedges.properties().size(), size_t(3));
-    mesh.remove_halfedge_property(hidx);
-    EXPECT_EQ(mesh.halfedges.properties().size(), size_t(2));
-
-    // implicit add
-    hidx = mesh.halfedge_property<int>("h:idx2");
-    EXPECT_EQ(mesh.halfedges.properties().size(), size_t(3));
-    mesh.remove_halfedge_property(hidx);
-    EXPECT_EQ(mesh.halfedges.properties().size(), size_t(2));
-}
-
-TEST_F(MeshTest, edge_properties) {
-    add_triangle();
-    // explicit add
-    auto eidx = mesh.add_edge_property<int>("e:idx");
-    auto e = mesh.get_edge(mesh.get_halfedge(v0));
-    eidx[e] = 0;
-    EXPECT_EQ(mesh.edges.properties().size(), size_t(3));
-    mesh.remove_edge_property(eidx);
-    EXPECT_EQ(mesh.edges.properties().size(), size_t(2));
-
-    // implicit add
-    eidx = mesh.edge_property<int>("e:idx2");
-    EXPECT_EQ(mesh.edges.properties().size(), size_t(3));
-    mesh.remove_edge_property(eidx);
-    EXPECT_EQ(mesh.edges.properties().size(), size_t(2));
-}
-
-TEST_F(MeshTest, face_properties) {
-    add_triangle();
-    // explicit add
-    auto fidx = mesh.add_face_property<int>("f:idx");
-    fidx[f0] = 0;
-    EXPECT_EQ(mesh.faces.properties().size(), size_t(3));
-    mesh.remove_face_property(fidx);
-    EXPECT_EQ(mesh.faces.properties().size(), size_t(2));
-
-    // implicit add
-    fidx = mesh.face_property<int>("f:idx2");
-    EXPECT_EQ(mesh.faces.properties().size(), size_t(3));
-    mesh.remove_face_property(fidx);
-    EXPECT_EQ(mesh.faces.properties().size(), size_t(2));
-}
-
-TEST_F(MeshTest, vertex_iterators) {
-    add_triangle();
-    size_t sumIdx(0);
-    for (auto v: mesh.vertices) {
-        sumIdx += v.idx();
+TEST_F(DifferentialGeometryTest, area_surface) {
+    auto a = SurfaceArea(sphere);
+    EXPECT_NEAR(a, 12.57, 1.0e-2);
+    double sum_voronoi_mixed = 0;
+    for (const auto &v: sphere.vertices) {
+        sum_voronoi_mixed += VertexVoronoiMixedArea(sphere, v);
     }
-    EXPECT_EQ(sumIdx, size_t(3));
+    EXPECT_NEAR(sum_voronoi_mixed, 12.57, 1.0e-2);
 }
 
-TEST_F(MeshTest, edge_iterators) {
-    add_triangle();
-    size_t sumIdx(0);
-    for (auto e: mesh.edges) {
-        sumIdx += e.idx();
-    }
-    EXPECT_EQ(sumIdx, size_t(3));
+TEST_F(DifferentialGeometryTest, volume) {
+    auto vdt = VolumeDivergenceTheorem(sphere);
+    EXPECT_NEAR(vdt, 4.18, 1.0e-2);
+
+    auto vtd = VolumeTetrahedralDecomposition(sphere);
+    EXPECT_NEAR(vtd, 4.18, 1.0e-2);
 }
 
-TEST_F(MeshTest, halfedge_iterators) {
-    add_triangle();
-    size_t sumIdx(0);
-    for (auto h: mesh.halfedges) {
-        sumIdx += h.idx();
-    }
-    EXPECT_EQ(sumIdx, size_t(15));
+TEST_F(DifferentialGeometryTest, centroid) {
+    auto center = Centroid(sphere);
+    EXPECT_LT(center.norm(), 1e-5);
 }
 
-TEST_F(MeshTest, face_iterators) {
-    add_triangle();
-    size_t sumIdx(0);
-    for (auto f: mesh.faces) {
-        sumIdx += f.idx();
-    }
-    EXPECT_EQ(sumIdx, size_t(0));
+//----------------------------------------------------------------------------------------------------------------------
+// Mesh Subdivision Tests
+//----------------------------------------------------------------------------------------------------------------------
+
+
+TEST(SubdivisionTest, loop_subdivision) {
+    auto mesh = Icosahedron();
+    Subdivision::Loop(mesh);
+    EXPECT_EQ(mesh.n_faces(), size_t(80));
 }
 
-TEST_F(MeshTest, is_triangle_mesh) {
-    add_triangle();
-    EXPECT_TRUE(mesh.is_triangle_mesh());
+TEST(SubdivisionTest, loop_with_features) {
+    auto mesh = Icosahedron();
+    DetectFeatures(mesh, 25);
+    Subdivision::Loop(mesh);
+    EXPECT_EQ(mesh.n_faces(), size_t(80));
 }
 
-TEST_F(MeshTest, is_quad_mesh) {
-    add_quad();
-    EXPECT_TRUE(mesh.is_quad_mesh());
+TEST(SubdivisionTest, loop_with_boundary) {
+    auto mesh = VertexOneRing();
+    Subdivision::Loop(mesh);
+    EXPECT_EQ(mesh.n_faces(), size_t(24));
 }
 
-TEST_F(MeshTest, poly_mesh) {
-    std::vector<Vertex> vertices(5);
-    vertices[0] = mesh.add_vertex(Vector<Real, 3>(0, 0, 0));
-    vertices[1] = mesh.add_vertex(Vector<Real, 3>(1, 0, 0));
-    vertices[2] = mesh.add_vertex(Vector<Real, 3>(1, 1, 0));
-    vertices[3] = mesh.add_vertex(Vector<Real, 3>(0.5, 1, 0));
-    vertices[4] = mesh.add_vertex(Vector<Real, 3>(0, 1, 0));
-    mesh.add_face(vertices);
-    EXPECT_FALSE(mesh.is_triangle_mesh() || mesh.is_quad_mesh());
+TEST(SubdivisionTest, catmull_clark_subdivision) {
+    auto mesh = Hexahedron();
+    Subdivision::CatmullClark(mesh);
+    EXPECT_EQ(mesh.n_faces(), size_t(24));
 }
 
-TEST_F(MeshTest, vertex_valence) {
-    add_triangle();
-    auto val = mesh.get_valence(*mesh.vertices.begin());
-    EXPECT_EQ(val, 2u);
+TEST(SubdivisionTest, catmull_clark_with_features) {
+    auto mesh = Hexahedron();
+    DetectFeatures(mesh, 25);
+    Subdivision::CatmullClark(mesh);
+    EXPECT_EQ(mesh.n_faces(), size_t(24));
 }
 
-TEST_F(MeshTest, face_valence) {
-    add_triangle();
-    auto val = mesh.get_valence(*mesh.faces.begin());
-    EXPECT_EQ(val, 3u);
-}
-
-TEST_F(MeshTest, collapse) {
-    add_triangles();
-    EXPECT_EQ(mesh.n_faces(), size_t(2));
-    auto h0 = mesh.find_halfedge(v3, v2);
-    if (mesh.is_collapse_ok(h0))
-        mesh.collapse(h0);
-    mesh.garbage_collection();
-    EXPECT_EQ(mesh.n_faces(), size_t(1));
-}
-
-TEST_F(MeshTest, edge_removal_ok) {
-    add_triangles();
-    Edge e(1); // diagonal of triangulated quad
-    EXPECT_TRUE(mesh.is_removal_ok(e));
-}
-
-TEST_F(MeshTest, edge_removal_not_ok) {
-    add_triangle();
-    Edge e(0); // boundary edge
-    EXPECT_FALSE(mesh.is_removal_ok(e));
-}
-
-TEST_F(MeshTest, remove_edge) {
-    add_triangles();
-    Edge e(1); // diagonal of triangulated quad
-    mesh.remove_edge(e);
-    EXPECT_TRUE(mesh.is_quad_mesh());
-}
-
-TEST_F(MeshTest, face_split) {
-    add_quad();
-    EXPECT_EQ(mesh.n_faces(), size_t(1));
-    Vector<Real, 3> p(0.5, 0.5, 0);
-    mesh.split(f0, p);
+TEST(SubdivisionTest, catmull_clark_with_boundary) {
+    auto mesh = Plane(1);
+    Subdivision::CatmullClark(mesh);
     EXPECT_EQ(mesh.n_faces(), size_t(4));
 }
 
-TEST_F(MeshTest, edge_split) {
-    add_triangle();
-    EXPECT_EQ(mesh.n_faces(), size_t(1));
-    auto e = mesh.find_edge(v0, v1);
-    Vector<Real, 3> p0 = mesh.positions[v0];
-    Vector<Real, 3> p1 = mesh.positions[v1];
-    Vector<Real, 3> p = (p0 + p1) * 0.5;
-    mesh.split(e, p);
-    EXPECT_EQ(mesh.n_faces(), size_t(2));
+TEST(SubdivisionTest, quad_tri_on_quads) {
+    auto mesh = Hexahedron();
+    Subdivision::QuadTri(mesh);
+    EXPECT_EQ(mesh.n_faces(), size_t(24));
 }
 
-TEST_F(MeshTest, edge_flip) {
-    edge_onering();
-    EXPECT_EQ(mesh.n_vertices(), size_t(10));
-    EXPECT_EQ(mesh.n_faces(), size_t(10));
-
-    // the two vertices of the center edge
-    v0 = Vertex(4);
-    v1 = Vertex(5);
-    auto e = mesh.find_edge(v0, v1);
-    if (mesh.is_flip_ok(e)) {
-        mesh.flip(e);
-    }
-    EXPECT_EQ(mesh.n_vertices(), size_t(10));
-    EXPECT_EQ(mesh.n_faces(), size_t(10));
+TEST(SubdivisionTest, quad_tri_on_triangles) {
+    auto mesh = Tetrahedron();
+    Subdivision::QuadTri(mesh);
+    EXPECT_EQ(mesh.n_faces(), size_t(16));
 }
 
-TEST_F(MeshTest, is_manifold) {
-    vertex_onering();
-    for (auto v: mesh.vertices) {
-        EXPECT_TRUE(mesh.is_manifold(v));
-    }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-// Iterator Tests
-//----------------------------------------------------------------------------------------------------------------------
-
-using It = Vertices::VertexIterator;
-TEST_F(MeshTest, default_constructible) {
-    It a;
-    EXPECT_FALSE((*a).is_valid());
-}
-
-TEST_F(MeshTest, copy_constructible) {
-    It a;
-    It b(a);
-    EXPECT_FALSE((*b).is_valid());
-}
-
-TEST_F(MeshTest, assignable) {
-    It a;
-    auto b = a;
-    EXPECT_FALSE((*b).is_valid());
-}
-
-TEST_F(MeshTest, insert) {
-    auto mesh = Mesh{};
-    auto vertices = std::vector<Vertex>{};
-    mesh.add_vertex(Vector<Real, 3>::Zero());
-    vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
-    EXPECT_EQ(vertices.size(), 1u);
-}
-
-TEST_F(MeshTest, std_distance) {
-    vertex_onering();
-    auto v = Vertex(3); // center vertex
-    auto vv = mesh.get_vertices(v);
-    auto d = std::distance(vv.begin(), vv.end());
-    EXPECT_EQ(d, 6);
-}
-
-TEST_F(MeshTest, post_increment) {
-    vertex_onering();
-    auto v = Vertex(3); // center vertex
-    auto vv = mesh.get_vertices(v);
-    EXPECT_EQ((*vv++).idx(), 4u);
-    EXPECT_EQ((*vv).idx(), 6u);
-}
-
-TEST_F(MeshTest, post_decrement) {
-    vertex_onering();
-    auto v = Vertex(3); // center vertex
-    auto vv = mesh.get_vertices(v);
-    EXPECT_EQ((*vv--).idx(), 4u);
-    EXPECT_EQ((*vv).idx(), 1u);
+TEST(SubdivisionTest, quad_tri_on_mixed) {
+    auto mesh = Cone(4); // pyramid
+    Subdivision::QuadTri(mesh);
+    EXPECT_EQ(mesh.n_faces(), size_t(20));
 }

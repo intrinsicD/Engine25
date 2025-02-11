@@ -32,7 +32,7 @@ namespace std {
 namespace Bcg {
     bool is_valid_filename(const std::string &filename) {
         // Allow only alphanumeric characters, underscores, hyphens, and dots in filenames
-        std::regex valid_filename_regex("^[a-zA-Z0-9._-]+$");
+        static const std::regex valid_filename_regex("^[a-zA-Z0-9._/-]+$");
         return std::regex_match(filename, valid_filename_regex);
     }
 

@@ -261,13 +261,19 @@ namespace Bcg {
 
         if (h.is_valid()) {
             do {
-                if (get_vertex(h) == v1)
+                if (get_vertex(h) == v1) {
                     return h;
+                }
                 h = rotate_cw(h);
             } while (h != hh);
         }
 
         return {};
+    }
+
+    Edge Graph::find_edge(const Vertex &v0, const Vertex &v1) const {
+        Halfedge h = find_halfedge(v0, v1);
+        return h.is_valid() ? get_edge(h) : Edge();
     }
 
     // Edge Methods

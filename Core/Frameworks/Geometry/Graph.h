@@ -442,6 +442,15 @@ namespace Bcg {
         Halfedge find_halfedge(const Vertex &v0, const Vertex &v1) const;
 
         /**
+         * @brief Find an edge between two vertices.
+         * @param v0 First vertex.
+         * @param v1 Second vertex.
+         * @return The edge between the two vertices.
+         * */
+        Edge find_edge(const Vertex &v0, const Vertex &v1) const;
+
+
+        /**
          * @brief Sets the target vertex of a halfedge.
          * @param h Halfedge to set the vertex for.
          * @param v The target vertex to set.
