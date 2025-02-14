@@ -30,16 +30,16 @@ namespace Bcg::Graphics {
                 cmd_desc.is_compute = false;
                 cmd_desc.allow_simultaneous_use = false;
 
-                CommandBufferHandle cmd = device.CreateCommandBuffer(cmd_desc);
+                CommandBufferHandle cmd = device.create_command_buffer(cmd_desc);
 
                 // Begin recording commands
-                device.BeginCommandBuffer(cmd);
+                device.begin_command_buffer(cmd);
 
                 // Let the pass record its commands into the command buffer
                 pass_data.RecordCommands(device, cmd);
 
                 // End command buffer recording
-                device.EndCommandBuffer(cmd);
+                device.end_command_buffer(cmd);
 
                 // Store the command buffer for submission
                 command_buffers.push_back(cmd);

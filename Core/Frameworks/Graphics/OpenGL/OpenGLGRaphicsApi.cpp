@@ -175,18 +175,18 @@ namespace Bcg::Graphics {
 
     static DeviceFunctions CreateGLBackendFunctions() {
         DeviceFunctions funcs = {};
-        funcs.CreateBuffer = GL_CreateBuffer;
-        funcs.DestroyBuffer = GL_DestroyBuffer;
-        funcs.CreateShader = GL_CreateShader;
-        funcs.DestroyShader = GL_DestroyShader;
-        funcs.CreatePipeline = GL_CreatePipeline;
-        funcs.DestroyPipeline = GL_DestroyPipeline;
-        funcs.IsFeatureSupported = GL_IsFeatureSupported;
-        funcs.GetLastErrorType = GL_GetLastErrorType;
-        funcs.ClearLastError = GL_ClearLastError;
-        funcs.DeviceBarrier = GL_DeviceBarrier;
-        funcs.CreateCommandBuffer = GL_CreateCommandBuffer;
-        funcs.DestroyCommandBuffer = GL_DestroyCommandBuffer;
+        funcs.create_buffer = GL_CreateBuffer;
+        funcs.destroy_buffer = GL_DestroyBuffer;
+        funcs.create_shader = GL_CreateShader;
+        funcs.destroy_shader = GL_DestroyShader;
+        funcs.create_pipeline = GL_CreatePipeline;
+        funcs.destroy_pipeline = GL_DestroyPipeline;
+        funcs.is_feature_supported = GL_IsFeatureSupported;
+        funcs.get_last_error_type = GL_GetLastErrorType;
+        funcs.clear_last_error = GL_ClearLastError;
+        funcs.device_barrier = GL_DeviceBarrier;
+        funcs.create_command_buffer = GL_CreateCommandBuffer;
+        funcs.destroy_command_buffer = GL_DestroyCommandBuffer;
         // Other functions left as nullptr for now.
         return funcs;
     }

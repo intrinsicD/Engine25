@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace Bcg::Graphics {
     using Int32 = int;
@@ -495,14 +496,14 @@ namespace Bcg::Graphics {
     // - Acquire images from the swapchain and present them
     // ----------------------------------------------------------
 
-    struct submitInfo {
+    struct SubmitInfo {
         std::vector<CommandBufferHandle> command_buffers;
         std::vector<SemaphoreHandle> wait_semaphores;   // Semaphores to wait on before execution
         std::vector<SemaphoreHandle> signal_semaphores; // Semaphores to signal after execution
         FenceHandle fence = {}; // Optional fence to signal when done
     };
 
-    struct presentInfo {
+    struct PresentInfo {
         SwapchainHandle swapchain;
         Uint32 image_index;
         std::vector<SemaphoreHandle> wait_semaphores;
@@ -592,7 +593,7 @@ namespace Bcg::Graphics {
         void (*end_command_buffer)(void *ctx, CommandBufferHandle) = nullptr;
 
         // submitting command buffers for execution
-        void (*submit)(void *ctx, const submitInfo &) = nullptr;
+        void (*submit)(void *ctx, const SubmitInfo &) = nullptr;
 
         void
         (*wait_for_fences)(void *ctx, const std::vector<FenceHandle> &fences, bool wait_all, Uint64 timeout) = nullptr;
@@ -604,7 +605,7 @@ namespace Bcg::Graphics {
         (*acquire_next_image)(void *ctx, SwapchainHandle, Uint64 timeout, SemaphoreHandle semaphore, FenceHandle fence,
                             Uint32 *image_index) = nullptr;
 
-        void (*present)(void *ctx, const presentInfo &) = nullptr;
+        void (*present)(void *ctx, const PresentInfo &) = nullptr;
 
         // Descriptor set updates for changing bound resources on-the-fly
         void (*update_descriptor_sets)(void *ctx, const std::vector<DescriptorUpdate> &) = nullptr;
@@ -711,7 +712,7 @@ namespace Bcg::Graphics {
 
         void end_command_buffer(CommandBufferHandle cmd) { funcs_.end_command_buffer(backend_context_, cmd); }
 
-        void submit(const submitInfo &info) { funcs_.submit(backend_context_, info); }
+        void submit(const SubmitInfo &info) { funcs_.submit(backend_context_, info); }
 
         void wait_for_fences(const std::vector<FenceHandle> &fences, bool wait_all, Uint64 timeout) {
             funcs_.wait_for_fences(backend_context_, fences, wait_all, timeout);
@@ -726,7 +727,7 @@ namespace Bcg::Graphics {
             return funcs_.acquire_next_image(backend_context_, swapchain, timeout, semaphore, fence, image_index);
         }
 
-        void present(const presentInfo &info) {
+        void present(const PresentInfo &info) {
             funcs_.present(backend_context_, info);
         }
 

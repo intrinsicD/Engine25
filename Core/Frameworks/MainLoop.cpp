@@ -44,9 +44,9 @@ namespace Bcg {
         auto &swapchainHandle = Engine::GetContext().get<Graphics::SwapchainHandle>();
 
         // Create semaphores and fence
-        Graphics::SemaphoreHandle image_available_semaphore = device.CreateSemaphore();
-        Graphics::SemaphoreHandle render_finished_semaphore = device.CreateSemaphore();
-        Graphics::FenceHandle frame_fence = device.CreateFence();
+        Graphics::SemaphoreHandle image_available_semaphore = device.create_semaphore();
+        Graphics::SemaphoreHandle render_finished_semaphore = device.create_semaphore();
+        Graphics::FenceHandle frame_fence = device.create_fence();
 
         while (running) {
             taskGraph.Clear();
@@ -64,7 +64,7 @@ namespace Bcg {
 
             // Acquire next image from the swapchain
             Graphics::Uint32 image_index = 0;
-            device.AcquireNextImage(swapchainHandle, UINT64_MAX, image_available_semaphore, frame_fence, &image_index);
+            device.acquire_next_image(swapchainHandle, UINT64_MAX, image_available_semaphore, frame_fence, &image_index);
 
             // Now we have an image index and command buffers recorded. Submit them:
             Graphics::SubmitInfo submit_info;
@@ -74,7 +74,7 @@ namespace Bcg {
             // Signal render_finished_semaphore when done rendering
             submit_info.signal_semaphores.push_back(render_finished_semaphore);
 
-            device.Submit(submit_info);
+            device.submit(submit_info);
             // Optionally wait for fences if you need CPU/GPU sync
 
             // Present the rendered image, waiting on render_finished_semaphore so the GPU is done rendering
@@ -82,15 +82,15 @@ namespace Bcg {
             present_info.swapchain = swapchainHandle;
             present_info.image_index = image_index;
             present_info.wait_semaphores.push_back(render_finished_semaphore);
-            device.Present(present_info);
+            device.present(present_info);
 
             Engine::GetDispatcher().trigger<Events::EndFrameEvent>();
         }
 
         // Destroy semaphores and fence if needed before exit
-        device.DestroySemaphore(image_available_semaphore);
-        device.DestroySemaphore(render_finished_semaphore);
-        device.DestroyFence(frame_fence);
+        device.destroy_semaphore(image_available_semaphore);
+        device.destroy_semaphore(render_finished_semaphore);
+        device.destroy_fence(frame_fence);
     }
 
 

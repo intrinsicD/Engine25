@@ -3,16 +3,7 @@
 //
 
 // TestGraph.cpp
-#include "gtest/gtest.h"
-#include "GraphUtils.h"
-
-using namespace Bcg;
-
-// Test fixture for Graph
-class GraphTest : public ::testing::Test {
-protected:
-    Graph graph;
-};
+#include "TestGraph.h"
 
 TEST_F(GraphTest, DefaultConstructor) {
     EXPECT_TRUE(graph.is_empty());
@@ -21,93 +12,61 @@ TEST_F(GraphTest, DefaultConstructor) {
 }
 
 TEST_F(GraphTest, AddVertex) {
-    auto vertex = graph.add_vertex(Vector<Real, 3>(1.0, 2.0, 3.0));
-    EXPECT_TRUE(vertex.is_valid());
-    EXPECT_EQ(graph.n_vertices(), 1);
-    EXPECT_EQ(graph.positions[vertex], (Vector<Real, 3>(1.0, 2.0, 3.0)));
+    // Create Graph
+    Create();
+    EXPECT_TRUE(A.is_valid());
+    EXPECT_EQ(graph.n_vertices(), 5);
+    EXPECT_EQ(graph.positions[A], (Vector<Real, 3>(1.0, 0.0, 0.0)));
 }
 
 TEST_F(GraphTest, AddAndDeleteEdge) {
-    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
+    Create();
 
-    auto edge = graph.add_edge(v1, v2);
-    EXPECT_TRUE(edge.is_valid());
-    EXPECT_EQ(graph.n_edges(), 1);
+    EXPECT_TRUE(AB.is_valid());
+    EXPECT_EQ(graph.n_edges(), 4);
 
-    graph.delete_edge(graph.get_edge(edge));
-    EXPECT_EQ(graph.n_edges(), 0);
+    graph.delete_edge(graph.get_edge(AB));
+    EXPECT_EQ(graph.n_edges(), 3);
     EXPECT_TRUE(graph.has_garbage());
 }
 
 TEST_F(GraphTest, GarbageCollection) {
-    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto v3 = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    Create();
 
-    graph.mark_deleted(v1);
-    graph.mark_deleted(v2);
+    graph.mark_deleted(A);
+    graph.mark_deleted(D);
 
     EXPECT_TRUE(graph.has_garbage());
 
     graph.garbage_collection();
     EXPECT_FALSE(graph.has_garbage());
-    EXPECT_EQ(graph.n_vertices(), 1);
-    EXPECT_EQ(graph.positions[Vertex(0)], (Vector<Real, 3>(0.0, 0.0, 1.0)));
+    EXPECT_EQ(graph.n_vertices(), 3);
+    EXPECT_EQ(graph.positions[Vertex(0)], (Vector<Real, 3>(0.0, -1.0, 0.0)));
 }
 
 TEST_F(GraphTest, ConnectivityValidation) {
-    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto v3 = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
+    Create();
 
-    graph.add_edge(v1, v2);
-    graph.add_edge(v2, v3);
-
-    EXPECT_EQ(graph.get_valence(v2), 2);
-    EXPECT_EQ(graph.get_valence(v1), 1);
-    EXPECT_EQ(graph.get_valence(v3), 1);
+    EXPECT_EQ(graph.get_valence(A), 2);
+    EXPECT_EQ(graph.get_valence(B), 3);
+    EXPECT_EQ(graph.get_valence(C), 1);
+    EXPECT_EQ(graph.get_valence(D), 1);
+    EXPECT_EQ(graph.get_valence(E), 1);
 
     // Check if the edges are as expected
     auto edges = Edges(graph);
-    EXPECT_EQ(graph.edges.size(), 2);
+    EXPECT_EQ(graph.edges.size(), 4);
     EXPECT_EQ(edges[Edge(0)], (Vector<unsigned int, 2>(1, 0)));
-    EXPECT_EQ(edges[Edge(1)], (Vector<unsigned int, 2>(2, 1)));
-}
-
-TEST_F(GraphTest, EdgeProperty) {
-    auto v1 = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto v2 = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto v3 = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
-
-    graph.add_edge(v1, v2);
-    graph.add_edge(v2, v3);
-
-    // Check if the edges are as expected
-    auto edges = Edges(graph);
-    EXPECT_EQ(graph.edges.size(), 2);
-    EXPECT_EQ(edges[Edge(0)], (Vector<unsigned int, 2>(1, 0)));
-    EXPECT_EQ(edges[Edge(1)], (Vector<unsigned int, 2>(2, 1)));
+    EXPECT_EQ(edges[Edge(1)], (Vector<unsigned int, 2>(2, 0)));
 }
 
 TEST_F(GraphTest, DFSRangeLoopIterator) {
-    // Create vertices
-    auto A = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto B = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto C = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
-    auto D = graph.add_vertex(Vector<Real, 3>(-1.0, 0.0, 0.0));
-    auto E = graph.add_vertex(Vector<Real, 3>(0.0, -1.0, 0.0));
-
-    // Add edges to form the graph:
-    // A is connected to B and C, and B is connected to D and E.
-    graph.add_edge(A, B);
-    graph.add_edge(A, C);
-    graph.add_edge(B, D);
-    graph.add_edge(B, E);
+    // Create Graph
+    Create();
 
     std::vector<Vertex> visited_order;
     // Use the DFS range-based iterator
-    for (const Vertex &v : graph.dfs(A)) {
+    for (const Vertex &v: graph.dfs(A)) {
         visited_order.push_back(v);
     }
 
@@ -121,23 +80,12 @@ TEST_F(GraphTest, DFSRangeLoopIterator) {
 }
 
 TEST_F(GraphTest, BFSRangeLoopIterator) {
-    // Create vertices
-    auto A = graph.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0));
-    auto B = graph.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0));
-    auto C = graph.add_vertex(Vector<Real, 3>(0.0, 0.0, 1.0));
-    auto D = graph.add_vertex(Vector<Real, 3>(-1.0, 0.0, 0.0));
-    auto E = graph.add_vertex(Vector<Real, 3>(0.0, -1.0, 0.0));
-
-    // Add edges to form the graph:
-    // A is connected to B and C, and B is connected to D and E.
-    graph.add_edge(A, B);
-    graph.add_edge(A, C);
-    graph.add_edge(B, D);
-    graph.add_edge(B, E);
+    // Create Graph
+    Create();
 
     std::vector<Vertex> visited_order;
     // Use the BFS range-based iterator
-    for (const Vertex &v : graph.bfs(A)) {
+    for (const Vertex &v: graph.bfs(A)) {
         visited_order.push_back(v);
     }
 
@@ -148,12 +96,11 @@ TEST_F(GraphTest, BFSRangeLoopIterator) {
     //   - The last two vertices are D and E (order can vary).
     EXPECT_EQ(visited_order[0], A);
     EXPECT_TRUE(
-            (visited_order[1] == B && visited_order[2] == C) ||
-            (visited_order[1] == C && visited_order[2] == B)
+        (visited_order[1] == B && visited_order[2] == C) ||
+        (visited_order[1] == C && visited_order[2] == B)
     );
     EXPECT_TRUE(
-            (visited_order[3] == D && visited_order[4] == E) ||
-            (visited_order[3] == E && visited_order[4] == D)
+        (visited_order[3] == D && visited_order[4] == E) ||
+        (visited_order[3] == E && visited_order[4] == D)
     );
 }
-
