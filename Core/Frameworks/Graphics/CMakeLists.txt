@@ -3,7 +3,7 @@ target_include_directories(Engine25 PUBLIC .)
 if (USE_OPENGL)
     target_include_directories(Engine25 PUBLIC OpenGL)
     target_sources(Engine25 PRIVATE
-            OpenGL/OpenGLGRaphicsApi.cpp
+            OpenGL/OpenGLGraphicsApi.cpp
     )
 #[[elseif (USE_VULKAN)
     target_include_directories(Engine25 PUBLIC Vulkan)
