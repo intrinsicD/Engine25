@@ -11,7 +11,7 @@
 #include "WindowComponent.h"
 #include <slang/slang.h>
 
-namespace Bcg {
+namespace Bcg::Graphics {
     RenderingModule::RenderingModule() : Module("RenderingModule", "0.1"){
 
     }

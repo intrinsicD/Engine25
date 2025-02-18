@@ -8,7 +8,7 @@
 #include "Module.h"
 #include "CommandBuffer.h"
 
-namespace Bcg {
+namespace Bcg::Graphics {
     class GuiModule : public Module {
     public:
         GuiModule();

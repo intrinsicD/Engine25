@@ -18,7 +18,7 @@
 
 #include "Math.h"
 
-namespace Bcg {
+namespace Bcg::Graphics {
     namespace fs = std::filesystem;
 
     GuiModule::GuiModule() : Module("GuiModule", "0.1") {

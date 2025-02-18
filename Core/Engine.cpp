@@ -32,12 +32,12 @@ namespace Bcg {
         auto &taskGraph = GetContext().emplace<TaskGraph>();
         auto &renderGraph = GetContext().emplace<Graphics::RenderGraph>();
         auto &loop = GetContext().emplace<MainLoop>();
-        auto &renderer = GetContext().emplace<RenderingModule>();
-        auto &glfw = GetContext().emplace<GLFWModule>();
-        auto &gui = GetContext().emplace<GuiModule>();
+        auto &renderer = GetContext().emplace<Graphics::RenderingModule>();
+        auto &glfw = GetContext().emplace<Graphics::GLFWModule>();
+        auto &gui = GetContext().emplace<Graphics::GuiModule>();
         auto &input = GetContext().emplace<InputModule>();
 
-        renderer.SetBackend({RenderingModule::Backend::Type::OpenGL, "OpenGL", "4.6"});
+        renderer.SetBackend({Graphics::RenderingModule::Backend::Type::OpenGL, "OpenGL", "4.6"});
 
         renderer.ConnectEvents();
         glfw.ConnectEvents();
@@ -45,7 +45,7 @@ namespace Bcg {
         input.ConnectEvents();
 
         dispatcher.trigger<Events::Initialize>();
-        LogThisFrame().Execute();
+        Graphics::LogThisFrame().Execute();
     }
 
     void Engine::Startup() {

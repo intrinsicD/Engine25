@@ -10,7 +10,7 @@
 
 struct GLFWwindow;
 
-namespace Bcg {
+namespace Bcg::Graphics {
     struct Window {
         GLFWwindow *handle = nullptr;
         int width = 0;

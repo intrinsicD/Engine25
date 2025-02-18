@@ -9,7 +9,7 @@
 #include "Pool.h"
 #include "Frameworks/Graphics/GlfwWindow.h"
 
-namespace Bcg{
+namespace Bcg::Graphics{
     using WindowComponent = PoolHandle<Window>;
 }
 

@@ -15,7 +15,7 @@
 #include "WindowComponent.h"
 #include "ConfigFile.h"
 
-namespace Bcg {
+namespace Bcg::Graphics {
     GLFWModule::GLFWModule() : Module("GLFWModule", "0.1") {
     }
 
@@ -153,7 +153,7 @@ namespace Bcg {
 
         if (!Engine::GetContext().find<WindowComponent>()) {
             auto &window_pool = Engine::GetContext().get<Pool<Window> >();
-            auto window_handle = window_pool.Create();
+            auto window_handle = window_pool.CreateHandle();
             Window window;
             if (!Engine::GetContext().find<Window>()) {
                 window.width = Config::GetInt("window.width");

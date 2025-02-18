@@ -23,10 +23,10 @@ namespace Bcg {
 
         [[nodiscard]] const char *GetName() const { return name; }
 
-        PoolHandle<T> Create();
+        PoolHandle<T> CreateHandle();
 
         template<typename U>
-        PoolHandle<T> Create(U &&obj);
+        PoolHandle<T> CreateHandle(U &&obj);
 
         PropertyContainer &GetProperties() { return properties; }
 
@@ -55,7 +55,7 @@ namespace Bcg {
     }
 
     template<typename T>
-    PoolHandle<T> Pool<T>::Create() {
+    PoolHandle<T> Pool<T>::CreateHandle() {
         size_t idx;
         if (free_list.empty()) {
             properties.push_back();
@@ -69,8 +69,8 @@ namespace Bcg {
 
     template<typename T>
     template<typename U>
-    PoolHandle<T> Pool<T>::Create(U &&obj) {
-        PoolHandle<T> handle = Create();
+    PoolHandle<T> Pool<T>::CreateHandle(U &&obj) {
+        PoolHandle<T> handle = CreateHandle();
         objects[handle.idx] = std::forward<U>(obj);
         return handle;
     }

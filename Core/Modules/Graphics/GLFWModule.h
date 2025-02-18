@@ -10,7 +10,7 @@
 #include "Math.h"
 #include "Keyboard.h"
 
-namespace Bcg {
+namespace Bcg::Graphics {
     class GLFWModule : public Module {
     public:
         GLFWModule();
