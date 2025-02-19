@@ -54,7 +54,7 @@ TEST_F(GraphTest, ConnectivityValidation) {
     EXPECT_EQ(graph.get_valence(E), 1);
 
     // Check if the edges are as expected
-    auto edges = Edges(graph);
+    auto edges = EdgeContainer(graph);
     EXPECT_EQ(graph.edges.size(), 4);
     EXPECT_EQ(edges[Edge(0)], (Vector<unsigned int, 2>(1, 0)));
     EXPECT_EQ(edges[Edge(1)], (Vector<unsigned int, 2>(2, 0)));

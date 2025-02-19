@@ -43,7 +43,7 @@ namespace Bcg {
         using Graph::split;
         using Graph::is_boundary;
 
-        Faces faces;
+        FaceContainer faces;
 
         FaceProperty<bool> f_deleted;
         FaceProperty<FaceConnectivity> f_connectivity;

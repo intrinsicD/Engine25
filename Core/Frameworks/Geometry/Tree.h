@@ -201,7 +201,7 @@ namespace Bcg {
         NodeProperty<bool> n_deleted; ///< Deletion flag for nodes.
         NodeProperty<Node> parents; ///< Parent node for each node.
         NodeProperty<std::vector<Node> > children; ///< Child nodes for each node.
-        Nodes nodes; ///< Container for managing nodes data.
+        NodeContainer nodes; ///< Container for managing nodes data.
         Node root; ///< Root node of the tree.
 
         /**

@@ -874,14 +874,14 @@ namespace Bcg {
         bool m_is_active{true}; // helper for C++11 range-based for-loops
     };
 
-    class Vertices : public PropertyContainer {
+    class VertexContainer : public PropertyContainer {
     public:
-        using VertexIterator = Iterator<Vertices, Vertex>;
+        using VertexIterator = Iterator<VertexContainer, Vertex>;
 
         VertexProperty<bool> v_deleted;
         size_t num_deleted;
 
-        Vertices() : v_deleted(vertex_property<bool>("v:deleted", false)), num_deleted(0) {
+        VertexContainer() : v_deleted(vertex_property<bool>("v:deleted", false)), num_deleted(0) {
         }
 
         VertexIterator begin() {
@@ -954,14 +954,14 @@ namespace Bcg {
         }
     };
 
-    class Halfedges : public PropertyContainer {
+    class HalfedgeContainer : public PropertyContainer {
     public:
-        using HalfEdgeIterator = Iterator<Halfedges, Halfedge>;
+        using HalfEdgeIterator = Iterator<HalfedgeContainer, Halfedge>;
 
         HalfedgeProperty<bool> h_deleted;
         size_t num_deleted;
 
-        Halfedges() : h_deleted(halfedge_property<bool>("h:deleted", false)), num_deleted(0) {
+        HalfedgeContainer() : h_deleted(halfedge_property<bool>("h:deleted", false)), num_deleted(0) {
         }
 
         HalfEdgeIterator begin() {
@@ -1035,14 +1035,14 @@ namespace Bcg {
         }
     };
 
-    class Edges : public PropertyContainer {
+    class EdgeContainer : public PropertyContainer {
     public:
-        using EdgeIterator = Iterator<Edges, Edge>;
+        using EdgeIterator = Iterator<EdgeContainer, Edge>;
 
         EdgeProperty<bool> e_deleted;
         size_t num_deleted;
 
-        Edges() : e_deleted(edge_property<bool>("e:deleted", false)), num_deleted(0) {
+        EdgeContainer() : e_deleted(edge_property<bool>("e:deleted", false)), num_deleted(0) {
         }
 
         EdgeIterator begin() {
@@ -1115,14 +1115,14 @@ namespace Bcg {
         }
     };
 
-    class Faces : public PropertyContainer {
+    class FaceContainer : public PropertyContainer {
     public:
-        using FaceIterator = Iterator<Faces, Face>;
+        using FaceIterator = Iterator<FaceContainer, Face>;
 
         FaceProperty<bool> f_deleted;
         size_t num_deleted;
 
-        Faces() : f_deleted(face_property<bool>("f:deleted", false)), num_deleted(0) {
+        FaceContainer() : f_deleted(face_property<bool>("f:deleted", false)), num_deleted(0) {
         }
 
         FaceIterator begin() {
@@ -1195,14 +1195,14 @@ namespace Bcg {
         }
     };
 
-    class Tets : public PropertyContainer {
+    class TetContainer : public PropertyContainer {
     public:
-        using TetIterator = Iterator<Tets, Tet>;
+        using TetIterator = Iterator<TetContainer, Tet>;
 
         TetProperty<bool> t_deleted;
         size_t num_deleted;
 
-        Tets() : t_deleted(tet_property<bool>("t:deleted", false)), num_deleted(0) {
+        TetContainer() : t_deleted(tet_property<bool>("t:deleted", false)), num_deleted(0) {
         }
 
         TetIterator begin() {
@@ -1272,14 +1272,14 @@ namespace Bcg {
     };
 
 
-    class Voxels : public PropertyContainer {
+    class VoxelContainer : public PropertyContainer {
     public:
-        using VoxelIterator = Iterator<Voxels, Voxel>;
+        using VoxelIterator = Iterator<VoxelContainer, Voxel>;
 
         VoxelProperty<bool> v_deleted;
         size_t num_deleted;
 
-        Voxels() : v_deleted(voxel_property<bool>("v:deleted", false)), num_deleted(0) {
+        VoxelContainer() : v_deleted(voxel_property<bool>("v:deleted", false)), num_deleted(0) {
         }
 
         VoxelIterator begin() {
@@ -1353,14 +1353,14 @@ namespace Bcg {
     };
 
 
-    class Nodes : public PropertyContainer {
+    class NodeContainer : public PropertyContainer {
     public:
-        using NodeIterator = Iterator<Nodes, Node>;
+        using NodeIterator = Iterator<NodeContainer, Node>;
 
         NodeProperty<bool> n_deleted;
         size_t num_deleted;
 
-        Nodes() : n_deleted(node_property<bool>("n:deleted", false)), num_deleted(0) {
+        NodeContainer() : n_deleted(node_property<bool>("n:deleted", false)), num_deleted(0) {
         }
 
         NodeIterator begin() {

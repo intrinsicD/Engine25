@@ -53,14 +53,6 @@ namespace Bcg {
         positions = vertices.vertex_property<Vector<Real, 3>>("v:position", Vector<Real, 3>::Zero());
     }
 
-    void PointCloud::free_memory() {
-        vertices.free_memory();
-    }
-
-    void PointCloud::reserve(size_t nvertices) {
-        vertices.reserve(nvertices);
-    };
-
     Vertex PointCloud::add_vertex(const Vector<Real, 3> &p) {
         Vertex v = new_vertex();
         if (v.is_valid()) {
@@ -68,51 +60,4 @@ namespace Bcg {
         }
         return v;
     }
-
-    void PointCloud::mark_deleted(const Vertex &v) {
-        if (v_deleted[v])
-            return;
-
-        v_deleted[v] = true;
-        ++vertices.num_deleted;
-    }
-
-    void PointCloud::delete_vertex(const Vertex &v) {
-        mark_deleted(v);
-    }
-
-    void PointCloud::garbage_collection() {
-        if (!vertices.has_garbage())
-            return;
-
-        auto nV = vertices.size();
-
-        // remove deleted vertices
-        if (nV > 0) {
-            size_t i0 = 0;
-            size_t i1 = nV - 1;
-
-            while (true) {
-                // find first deleted and last un-deleted
-                while (!v_deleted[Vertex(i0)] && i0 < i1)
-                    ++i0;
-                while (v_deleted[Vertex(i1)] && i0 < i1)
-                    --i1;
-                if (i0 >= i1)
-                    break;
-
-                // swap
-                vertices.swap(i0, i1);
-            }
-
-            // remember new size
-            nV = v_deleted[Vertex(i0)] ? i0 : i0 + 1;
-        }
-
-        // finally resize arrays
-        vertices.resize(nV);
-        free_memory();
-
-        vertices.num_deleted = 0;
-    };
 }

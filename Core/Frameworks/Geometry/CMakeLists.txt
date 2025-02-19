@@ -22,4 +22,5 @@ target_sources(Engine25 PRIVATE
         TreeUtils.cpp
         VoxelGrid.cpp
         VoxelGridDownsampling.cpp
+        Vertices.cpp
 )

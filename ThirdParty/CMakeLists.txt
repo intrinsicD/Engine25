@@ -17,8 +17,9 @@ target_link_libraries(Engine25 PUBLIC Eigen3::Eigen)
 add_subdirectory(json)
 target_link_libraries(Engine25 PUBLIC nlohmann_json::nlohmann_json)
 
+#[[set(SLANG_BUILD_STB OFF CACHE BOOL "Disable stb build in slang")
 add_subdirectory(slang)
-target_link_libraries(Engine25 PUBLIC slang gfx)
+target_link_libraries(Engine25 PUBLIC slang gfx glfw)]]
 
 add_subdirectory(googletest)
 

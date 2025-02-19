@@ -12,7 +12,7 @@
 
 using namespace Bcg;
 
-using It = Vertices::VertexIterator;
+using It = VertexContainer::VertexIterator;
 
 // Note: These are partial tests only used for development. They are not meant
 // to fully cover iterators and their functionality,

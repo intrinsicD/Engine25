@@ -125,7 +125,7 @@ namespace Bcg {
         std::unordered_map<size_t, Voxel> sparse_voxels_map;
         VoxelProperty<bool> v_deleted; ///< Deletion flag for voxels.
         VoxelProperty<size_t> v_linear_index; ///< Linear index for voxels.
-        Voxels voxels;
+        VoxelContainer voxels;
 
         /**
          * @brief Default constructor. Initializes properties and containers.

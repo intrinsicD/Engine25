@@ -290,6 +290,9 @@ namespace Bcg {
 
         set_vertex(h, v1);
         set_vertex(o, v0);
+        if(e_direction){
+            e_direction[get_edge(h)] = h;
+        }
         return h;
     }
 

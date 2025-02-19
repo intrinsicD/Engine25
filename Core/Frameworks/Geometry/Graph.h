@@ -227,8 +227,8 @@ namespace Bcg {
         using PointCloud::mark_deleted;
         using PointCloud::is_valid;
 
-        Halfedges halfedges;
-        Edges edges;
+        HalfedgeContainer halfedges;
+        EdgeContainer edges;
 
         VertexProperty<VertexConnectivity> v_connectivity;
 
