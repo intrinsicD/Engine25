@@ -8,7 +8,6 @@
 #include "GraphicsTypes.h"
 
 namespace Bcg::Graphics {
-
     // ----------------------------------------------------------
     // Handle Types (Opaque Identifiers)
     //
@@ -73,6 +72,10 @@ namespace Bcg::Graphics {
     };
 
     struct SwapchainHandle {
+        Uint32 id = 0;
+    };
+
+    struct TextureViewHandle {
         Uint32 id = 0;
     };
 
@@ -210,6 +213,14 @@ namespace Bcg::Graphics {
         DepthStencil
     };
 
+    enum class TextureType {
+        Texture1D,
+        Texture2D,
+        Texture3D,
+        CubeMap,
+        TextureArray
+    };
+
     enum class PresentMode {
         Immediate,
         Mailbox,
@@ -301,6 +312,7 @@ namespace Bcg::Graphics {
         Uint32 depth = 1;
         Uint32 mip_levels = 1;
         Format format = Format::RGBA8;
+        TextureType type = TextureType::Texture2D;
         TextureUsage usage = TextureUsage::Sampled;
         Filter min_filter = Filter::Linear;
         Filter mag_filter = Filter::Linear;
@@ -435,12 +447,42 @@ namespace Bcg::Graphics {
     struct PipelineDesc {
         ShaderHandle vertex_shader;
         ShaderHandle fragment_shader;
+        ShaderHandle geometry_shader = {};
+        ShaderHandle tessellation_control_shader = {};
+        ShaderHandle tessellation_evaluation_shader = {};
         InputLayoutDesc input_layout;
         RasterizationStateDesc rasterization_state;
         DepthStencilStateDesc depth_stencil_state;
         BlendStateDesc blend_state;
         PipelineLayoutDesc pipeline_layout;
         RenderPassHandle render_pass;
+    };
+
+    // Compute Pipeline Descriptor
+    struct ComputePipelineDesc {
+        ShaderHandle compute_shader;
+        PipelineLayoutDesc pipeline_layout;
+    };
+
+    // Mesh Pipeline Descriptor
+    struct MeshPipelineDesc {
+        ShaderHandle mesh_shader;
+        ShaderHandle fragment_shader;
+        PipelineLayoutDesc pipeline_layout;
+        RasterizationStateDesc rasterization_state;
+        DepthStencilStateDesc depth_stencil_state;
+        BlendStateDesc blend_state;
+        RenderPassHandle render_pass;
+    };
+
+    // Texture View Descriptor
+    struct TextureViewDesc {
+        TextureHandle texture;
+        Format format; // Allows reinterpretation if needed.
+        Uint32 base_mip_level = 0;
+        Uint32 level_count = 1;
+        Uint32 base_array_layer = 0;
+        Uint32 layer_count = 1;
     };
 
     struct CommandBufferDesc {
@@ -506,6 +548,26 @@ namespace Bcg::Graphics {
         Uint32 height = 0;
     };
 
+
+    struct ClearValue {
+        union {
+            struct {
+                float r, g, b, a;
+            } color;
+            struct {
+                float depth;
+                Uint32 stencil;
+            } depth_stencil;
+        };
+    };
+
+    struct RenderPassBeginInfo {
+        RenderPassHandle render_pass;          // Render pass handle to use
+        FramebufferHandle framebuffer;         // Target framebuffer
+        Rect2D render_area;                    // Render area (x, y, width, height)
+        std::vector<ClearValue> clear_values;  // Clear values for attachments
+    };
+
     // New handle for pipeline layouts (to be used with push constants).
     struct PipelineLayoutHandle {
         Uint32 id = 0;
@@ -559,9 +621,9 @@ namespace Bcg::Graphics {
     };
 
     struct DrawArraysIndirectCommand {
-        Uint32 count;         // Number of vertices to draw per command.
+        Uint32 count; // Number of vertices to draw per command.
         Uint32 instance_count; // Number of instances to draw.
-        Uint32 first;         // Starting vertex offset.
+        Uint32 first; // Starting vertex offset.
         Uint32 base_instance; // Starting instance ID.
     };
 
@@ -687,7 +749,7 @@ namespace Bcg::Graphics {
         void (*update_buffer)(void *ctx, BufferHandle, const void *data, Uint32 offset, Uint32 size) = nullptr;
 
         // ---------------------------
-        // New: Compute dispatch commands
+        // Compute dispatch commands
         // ---------------------------
         void (*dispatch)(void *ctx, Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z) = nullptr;
 
@@ -695,7 +757,7 @@ namespace Bcg::Graphics {
         (*dispatch_indirect)(void *ctx, CommandBufferHandle cmd, BufferHandle indirect_buffer, Uint32 offset) = nullptr;
 
         // ---------------------------
-        // New: Pipeline binding and dynamic state commands
+        // Pipeline binding and dynamic state commands
         // ---------------------------
         void (*bind_pipeline)(void *ctx, CommandBufferHandle cmd, PipelineHandle pipeline) = nullptr;
 
@@ -715,7 +777,7 @@ namespace Bcg::Graphics {
                                  Uint32 offset, Uint32 size, const void *data) = nullptr;
 
         // ---------------------------
-        // New: Resource copy operations
+        // Resource copy operations
         // ---------------------------
         void (*copy_buffer)(void *ctx, BufferHandle src, BufferHandle dst, Uint32 src_offset, Uint32 dst_offset,
                             Uint32 size) = nullptr;
@@ -723,7 +785,7 @@ namespace Bcg::Graphics {
         void (*copy_texture)(void *ctx, TextureHandle src, TextureHandle dst) = nullptr;
 
         // ---------------------------
-        // New: Query and debug utilities
+        // Query and debug utilities
         // ---------------------------
         void (*reset_query_pool)(void *ctx, QueryPoolHandle pool, Uint32 first_query, Uint32 query_count) = nullptr;
 
@@ -745,11 +807,33 @@ namespace Bcg::Graphics {
                                     const float color[4]) = nullptr;
 
         // ---------------------------
-        // New: Pipeline layout creation/destruction
+        // Pipeline layout creation/destruction
         // ---------------------------
         PipelineLayoutHandle (*create_pipeline_layout)(void *ctx, const PipelineLayoutDesc &desc) = nullptr;
 
         void (*destroy_pipeline_layout)(void *ctx, PipelineLayoutHandle layout) = nullptr;
+
+        // ---------------------------
+        // Compute Pipeline creation/destruction
+        // ---------------------------
+        PipelineHandle (*create_compute_pipeline)(void *ctx, const ComputePipelineDesc &) = nullptr;
+        void (*destroy_compute_pipeline)(void *ctx, PipelineHandle) = nullptr;
+
+        // ---------------------------
+        // Mesh Pipeline creation/destruction
+        // ---------------------------
+        PipelineHandle (*create_mesh_pipeline)(void *ctx, const MeshPipelineDesc &) = nullptr;
+        void (*destroy_mesh_pipeline)(void *ctx, PipelineHandle) = nullptr;
+
+        // Texture view creation/destruction
+        TextureViewHandle (*create_texture_view)(void *ctx, const TextureViewDesc &) = nullptr;
+        void (*destroy_texture_view)(void *ctx, TextureViewHandle) = nullptr;
+
+        // New: Begin a render pass
+        void (*begin_render_pass)(void *ctx, CommandBufferHandle cmd, const RenderPassBeginInfo &begin_info) = nullptr;
+
+        // New: End a render pass
+        void (*end_render_pass)(void *ctx, CommandBufferHandle cmd) = nullptr;
     };
 
     // ----------------------------------------------------------
@@ -763,7 +847,7 @@ namespace Bcg::Graphics {
     class Device {
     public:
         Device(const DeviceFunctions &funcs, void *backend_context, BackendType backend_type)
-                : funcs_(funcs), backend_context_(backend_context), backend_type_(backend_type) {
+            : funcs_(funcs), backend_context_(backend_context), backend_type_(backend_type) {
         }
 
         // Resource Creation/Destruction
@@ -919,7 +1003,7 @@ namespace Bcg::Graphics {
         }
 
         // ---------------------------
-        // New: Compute dispatch commands
+        // Compute dispatch commands
         // ---------------------------
         void dispatch(Uint32 group_count_x, Uint32 group_count_y, Uint32 group_count_z) {
             funcs_.dispatch(backend_context_, group_count_x, group_count_y, group_count_z);
@@ -930,7 +1014,7 @@ namespace Bcg::Graphics {
         }
 
         // ---------------------------
-        // New: Pipeline binding and dynamic state commands
+        // Pipeline binding and dynamic state commands
         // ---------------------------
         void bind_pipeline(CommandBufferHandle cmd, PipelineHandle pipeline) {
             funcs_.bind_pipeline(backend_context_, cmd, pipeline);
@@ -962,7 +1046,7 @@ namespace Bcg::Graphics {
         }
 
         // ---------------------------
-        // New: Resource copy operations
+        // Resource copy operations
         // ---------------------------
         void copy_buffer(BufferHandle src, BufferHandle dst, Uint32 src_offset, Uint32 dst_offset, Uint32 size) {
             funcs_.copy_buffer(backend_context_, src, dst, src_offset, dst_offset, size);
@@ -973,7 +1057,7 @@ namespace Bcg::Graphics {
         }
 
         // ---------------------------
-        // New: Query and debug utilities
+        // Query and debug utilities
         // ---------------------------
         void reset_query_pool(QueryPoolHandle pool, Uint32 first_query, Uint32 query_count) {
             funcs_.reset_query_pool(backend_context_, pool, first_query, query_count);
@@ -1006,7 +1090,7 @@ namespace Bcg::Graphics {
         }
 
         // ---------------------------
-        // New: Pipeline layout creation/destruction
+        // Pipeline layout creation/destruction
         // ---------------------------
         PipelineLayoutHandle create_pipeline_layout(const PipelineLayoutDesc &desc) {
             return funcs_.create_pipeline_layout(backend_context_, desc);
@@ -1016,9 +1100,46 @@ namespace Bcg::Graphics {
             funcs_.destroy_pipeline_layout(backend_context_, layout);
         }
 
+        // ---------------------------
+        // Compute pipeline creation/destruction
+        // ---------------------------
+        PipelineHandle create_compute_pipeline(const ComputePipelineDesc &desc) {
+            return funcs_.create_compute_pipeline(backend_context_, desc);
+        }
+        void destroy_compute_pipeline(PipelineHandle handle) {
+            funcs_.destroy_compute_pipeline(backend_context_, handle);
+        }
+
+        // ---------------------------
+        // Mesh pipeline creation/destruction
+        // ---------------------------
+        PipelineHandle create_mesh_pipeline(const MeshPipelineDesc &desc) {
+            return funcs_.create_mesh_pipeline(backend_context_, desc);
+        }
+        void destroy_mesh_pipeline(PipelineHandle handle) {
+            funcs_.destroy_mesh_pipeline(backend_context_, handle);
+        }
+
+        // Texture view creation/destruction
+        TextureViewHandle create_texture_view(const TextureViewDesc &desc) {
+            return funcs_.create_texture_view(backend_context_, desc);
+        }
+        void destroy_texture_view(TextureViewHandle handle) {
+            funcs_.destroy_texture_view(backend_context_, handle);
+        }
+
+        // Render pass commands
+        void begin_render_pass(CommandBufferHandle cmd, const RenderPassBeginInfo &begin_info) {
+            funcs_.begin_render_pass(backend_context_, cmd, begin_info);
+        }
+
+        void end_render_pass(CommandBufferHandle cmd) {
+            funcs_.end_render_pass(backend_context_, cmd);
+        }
+
         [[nodiscard]] BackendType get_backend_type() const { return backend_type_; }
 
-        [[nodiscard]] void *GetBackendContext() const { return backend_context_; }
+        [[nodiscard]] void *get_backend_context() const { return backend_context_; }
 
     protected:
         DeviceFunctions funcs_;
