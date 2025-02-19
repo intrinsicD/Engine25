@@ -3,10 +3,10 @@
 int main() {
 
     Bcg::Engine engine;
-    engine.Init();
-    engine.Startup();
-    engine.Run();
-    engine.Shutdown();
+    engine.init();
+    engine.startup();
+    engine.run();
+    engine.shutdown();
 
     return 0;
 }

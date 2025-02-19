@@ -14,74 +14,74 @@ namespace Bcg {
     InputModule::InputModule() : Module("InputModule", "0.1") {
     }
 
-    void InputModule::ConnectEvents() {
-        Engine::GetDispatcher().sink<Events::Initialize>().connect<&InputModule::OnInitialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().connect<&InputModule::OnStartup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&InputModule::OnSynchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&InputModule::OnShutdown>(*this);
-        Module::ConnectEvents();
+    void InputModule::connect_events() {
+        Engine::get_dispatcher().sink<Events::Initialize>().connect<&InputModule::on_initialize>(*this);
+        Engine::get_dispatcher().sink<Events::Startup>().connect<&InputModule::on_startup>(*this);
+        Engine::get_dispatcher().sink<Events::Synchronize>().connect<&InputModule::on_synchronize>(*this);
+        Engine::get_dispatcher().sink<Events::Shutdown>().connect<&InputModule::on_shutdown>(*this);
+        Module::connect_events();
     }
 
-    void InputModule::DisconnectEvents() {
-        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&InputModule::OnInitialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&InputModule::OnStartup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&InputModule::OnSynchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&InputModule::OnShutdown>(*this);
-        Module::DisconnectEvents();
+    void InputModule::disconnect_events() {
+        Engine::get_dispatcher().sink<Events::Initialize>().disconnect<&InputModule::on_initialize>(*this);
+        Engine::get_dispatcher().sink<Events::Startup>().disconnect<&InputModule::on_startup>(*this);
+        Engine::get_dispatcher().sink<Events::Synchronize>().disconnect<&InputModule::on_synchronize>(*this);
+        Engine::get_dispatcher().sink<Events::Shutdown>().disconnect<&InputModule::on_shutdown>(*this);
+        Module::disconnect_events();
     }
 
-    void InputModule::OnInitialize(const Events::Initialize &event) {
-        Module::OnInitialize(event);
-        Engine::GetContext().emplace<Mouse>();
-        Engine::GetContext().emplace<Keyboard>();
-        Engine::GetContext().emplace<KeyboardCallbacks>();
+    void InputModule::on_initialize(const Events::Initialize &event) {
+        Module::on_initialize(event);
+        Engine::get_context().emplace<Mouse>();
+        Engine::get_context().emplace<Keyboard>();
+        Engine::get_context().emplace<KeyboardCallbacks>();
     }
 
-    void InputModule::OnStartup(const Events::Startup &event) {
-        Module::OnStartup(event);
+    void InputModule::on_startup(const Events::Startup &event) {
+        Module::on_startup(event);
     }
 
-    void InputModule::OnSynchronize(const Events::Synchronize &event) {
-        Module::OnSynchronize(event);
-        auto &loop = Engine::GetContext().get<MainLoop>();
+    void InputModule::on_synchronize(const Events::Synchronize &event) {
+        Module::on_synchronize(event);
+        auto &loop = Engine::get_context().get<MainLoop>();
 
         loop.end_gui.Next().AddCommand(std::make_shared<Task>([]() {
-            auto &mouse = Engine::GetContext().get<Mouse>();
+            auto &mouse = Engine::get_context().get<Mouse>();
             mouse.state = Mouse::State::Idle;
             mouse.wheel.scroll_offset = {0, 0};
         }));
     }
 
-    void InputModule::OnShutdown(const Events::Shutdown &event) {
-        Module::OnShutdown(event);
+    void InputModule::on_shutdown(const Events::Shutdown &event) {
+        Module::on_shutdown(event);
     }
 
     static bool enabled_key_logging = false;
     static bool enabled_mouse_logging = false;
 
-    void InputModule::EnableKeyLogging(){
+    void InputModule::enable_key_logging(){
         enabled_key_logging = true;
     }
 
-    void InputModule::DisableKeyLogging(){
+    void InputModule::disable_key_logging(){
         enabled_key_logging = false;
     }
 
-    void InputModule::EnableMouseLogging(){
+    void InputModule::enable_mouse_logging(){
         enabled_mouse_logging = true;
     }
 
-    void InputModule::DisableMouseLogging(){
+    void InputModule::disable_mouse_logging(){
         enabled_mouse_logging = false;
     }
 
-    void InputModule::OnKey(const Events::Key &event) {
+    void InputModule::on_key(const Events::Key &event) {
         if(enabled_key_logging){
-            LOG_INFO(fmt::format("InputModule::OnKey: Key: {}, Scancode: {}, Action: {}, Mode: {}",
+            LOG_INFO(fmt::format("InputModule::on_key: Key: {}, Scancode: {}, Action: {}, Mode: {}",
                                  event.key,event.scancode,event.action, event.mode));
         }
 
-        auto &keyboard = Engine::GetContext().get<Keyboard>();
+        auto &keyboard = Engine::get_context().get<Keyboard>();
 
         if(event.action == GLFW_PRESS){
             keyboard.PressKey(MapGlfwKey(event.key));
@@ -90,12 +90,12 @@ namespace Bcg {
         }
     }
 
-    void InputModule::OnMouseCursor(const Events::MouseCursor &event) {
+    void InputModule::on_mouse_cursor(const Events::MouseCursor &event) {
         if(enabled_mouse_logging){
-            LOG_INFO(fmt::format("InputModule::OnMouseCursor: Xpos: {}, Ypos: {}", event.xpos, event.ypos));
+            LOG_INFO(fmt::format("InputModule::on_mouse_cursor: Xpos: {}, Ypos: {}", event.xpos, event.ypos));
         }
 
-        auto &mouse = Engine::GetContext().get<Mouse>();
+        auto &mouse = Engine::get_context().get<Mouse>();
         mouse.cursor_position = {event.xpos, event.ypos};
         if (mouse.any_pressed()) {
             mouse.state = Mouse::State::Drag;
@@ -104,13 +104,13 @@ namespace Bcg {
         }
     }
 
-    void InputModule::OnMouseButton(const Events::MouseButton &event) {
+    void InputModule::on_mouse_button(const Events::MouseButton &event) {
         if(enabled_mouse_logging){
-            LOG_INFO(fmt::format("InputModule::OnMouseButton: Button: {}, Action: {}, Mods: {}", event.button, event.action,
+            LOG_INFO(fmt::format("InputModule::on_mouse_button: Button: {}, Action: {}, Mods: {}", event.button, event.action,
                                  event.mods));
         }
 
-        auto &mouse = Engine::GetContext().get<Mouse>();
+        auto &mouse = Engine::get_context().get<Mouse>();
         if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
             if (event.action == GLFW_PRESS) {
                 mouse.left.state = Mouse::Button::State::Press;
@@ -142,12 +142,12 @@ namespace Bcg {
         }
     }
 
-    void InputModule::OnMouseScroll(const Events::MouseScroll &event) {
+    void InputModule::on_mouse_scroll(const Events::MouseScroll &event) {
         if(enabled_mouse_logging){
-            LOG_INFO(fmt::format("InputModule::OnMouseScroll: Xoffset: {}, Yoffset: {}", event.xoffset, event.yoffset));
+            LOG_INFO(fmt::format("InputModule::on_mouse_scroll: Xoffset: {}, Yoffset: {}", event.xoffset, event.yoffset));
         }
 
-        auto &mouse = Engine::GetContext().get<Mouse>();
+        auto &mouse = Engine::get_context().get<Mouse>();
         mouse.wheel.scroll_offset = {event.xoffset, event.yoffset};
         mouse.wheel.state = Mouse::Wheel::State::Scroll;
     }

@@ -17,19 +17,19 @@ namespace Bcg::Graphics {
 
         ~GLFWModule() override = default;
 
-        void ConnectEvents() override;
+        void connect_events() override;
 
-        void DisconnectEvents() override;
+        void disconnect_events() override;
 
-        void OnInitialize(const Events::Initialize &event) override;
+        void on_initialize(const Events::Initialize &event) override;
 
-        void OnStartup(const Events::Startup &event) override;
+        void on_startup(const Events::Startup &event) override;
 
-        void OnSynchronize(const Events::Synchronize &event) override;
+        void on_synchronize(const Events::Synchronize &event) override;
 
-        void OnShutdown(const Events::Shutdown &event) override;
+        void on_shutdown(const Events::Shutdown &event) override;
 
-        static GLFWwindow *GetCurrentWindow();
+        static GLFWwindow *get_current_window();
 
         static Vector<Real, 2> GetCursorPosition(GLFWwindow *window);
 

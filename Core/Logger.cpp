@@ -11,27 +11,45 @@
 #include "fmt/color.h"
 
 namespace Bcg {
-    Logger &Logger::GetInstance() {
+
+    std::string GetTimestamp() {
+        auto now = std::time(nullptr);
+        std::ostringstream timestamp;
+        timestamp << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S");
+        return timestamp.str();
+    }
+
+    std::string ToString(Logger::Level level) {
+        switch (level) {
+            case Logger::Level::TODO:
+                return fmt::format("{}", fmt::styled(" TODO", fmt::fg(fmt::color::yellow)));
+            case Logger::Level::Info:
+                return fmt::format("{}", fmt::styled(" INFO", fmt::fg(fmt::color::green)));
+            case Logger::Level::Warn:
+                return fmt::format("{}", fmt::styled(" WARN", fmt::fg(fmt::color::orange)));
+            case Logger::Level::Error:
+                return fmt::format("{}", fmt::styled("ERROR", fmt::fg(fmt::color::red)));
+            case Logger::Level::Fatal:
+                return fmt::format("{}", fmt::styled("FATAL", fmt::fg(fmt::color::blue)));
+            default:
+                return fmt::format("{}", fmt::styled("UNKNOWN", fmt::fg(fmt::color::pink)));
+        }
+    }
+
+    Logger &Logger::get_instance() {
         static Logger instance;
         return instance;
     }
 
-    void Logger::SetLogFile(const std::string &filePath) {
+    void Logger::set_log_file(const std::string &filePath) {
         std::lock_guard<std::mutex> lock(mutex_);
         logFile_.open(filePath, std::ios::out | std::ios::app);
         //add a header to the log file
         logFile_ << "Log file created at " << GetTimestamp() << "\n";
     }
 
-    void Logger::SetLogLevel(Level level) {
-        minLogLevel_ = level;
-    }
-
-    void Logger::Log(Level level, const std::string &message) {
+    void Logger::log(Level level, const std::string &message) {
         std::lock_guard<std::mutex> lock(mutex_);
-
-        // Filter out messages below the minimum log level
-        if (level < minLogLevel_) return;
 
         // Format the log message
         std::ostringstream logStream;
@@ -54,11 +72,11 @@ namespace Bcg {
         }
     }
 
-    void Logger::EnableConsoleLogger(bool enable) {
+    void Logger::enable_console_logger(bool enable) {
         logToConsole_ = enable;
     }
 
-    Logger::Logger() : minLogLevel_(Level::Info), logToConsole_(true) {}
+    Logger::Logger() : logToConsole_(true) {}
 
     Logger::~Logger() {
         if (logFile_.is_open()) {
@@ -68,27 +86,4 @@ namespace Bcg {
         }
     }
 
-    std::string Logger::GetTimestamp() const {
-        auto now = std::time(nullptr);
-        std::ostringstream timestamp;
-        timestamp << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S");
-        return timestamp.str();
-    }
-
-    std::string Logger::ToString(Level level) const {
-        switch (level) {
-            case Level::TODO:
-                return fmt::format("{}", fmt::styled(" TODO", fmt::fg(fmt::color::yellow)));
-            case Level::Info:
-                return fmt::format("{}", fmt::styled(" INFO", fmt::fg(fmt::color::green)));
-            case Level::Warn:
-                return fmt::format("{}", fmt::styled(" WARN", fmt::fg(fmt::color::orange)));
-            case Level::Error:
-                return fmt::format("{}", fmt::styled("ERROR", fmt::fg(fmt::color::red)));
-            case Level::Fatal:
-                return fmt::format("{}", fmt::styled("FATAL", fmt::fg(fmt::color::blue)));
-            default:
-                return fmt::format("{}", fmt::styled("UNKNOWN", fmt::fg(fmt::color::pink)));
-        }
-    }
 }

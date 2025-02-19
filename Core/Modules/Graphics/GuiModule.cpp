@@ -24,35 +24,35 @@ namespace Bcg::Graphics {
     GuiModule::GuiModule() : Module("GuiModule", "0.1") {
     }
 
-    void GuiModule::ConnectEvents() {
-        Engine::GetDispatcher().sink<Events::Initialize>().connect<&GuiModule::OnInitialize>(this);
-        Engine::GetDispatcher().sink<Events::Startup>().connect<&GuiModule::OnStartup>(this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&GuiModule::OnSynchronize>(this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&GuiModule::OnShutdown>(this);
-        Module::ConnectEvents();
+    void GuiModule::connect_events() {
+        Engine::get_dispatcher().sink<Events::Initialize>().connect<&GuiModule::on_initialize>(this);
+        Engine::get_dispatcher().sink<Events::Startup>().connect<&GuiModule::on_startup>(this);
+        Engine::get_dispatcher().sink<Events::Synchronize>().connect<&GuiModule::on_synchronize>(this);
+        Engine::get_dispatcher().sink<Events::Shutdown>().connect<&GuiModule::on_shutdown>(this);
+        Module::connect_events();
     }
 
-    void GuiModule::DisconnectEvents() {
-        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&GuiModule::OnInitialize>(this);
-        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&GuiModule::OnStartup>(this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&GuiModule::OnSynchronize>(this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&GuiModule::OnShutdown>(this);
-        Module::DisconnectEvents();
+    void GuiModule::disconnect_events() {
+        Engine::get_dispatcher().sink<Events::Initialize>().disconnect<&GuiModule::on_initialize>(this);
+        Engine::get_dispatcher().sink<Events::Startup>().disconnect<&GuiModule::on_startup>(this);
+        Engine::get_dispatcher().sink<Events::Synchronize>().disconnect<&GuiModule::on_synchronize>(this);
+        Engine::get_dispatcher().sink<Events::Shutdown>().disconnect<&GuiModule::on_shutdown>(this);
+        Module::disconnect_events();
     }
 
-    void GuiModule::OnInitialize(const Events::Initialize &event) {
-        Module::OnInitialize(event);
-        auto &loop = Engine::GetContext().get<MainLoop>();
+    void GuiModule::on_initialize(const Events::Initialize &event) {
+        Module::on_initialize(event);
+        auto &loop = Engine::get_context().get<MainLoop>();
         loop.begin.Next().AddCommand(std::make_shared<InitializeImGui>());
     }
 
-    void GuiModule::OnStartup(const Events::Startup &event) {
-        Module::OnStartup(event);
+    void GuiModule::on_startup(const Events::Startup &event) {
+        Module::on_startup(event);
     }
 
-    void GuiModule::OnSynchronize(const Events::Synchronize &event) {
-        Module::OnSynchronize(event);
-        auto &loop = Engine::GetContext().get<MainLoop>();
+    void GuiModule::on_synchronize(const Events::Synchronize &event) {
+        Module::on_synchronize(event);
+        auto &loop = Engine::get_context().get<MainLoop>();
         loop.end_render.Next().AddCommand(std::make_shared<BeginGui>());
         loop.render_gui.Next().AddCommand(std::make_shared<MockMenu>());
         loop.render_gui.Next().AddCommand(std::make_shared<RenderMenu>());
@@ -60,8 +60,8 @@ namespace Bcg::Graphics {
         loop.end_gui.Next().AddCommand(std::make_shared<EndGui>());
     }
 
-    void GuiModule::OnShutdown(const Events::Shutdown &event) {
-        Module::OnShutdown(event);
+    void GuiModule::on_shutdown(const Events::Shutdown &event) {
+        Module::on_shutdown(event);
     }
 
     bool GuiModule::WantCaptureKeyboard() {
@@ -86,9 +86,9 @@ namespace Bcg::Graphics {
     //------------------------------------------------------------------------------------------------------------------
 
     void InitializeImGui::Execute() const {
-        if (!Engine::GetContext().contains<ImGuiContext>()) {
+        if (!Engine::get_context().contains<ImGuiContext>()) {
             IMGUI_CHECKVERSION();
-            auto &context = Engine::GetContext().emplace<ImGuiContext *>(ImGui::CreateContext());
+            auto &context = Engine::get_context().emplace<ImGuiContext *>(ImGui::CreateContext());
 
             auto &io = ImGui::GetIO();
             io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -100,9 +100,9 @@ namespace Bcg::Graphics {
             ImGui_ImplOpenGL3_Init();
 
             float dpi = GLFWModule::GetDpiScaling();
-            std::string fontPath = Config::GetString("font.path");
-            std::string defaultFont = Config::GetString("font.default_font");
-            float fontSize = Config::GetFloat("font.size");
+            std::string fontPath = Config::get_string("font.path");
+            std::string defaultFont = Config::get_string("font.default_font");
+            float fontSize = Config::get_float("font.size");
             fs::path path = fs::path(SOURCE_DIR_PATH) / fontPath / defaultFont;
             LOG_INFO(fmt::format("Command::InitiallizeImGui: DPI Scaling: {}", dpi));
             LOG_INFO(fmt::format("Command::InitiallizeImGui: Font size: {}", fontSize));
@@ -126,12 +126,12 @@ namespace Bcg::Graphics {
     }
 
     void RenderMenu::Execute() const {
-        Engine::GetDispatcher().trigger<Events::Gui::RenderMenu>();
+        Engine::get_dispatcher().trigger<Events::Gui::RenderMenu>();
         LOG_FRAME("Command::RenderMenu: trigger event");
     }
 
     void RenderGui::Execute() const {
-        Engine::GetDispatcher().trigger<Events::Gui::RenderGui>();
+        Engine::get_dispatcher().trigger<Events::Gui::RenderGui>();
         LOG_FRAME("Command::RenderGui: trigger event");
     }
 
@@ -151,7 +151,7 @@ namespace Bcg::Graphics {
             }
             ImGui::EndMenu();
         }
-        auto &window = Engine::GetContext().get<WindowComponent>();
+        auto &window = Engine::get_context().get<WindowComponent>();
         static bool show_window_gui = true;
         if (ImGui::Begin("Window", &show_window_gui, ImGuiWindowFlags_AlwaysAutoResize)) {
             if (ImGui::ColorEdit3("clear_color", window->clear_color.data())) {

@@ -19,23 +19,23 @@ namespace Bcg {
     public:
         Engine() = default;
 
-        void Init();
+        void init();
 
-        void Startup();
+        void startup();
 
-        void Run();
+        void run();
 
-        void Shutdown();
+        void shutdown();
 
-        static Scene &GetScene();
+        static Scene &get_scene();
 
-        static Context &GetContext();
+        static Context &get_context();
 
-        static Dispatcher &GetDispatcher();
+        static Dispatcher &get_dispatcher();
 
-        static TaskGraph &GetTaskGraph();
+        static TaskGraph &get_task_graph();
 
-        static Graphics::RenderGraph &GetRenderGraph();
+        static Graphics::RenderGraph &get_render_graph();
     private:
         const char *name = "Engine";
         const char *version = "0.0.1";

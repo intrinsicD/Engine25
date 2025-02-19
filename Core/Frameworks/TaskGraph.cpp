@@ -24,7 +24,7 @@ namespace Bcg {
     // because there's no cycle, tasks won't break ordering logically.
     // Any data dependencies must be handled inside tasks themselves if needed.
     void TaskGraph::ExecuteParallelNaive() {
-        auto &jobSystem = Engine::GetContext().get<Bcg::JobSystem>();
+        auto &jobSystem = Engine::get_context().get<Bcg::JobSystem>();
         auto sorted = TopologicalSort();
 
         std::vector<std::future<void>> futures;
@@ -49,7 +49,7 @@ namespace Bcg {
     // When a dependent has in-degree zero, we enqueue it in the next "wave."
     // We proceed level by level until all tasks are done.
     void TaskGraph::ExecuteFullParallelUsingJobSystem() {
-        auto &jobSystem = Engine::GetContext().get<Bcg::JobSystem>();
+        auto &jobSystem = Engine::get_context().get<Bcg::JobSystem>();
 
         // Compute in-degrees
         std::vector<size_t> in_degree(GetNodeCount(), 0);

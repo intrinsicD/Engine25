@@ -14,33 +14,33 @@ namespace Bcg {
 
         ~InputModule() override = default;
 
-        void ConnectEvents() override;
+        void connect_events() override;
 
-        void DisconnectEvents() override;
+        void disconnect_events() override;
 
-        void OnInitialize(const Events::Initialize &event) override;
+        void on_initialize(const Events::Initialize &event) override;
 
-        void OnStartup(const Events::Startup &event) override;
+        void on_startup(const Events::Startup &event) override;
 
-        void OnSynchronize(const Events::Synchronize &event) override;
+        void on_synchronize(const Events::Synchronize &event) override;
 
-        void OnShutdown(const Events::Shutdown &event) override;
+        void on_shutdown(const Events::Shutdown &event) override;
 
-        static void EnableKeyLogging();
+        static void enable_key_logging();
 
-        static void DisableKeyLogging();
+        static void disable_key_logging();
 
-        static void EnableMouseLogging();
+        static void enable_mouse_logging();
 
-        static void DisableMouseLogging();
+        static void disable_mouse_logging();
 
-        static void OnKey(const Events::Key &event);
+        static void on_key(const Events::Key &event);
 
-        static void OnMouseCursor(const Events::MouseCursor &event);
+        static void on_mouse_cursor(const Events::MouseCursor &event);
 
-        static void OnMouseButton(const Events::MouseButton &event);
+        static void on_mouse_button(const Events::MouseButton &event);
 
-        static void OnMouseScroll(const Events::MouseScroll &event);
+        static void on_mouse_scroll(const Events::MouseScroll &event);
     };
 }
 #endif //ENGINE25_INPUTMODULE_H

@@ -20,7 +20,7 @@ namespace Bcg {
         }
 
         while (running) {
-            Engine::GetDispatcher().trigger<Events::Synchronize>();
+            Engine::get_dispatcher().trigger<Events::Synchronize>();
             begin.Handle();
             prepare_scene.Handle();
             end_scene.Handle();
@@ -38,10 +38,10 @@ namespace Bcg {
             running = true;
         }
 
-        auto &device = Engine::GetContext().get<Graphics::Device>();
-        auto &taskGraph = Engine::GetTaskGraph();
-        auto &renderGraph = Engine::GetRenderGraph();
-        auto &swapchainHandle = Engine::GetContext().get<Graphics::SwapchainHandle>();
+        auto &device = Engine::get_context().get<Graphics::Device>();
+        auto &taskGraph = Engine::get_task_graph();
+        auto &renderGraph = Engine::get_render_graph();
+        auto &swapchainHandle = Engine::get_context().get<Graphics::SwapchainHandle>();
 
         // Create semaphores and fence
         Graphics::SemaphoreHandle image_available_semaphore = device.create_semaphore();
@@ -52,8 +52,8 @@ namespace Bcg {
             taskGraph.Clear();
             renderGraph.Clear();
 
-            Engine::GetDispatcher().trigger<Events::BeginFrameEvent>();
-            Engine::GetDispatcher().trigger<Events::UpdateSystems>();
+            Engine::get_dispatcher().trigger<Events::BeginFrameEvent>();
+            Engine::get_dispatcher().trigger<Events::UpdateSystems>();
 
             // Execute tasks
             taskGraph.ExecuteFullParallelUsingJobSystem();
@@ -84,7 +84,7 @@ namespace Bcg {
             present_info.wait_semaphores.push_back(render_finished_semaphore);
             device.present(present_info);
 
-            Engine::GetDispatcher().trigger<Events::EndFrameEvent>();
+            Engine::get_dispatcher().trigger<Events::EndFrameEvent>();
         }
 
         // Destroy semaphores and fence if needed before exit

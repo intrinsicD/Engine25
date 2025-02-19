@@ -19,20 +19,20 @@ namespace Bcg::Graphics {
     GLFWModule::GLFWModule() : Module("GLFWModule", "0.1") {
     }
 
-    void GLFWModule::ConnectEvents() {
-        Engine::GetDispatcher().sink<Events::Initialize>().connect<&GLFWModule::OnInitialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().connect<&GLFWModule::OnStartup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().connect<&GLFWModule::OnSynchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().connect<&GLFWModule::OnShutdown>(*this);
-        Module::ConnectEvents();
+    void GLFWModule::connect_events() {
+        Engine::get_dispatcher().sink<Events::Initialize>().connect<&GLFWModule::on_initialize>(*this);
+        Engine::get_dispatcher().sink<Events::Startup>().connect<&GLFWModule::on_startup>(*this);
+        Engine::get_dispatcher().sink<Events::Synchronize>().connect<&GLFWModule::on_synchronize>(*this);
+        Engine::get_dispatcher().sink<Events::Shutdown>().connect<&GLFWModule::on_shutdown>(*this);
+        Module::connect_events();
     }
 
-    void GLFWModule::DisconnectEvents() {
-        Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&GLFWModule::OnInitialize>(*this);
-        Engine::GetDispatcher().sink<Events::Startup>().disconnect<&GLFWModule::OnStartup>(*this);
-        Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&GLFWModule::OnSynchronize>(*this);
-        Engine::GetDispatcher().sink<Events::Shutdown>().disconnect<&GLFWModule::OnShutdown>(*this);
-        Module::DisconnectEvents();
+    void GLFWModule::disconnect_events() {
+        Engine::get_dispatcher().sink<Events::Initialize>().disconnect<&GLFWModule::on_initialize>(*this);
+        Engine::get_dispatcher().sink<Events::Startup>().disconnect<&GLFWModule::on_startup>(*this);
+        Engine::get_dispatcher().sink<Events::Synchronize>().disconnect<&GLFWModule::on_synchronize>(*this);
+        Engine::get_dispatcher().sink<Events::Shutdown>().disconnect<&GLFWModule::on_shutdown>(*this);
+        Module::disconnect_events();
     }
 
     static void glfw_error_callback(int error, const char *description) {
@@ -42,7 +42,7 @@ namespace Bcg::Graphics {
     static void close_callback(GLFWwindow *window) {
         LOG_INFO("GLFWModule::close_callback: Close window");
         glfwSetWindowShouldClose(window, true);
-        Engine::GetContext().get<MainLoop>().Stop();
+        Engine::get_context().get<MainLoop>().Stop();
     }
 
     static bool mouse_logging = false;
@@ -50,12 +50,12 @@ namespace Bcg::Graphics {
 
     static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode) {
         auto event = Events::Key{window, key, scancode, action, mode};
-        InputModule::OnKey(event);
+        InputModule::on_key(event);
 
         if (!GuiModule::WantCaptureKeyboard()) {
-            Engine::GetDispatcher().trigger(event);
+            Engine::get_dispatcher().trigger(event);
 
-            auto &k_callbacks = Engine::GetContext().get<KeyboardCallbacks>();
+            auto &k_callbacks = Engine::get_context().get<KeyboardCallbacks>();
             auto bcg_key = MapGlfwKey(key);
             if (action == GLFW_PRESS) {
                 k_callbacks.TriggerPressKeyCallback(bcg_key);
@@ -67,38 +67,38 @@ namespace Bcg::Graphics {
 
     static void mouse_cursor_callback(GLFWwindow *window, double xpos, double ypos) {
         auto event = Events::MouseCursor{window, xpos, ypos};
-        InputModule::OnMouseCursor(event);
+        InputModule::on_mouse_cursor(event);
 
         if (!GuiModule::WantCaptureMouse()) {
-            Engine::GetDispatcher().trigger(event);
+            Engine::get_dispatcher().trigger(event);
         }
     }
 
     static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
         auto event = Events::MouseButton{window, button, action, mods};
-        InputModule::OnMouseButton(event);
+        InputModule::on_mouse_button(event);
 
         if (!GuiModule::WantCaptureMouse()) {
-            Engine::GetDispatcher().trigger(event);
+            Engine::get_dispatcher().trigger(event);
         }
     }
 
     static void mouse_scrolling(GLFWwindow *window, double xoffset, double yoffset) {
         auto event = Events::MouseScroll{window, xoffset, yoffset};
-        InputModule::OnMouseScroll(event);
+        InputModule::on_mouse_scroll(event);
 
         if (!GuiModule::WantCaptureMouse()) {
-            Engine::GetDispatcher().trigger(event);
+            Engine::get_dispatcher().trigger(event);
         }
     }
 
     static void window_resize_callback(GLFWwindow *window, int width, int height) {
-        Engine::GetDispatcher().trigger(Events::WindowResize{window, width, height});
+        Engine::get_dispatcher().trigger(Events::WindowResize{window, width, height});
     }
 
     static void framebuffer_resize_callback(GLFWwindow *window, int width, int height) {
         SetViewport(0, 0, width, height).Execute();
-        Engine::GetDispatcher().trigger(Events::FramebufferResize{window, width, height});
+        Engine::get_dispatcher().trigger(Events::FramebufferResize{window, width, height});
     }
 
     static void drop_callback(GLFWwindow *window, int count, const char **paths) {
@@ -106,10 +106,10 @@ namespace Bcg::Graphics {
             LOG_INFO(fmt::format("Dropped: {}", paths[i]));
         }
 
-        Engine::GetDispatcher().trigger<Events::Drop>({window, count, paths});
+        Engine::get_dispatcher().trigger<Events::Drop>({window, count, paths});
     }
 
-    GLFWwindow *GLFWModule::GetCurrentWindow() {
+    GLFWwindow *GLFWModule::get_current_window() {
         return glfwGetCurrentContext();
     }
 
@@ -119,18 +119,18 @@ namespace Bcg::Graphics {
         return {xpos, ypos};
     }
 
-    void GLFWModule::OnInitialize(const Events::Initialize &event) {
-        Module::OnInitialize(event);
+    void GLFWModule::on_initialize(const Events::Initialize &event) {
+        Module::on_initialize(event);
         glfwSetErrorCallback(glfw_error_callback);
         if (!glfwInit()) {
-            LOG_FATAL("GLFWModule::OnInitialize: Failed to initialize GLFW");
+            LOG_FATAL("GLFWModule::on_initialize: Failed to initialize GLFW");
         }
-        auto &renderer = Engine::GetContext().get<RenderingModule>();
+        auto &renderer = Engine::get_context().get<RenderingModule>();
         auto &backend = renderer.GetBackend();
         if (!backend) {
-            LOG_FATAL("GLFWModule::OnInitialize: No backend set, please set a backend before initializing GLFW");
+            LOG_FATAL("GLFWModule::on_initialize: No backend set, please set a backend before initializing GLFW");
         }
-        LOG_INFO(fmt::format("GLFWModule::OnInitialize: Starting GLFW context, {} {}", backend.name, backend.version));
+        LOG_INFO(fmt::format("GLFWModule::on_initialize: Starting GLFW context, {} {}", backend.name, backend.version));
 
         switch (backend.type) {
             case RenderingModule::Backend::Type::OpenGL:
@@ -142,28 +142,28 @@ namespace Bcg::Graphics {
                 glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
                 break;
             default:
-                LOG_FATAL("GLFWModule::OnInitialize: Unknown backend type");
+                LOG_FATAL("GLFWModule::on_initialize: Unknown backend type");
         }
 
-        Engine::GetContext().emplace<Pool<Window> >("window_pool");
+        Engine::get_context().emplace<Pool<Window> >("window_pool");
     }
 
-    void GLFWModule::OnStartup(const Events::Startup &event) {
-        Module::OnStartup(event);
+    void GLFWModule::on_startup(const Events::Startup &event) {
+        Module::on_startup(event);
 
-        if (!Engine::GetContext().find<WindowComponent>()) {
-            auto &window_pool = Engine::GetContext().get<Pool<Window> >();
+        if (!Engine::get_context().find<WindowComponent>()) {
+            auto &window_pool = Engine::get_context().get<Pool<Window> >();
             auto window_handle = window_pool.CreateHandle();
             Window window;
-            if (!Engine::GetContext().find<Window>()) {
-                window.width = Config::GetInt("window.width");
-                window.height = Config::GetInt("window.height");
-                window.title = Config::GetString("window.title");
-                LOG_INFO("GLFWModule::OnStartup: Create window from default");
+            if (!Engine::get_context().find<Window>()) {
+                window.width = Config::get_int("window.width");
+                window.height = Config::get_int("window.height");
+                window.title = Config::get_string("window.title");
+                LOG_INFO("GLFWModule::on_startup: Create window from default");
             } else {
-                window = Engine::GetContext().get<Window>();
-                Engine::GetContext().erase<Window>();
-                LOG_INFO("GLFWModule::OnStartup: Create window from Engine::GetContext()");
+                window = Engine::get_context().get<Window>();
+                Engine::get_context().erase<Window>();
+                LOG_INFO("GLFWModule::on_startup: Create window from Engine::get_context()");
             }
 
             window_handle->width = window.width;
@@ -173,7 +173,7 @@ namespace Bcg::Graphics {
             window_handle->handle = glfwCreateWindow(window_handle->width, window_handle->height, window_handle->title.c_str(),
                                                      nullptr, nullptr);
             if (!window_handle->handle) {
-                LOG_FATAL("GLFWModule::OnStartup: Failed to create window");
+                LOG_FATAL("GLFWModule::on_startup: Failed to create window");
             }
 
             glfwMakeContextCurrent(window_handle->handle);
@@ -187,59 +187,59 @@ namespace Bcg::Graphics {
             glfwSetWindowSizeCallback(window_handle->handle, window_resize_callback);
             glfwSetFramebufferSizeCallback(window_handle->handle, framebuffer_resize_callback);
             glfwSetDropCallback(window_handle->handle, drop_callback);
-            Engine::GetContext().emplace<WindowComponent>(window_handle);
+            Engine::get_context().emplace<WindowComponent>(window_handle);
         }
 
-        auto &k_callbacks = Engine::GetContext().get<KeyboardCallbacks>();
+        auto &k_callbacks = Engine::get_context().get<KeyboardCallbacks>();
 
         k_callbacks.SetPressKeymapCallback(Key::Escape, []() {
-            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-                close_callback(Engine::GetContext().get<WindowComponent>()->handle);
+            if (glfwGetKey(Engine::get_context().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+                close_callback(Engine::get_context().get<WindowComponent>()->handle);
             }
         });
         k_callbacks.SetPressKeymapCallback(Key::C, []() {
-            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+            if (glfwGetKey(Engine::get_context().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
                 LogThisFrame().Execute();
             }
         });
         k_callbacks.SetPressKeymapCallback(Key::M, []() {
-            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+            if (glfwGetKey(Engine::get_context().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
                 if (!mouse_logging) {
                     mouse_logging = true;
-                    InputModule::EnableMouseLogging();
+                    InputModule::enable_mouse_logging();
                 } else {
                     mouse_logging = false;
-                    InputModule::DisableMouseLogging();
+                    InputModule::disable_mouse_logging();
                 }
             }
         });
         k_callbacks.SetPressKeymapCallback(Key::K, []() {
-            if (glfwGetKey(Engine::GetContext().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+            if (glfwGetKey(Engine::get_context().get<WindowComponent>()->handle, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
                 if (!key_logging) {
                     key_logging = true;
-                    InputModule::EnableKeyLogging();
+                    InputModule::enable_key_logging();
                 } else {
                     key_logging = false;
-                    InputModule::DisableKeyLogging();
+                    InputModule::disable_key_logging();
                 }
             }
         });
     }
 
-    void GLFWModule::OnSynchronize(const Events::Synchronize &event) {
-        Module::OnSynchronize(event);
-        auto &loop = Engine::GetContext().get<MainLoop>();
+    void GLFWModule::on_synchronize(const Events::Synchronize &event) {
+        Module::on_synchronize(event);
+        auto &loop = Engine::get_context().get<MainLoop>();
         loop.end.Next().AddCommand(std::make_shared<PollEvents>());
         loop.end.Next().AddCommand(std::make_shared<SwapBuffers>());
     }
 
-    void GLFWModule::OnShutdown(const Events::Shutdown &event) {
-        Module::OnShutdown(event);
+    void GLFWModule::on_shutdown(const Events::Shutdown &event) {
+        Module::on_shutdown(event);
         glfwTerminate();
     }
 
     float GLFWModule::GetDpiScaling() {
-        auto &window_handle = Engine::GetContext().get<WindowComponent>();
+        auto &window_handle = Engine::get_context().get<WindowComponent>();
         float dpi_scaling_factor;
         glfwGetWindowContentScale(window_handle->handle, &dpi_scaling_factor, &dpi_scaling_factor);
         return dpi_scaling_factor;
@@ -255,7 +255,7 @@ namespace Bcg::Graphics {
     }
 
     void SwapBuffers::Execute() const {
-        glfwSwapBuffers(Engine::GetContext().get<WindowComponent>()->handle);
+        glfwSwapBuffers(Engine::get_context().get<WindowComponent>()->handle);
         LOG_FRAME("Command::SwapBuffers");
     }
 }

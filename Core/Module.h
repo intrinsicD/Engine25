@@ -15,17 +15,17 @@ namespace Bcg {
 
         virtual ~Module() = default;
 
-        virtual void ConnectEvents();
+        virtual void connect_events();
 
-        virtual void DisconnectEvents();
+        virtual void disconnect_events();
 
-        virtual void OnInitialize(const Events::Initialize &event);
+        virtual void on_initialize(const Events::Initialize &event);
 
-        virtual void OnStartup(const Events::Startup &event);
+        virtual void on_startup(const Events::Startup &event);
 
-        virtual void OnSynchronize(const Events::Synchronize &event);
+        virtual void on_synchronize(const Events::Synchronize &event);
 
-        virtual void OnShutdown(const Events::Shutdown &event);
+        virtual void on_shutdown(const Events::Shutdown &event);
 
         std::string name;
         std::string version;

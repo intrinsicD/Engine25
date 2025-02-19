@@ -16,7 +16,7 @@ namespace Bcg{
 
     }
 
-    void SlangShaderModule::ConnectEvents() {
+    void SlangShaderModule::connect_events() {
         Engine::GetDispatcher().sink<Events::Initialize>().connect<&SlangShaderModule::OnInitialize>(*this);
         Engine::GetDispatcher().sink<Events::Startup>().connect<&SlangShaderModule::OnStartup>(*this);
         Engine::GetDispatcher().sink<Events::Synchronize>().connect<&SlangShaderModule::OnSynchronize>(*this);
@@ -24,7 +24,7 @@ namespace Bcg{
         Module::ConnectEvents();
     }
 
-    void SlangShaderModule::DisconnectEvents() {
+    void SlangShaderModule::disconnect_events() {
         Engine::GetDispatcher().sink<Events::Initialize>().disconnect<&SlangShaderModule::OnInitialize>(this);
         Engine::GetDispatcher().sink<Events::Startup>().disconnect<&SlangShaderModule::OnStartup>(this);
         Engine::GetDispatcher().sink<Events::Synchronize>().disconnect<&SlangShaderModule::OnSynchronize>(this);
@@ -36,7 +36,7 @@ namespace Bcg{
         SlangSession *session;
     };
 
-    void SlangShaderModule::OnInitialize(const Events::Initialize &event) {
+    void SlangShaderModule::on_initialize(const Events::Initialize &event) {
         Module::OnInitialize(event);
 
 
@@ -64,15 +64,15 @@ namespace Bcg{
         }
     }
 
-    void SlangShaderModule::OnStartup(const Events::Startup &event) {
+    void SlangShaderModule::on_startup(const Events::Startup &event) {
         Module::OnStartup(event);
     }
 
-    void SlangShaderModule::OnSynchronize(const Events::Synchronize &event) {
+    void SlangShaderModule::on_synchronize(const Events::Synchronize &event) {
         Module::OnSynchronize(event);
     }
 
-    void SlangShaderModule::OnShutdown(const Events::Shutdown &event) {
+    void SlangShaderModule::on_shutdown(const Events::Shutdown &event) {
         Module::OnShutdown(event);
     }
 

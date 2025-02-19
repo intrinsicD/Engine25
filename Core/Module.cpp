@@ -9,27 +9,27 @@ namespace Bcg {
     Module::Module(std::string name, std::string version) : name(std::move(name)), version(std::move(version)) {
     }
 
-    void Module::ConnectEvents() {
-        LOG_INFO(fmt::format("{}::ConnectEvents", name));
+    void Module::connect_events() {
+        LOG_INFO(fmt::format("{}::connect_events", name));
     }
 
-    void Module::DisconnectEvents() {
-        LOG_INFO(fmt::format("{}::DisconnectEvents", name));
+    void Module::disconnect_events() {
+        LOG_INFO(fmt::format("{}::disconnect_events", name));
     }
 
-    void Module::OnInitialize(const Events::Initialize &event) {
-        LOG_INFO(fmt::format("{}::OnInitialize: version {}", name, version));
+    void Module::on_initialize(const Events::Initialize &event) {
+        LOG_INFO(fmt::format("{}::on_initialize: version {}", name, version));
     }
 
-    void Module::OnStartup(const Events::Startup &event) {
-        LOG_INFO(fmt::format("{}::OnStartup", name));
+    void Module::on_startup(const Events::Startup &event) {
+        LOG_INFO(fmt::format("{}::on_startup", name));
     }
 
-    void Module::OnSynchronize(const Events::Synchronize &event) {
-        LOG_FRAME(fmt::format("{}::OnSynchronize", name));
+    void Module::on_synchronize(const Events::Synchronize &event) {
+        LOG_FRAME(fmt::format("{}::on_synchronize", name));
     }
 
-    void Module::OnShutdown(const Events::Shutdown &event) {
-        LOG_INFO(fmt::format("{}::OnShutdown", name));
+    void Module::on_shutdown(const Events::Shutdown &event) {
+        LOG_INFO(fmt::format("{}::on_shutdown", name));
     }
 }
