@@ -34,7 +34,7 @@ namespace Bcg {
         }
     }
 
-    void JobSystem::Enqueue(std::function<void()> job) {
+    void JobSystem::enqueue(std::function<void()> job) {
         {
             std::scoped_lock lock(mutex_);
             if (stop_flag_) {
@@ -45,7 +45,7 @@ namespace Bcg {
         cv_.notify_one();
     }
 
-    void JobSystem::Wait() {
+    void JobSystem::wait() {
         std::unique_lock lock(mutex_);
         done_cv_.wait(lock, [this]() {
             return tasks_.empty() && active_tasks_ == 0;

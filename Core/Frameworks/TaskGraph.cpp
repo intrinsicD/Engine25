@@ -32,7 +32,7 @@ namespace Bcg {
 
         for (auto id: sorted) {
             auto &task = GetNode(id).data;
-            futures.push_back(jobSystem.Enqueue([&task]() {
+            futures.push_back(jobSystem.enqueue([&task]() {
                 task.Execute();
             }));
         }
@@ -87,7 +87,7 @@ namespace Bcg {
             // Enqueue all tasks in this level
             for (auto node_id: this_level_nodes) {
                 auto &task = GetNode(node_id).data;
-                futures.push_back(jobSystem.Enqueue([&task]() {
+                futures.push_back(jobSystem.enqueue([&task]() {
                     task.Execute();
                 }));
             }

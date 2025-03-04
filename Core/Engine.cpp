@@ -10,8 +10,8 @@
 #include "GLFWModule.h"
 #include "GuiModule.h"
 #include "InputModule.h"
+#include "TaskModule.h"
 #include "ConfigFile.h"
-#include "JobSystem.h"
 
 namespace Bcg {
     static Scene scene;
@@ -28,13 +28,13 @@ namespace Bcg {
 
         LOG_INFO(fmt::format("{}::Init: version {}", name, version));
 
-        auto &jobs = get_context().emplace<JobSystem>(Config::get_int("jobs.max_threads"));
         auto &taskGraph = get_context().emplace<TaskGraph>();
         auto &renderGraph = get_context().emplace<Graphics::RenderGraph>();
         auto &loop = get_context().emplace<MainLoop>();
         auto &renderer = get_context().emplace<Graphics::RenderingModule>();
         auto &glfw = get_context().emplace<Graphics::GLFWModule>();
         auto &gui = get_context().emplace<Graphics::GuiModule>();
+        auto &tasks = get_context().emplace<TaskModule>();
         auto &input = get_context().emplace<InputModule>();
 
         renderer.SetBackend({Graphics::RenderingModule::Backend::Type::OpenGL, "OpenGL", "4.6"});
@@ -43,6 +43,7 @@ namespace Bcg {
         glfw.connect_events();
         gui.connect_events();
         input.connect_events();
+        tasks.connect_events();
 
         dispatcher.trigger<Events::Initialize>();
         Graphics::LogThisFrame().Execute();
@@ -64,8 +65,6 @@ namespace Bcg {
         //TODO
         LOG_INFO(fmt::format("{}::Shutdown", name));
         dispatcher.trigger<Events::Shutdown>();
-        auto &jobs = get_context().get<JobSystem>();
-        jobs.Wait();
     }
 
     Scene &Engine::get_scene() {
