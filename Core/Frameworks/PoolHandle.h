@@ -25,7 +25,7 @@ namespace Bcg {
                 assert(other.pool != nullptr);
                 assert(pool != nullptr);
 
-                pool->IncrementRefCount(idx);
+                pool->increment_ref_count(idx);
             }
         }
 
@@ -43,14 +43,14 @@ namespace Bcg {
             if (this != &other) {
                 // Decrement current reference
                 if (pool && idx < pool->properties.size()) {
-                    pool->DecrementRefCount(idx);
+                    pool->decrement_ref_count(idx);
                 }
 
                 // Copy new reference
                 pool = other.pool;
                 idx = other.idx;
                 if (pool && idx < pool->properties.size()) {
-                    pool->IncrementRefCount(idx);
+                    pool->increment_ref_count(idx);
                 }
             }
             return *this;
@@ -60,7 +60,7 @@ namespace Bcg {
             if (this != &other) {
                 // Decrement current reference
                 if (pool && idx < pool->properties.size()) {
-                    pool->DecrementRefCount(idx);
+                    pool->decrement_ref_count(idx);
                 }
 
                 // Move new reference
@@ -74,7 +74,7 @@ namespace Bcg {
 
         ~PoolHandle() {
             if (pool && idx < pool->properties.size()) {
-                pool->DecrementRefCount(idx);
+                pool->decrement_ref_count(idx);
             }
         }
 
@@ -133,7 +133,7 @@ namespace Bcg {
 
         PoolHandle(Pool<T> *pool, size_t idx) : pool(pool), idx(idx) {
             if (pool && idx < pool->properties.size()) {
-                pool->IncrementRefCount(idx);
+                pool->increment_ref_count(idx);
             }
         }
 

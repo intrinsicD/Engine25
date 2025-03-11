@@ -153,7 +153,7 @@ namespace Bcg::Graphics {
 
         if (!Engine::get_context().find<WindowComponent>()) {
             auto &window_pool = Engine::get_context().get<Pool<Window> >();
-            auto window_handle = window_pool.CreateHandle();
+            auto window_handle = window_pool.create_handle();
             Window window;
             if (!Engine::get_context().find<Window>()) {
                 window.width = Config::get_int("window.width");

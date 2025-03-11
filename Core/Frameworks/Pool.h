@@ -21,24 +21,24 @@ namespace Bcg {
 
         virtual ~Pool() = default;
 
-        [[nodiscard]] const char *GetName() const { return name; }
+        [[nodiscard]] const char *get_name() const { return name; }
 
-        PoolHandle<T> CreateHandle();
+        PoolHandle<T> create_handle();
 
         template<typename U>
-        PoolHandle<T> CreateHandle(U &&obj);
+        PoolHandle<T> create_handle(U &&obj);
 
-        PropertyContainer &GetProperties() { return properties; }
+        PropertyContainer &get_properties() { return properties; }
 
-        Property<size_t> &GetRefCount() { return ref_count; }
+        Property<size_t> &get_ref_count() { return ref_count; }
 
-        Property<T> &GetObjects() { return objects; }
+        Property<T> &get_objects() { return objects; }
 
     protected:
 
-        void IncrementRefCount(size_t idx);
+        void increment_ref_count(size_t idx);
 
-        void DecrementRefCount(size_t idx);
+        void decrement_ref_count(size_t idx);
 
         friend class PoolHandle<T>;
         const char *name;
@@ -55,7 +55,7 @@ namespace Bcg {
     }
 
     template<typename T>
-    PoolHandle<T> Pool<T>::CreateHandle() {
+    PoolHandle<T> Pool<T>::create_handle() {
         size_t idx;
         if (free_list.empty()) {
             properties.push_back();
@@ -69,14 +69,14 @@ namespace Bcg {
 
     template<typename T>
     template<typename U>
-    PoolHandle<T> Pool<T>::CreateHandle(U &&obj) {
-        PoolHandle<T> handle = CreateHandle();
+    PoolHandle<T> Pool<T>::create_handle(U &&obj) {
+        PoolHandle<T> handle = create_handle();
         objects[handle.idx] = std::forward<U>(obj);
         return handle;
     }
 
     template<typename T>
-    void Pool<T>::IncrementRefCount(size_t idx) {
+    void Pool<T>::increment_ref_count(size_t idx) {
         std::scoped_lock lock(mutex);
         assert(idx < properties.size());
         assert(ref_count);
@@ -85,7 +85,7 @@ namespace Bcg {
     }
 
     template<typename T>
-    void Pool<T>::DecrementRefCount(size_t idx) {
+    void Pool<T>::decrement_ref_count(size_t idx) {
         std::scoped_lock lock(mutex);
         assert(idx < properties.size());
         assert(ref_count);
