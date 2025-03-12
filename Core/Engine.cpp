@@ -11,6 +11,7 @@
 #include "GuiModule.h"
 #include "InputModule.h"
 #include "TaskModule.h"
+#include "MeshAssetModule.h"
 #include "ConfigFile.h"
 
 namespace Bcg {
@@ -36,6 +37,7 @@ namespace Bcg {
         auto &gui = get_context().emplace<Graphics::GuiModule>();
         auto &tasks = get_context().emplace<TaskModule>();
         auto &input = get_context().emplace<InputModule>();
+        auto &mesh_assets = get_context().emplace<MeshAssetModule>();
 
         renderer.SetBackend({Graphics::RenderingModule::Backend::Type::OpenGL, "OpenGL", "4.6"});
 
@@ -44,6 +46,7 @@ namespace Bcg {
         gui.connect_events();
         input.connect_events();
         tasks.connect_events();
+        mesh_assets.connect_events();
 
         dispatcher.trigger<Events::Initialize>();
         Graphics::LogThisFrame().Execute();

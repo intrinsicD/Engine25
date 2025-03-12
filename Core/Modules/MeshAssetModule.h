@@ -25,6 +25,8 @@ namespace Bcg {
         void on_synchronize(const Events::Synchronize &event) override;
 
         void on_shutdown(const Events::Shutdown &event) override;
+
+        void on_drop_file(const Events::Drop &event);
     };
 }
 
