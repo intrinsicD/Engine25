@@ -1,4 +1,5 @@
 target_include_directories(Engine25 PUBLIC .)
+add_subdirectory(Gui)
 
 if (USE_OPENGL)
     target_include_directories(Engine25 PUBLIC OpenGL)

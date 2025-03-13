@@ -86,10 +86,26 @@ namespace Bcg {
         }
 
         /**
+       * @brief Returns the center of the sphere.
+       * @return The center of the sphere.
+       */
+        [[nodiscard]] Vector<T, N> &center() {
+            return m_center;
+        }
+
+        /**
          * @brief Returns the radius of the sphere.
          * @return The radius of the sphere.
          */
         [[nodiscard]] T radius() const {
+            return m_radius;
+        }
+
+        /**
+ * @brief Returns the radius of the sphere.
+ * @return The radius of the sphere.
+ */
+        [[nodiscard]] T &radius() {
             return m_radius;
         }
 

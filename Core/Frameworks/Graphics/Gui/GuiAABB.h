@@ -8,7 +8,12 @@
 #include "AABB.h"
 
 namespace Bcg::Graphics::Gui {
-    void ShowWidget(const AABB<Real, 3> &aabb3);
-    void ShowWidget(const AABB<Real, 2> &aabb2);
+    void ShowGui(const char *label, const AABB<Real, 3> &aabb);
+
+    void ShowGui(const char *label, const AABB<Real, 2> &aabb);
+
+    void EditGui(const char *label, AABB<Real, 3> &aabb);
+
+    void EditGui(const char *label, AABB<Real, 3> &aabb);
 }
 #endif //GUIAABB_H

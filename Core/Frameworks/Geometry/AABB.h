@@ -71,10 +71,26 @@ public:
     }
 
     /**
+     * @brief Returns the minimum corner of the AABB.
+     * @return The minimum corner of the AABB.
+     */
+    [[nodiscard]] Vector<T, N> &min() {
+        return m_min;
+    }
+
+    /**
      * @brief Returns the maximum corner of the AABB.
      * @return The maximum corner of the AABB.
      */
     [[nodiscard]] const Vector<T, N> &max() const {
+        return m_max;
+    }
+
+    /**
+     * @brief Returns the maximum corner of the AABB.
+     * @return The maximum corner of the AABB.
+     */
+    [[nodiscard]] Vector<T, N> &max() {
         return m_max;
     }
 

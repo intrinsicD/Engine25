@@ -926,6 +926,15 @@ namespace Bcg {
     }
 
     bool MeshIoManager::read(Mesh &mesh) {
+        assert(mesh.positions);
+        assert(mesh.v_connectivity);
+        assert(mesh.h_connectivity);
+        assert(mesh.f_connectivity);
+        assert(mesh.v_deleted);
+        assert(mesh.h_deleted);
+        assert(mesh.e_deleted);
+        assert(mesh.f_deleted);
+        assert(mesh.e_direction);
         for (const auto &io : m_ios) {
             if (io->can_load_file()) {
                 if (io->read(mesh)) {

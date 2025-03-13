@@ -16,6 +16,14 @@ namespace Bcg {
         h_deleted = halfedges.halfedge_property<bool>("h:deleted", false);
         e_deleted = edges.edge_property<bool>("e:deleted", false);
         e_direction = edges.edge_property<Halfedge>("e:direction");
+
+        assert(positions);
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(e_direction);
     }
 
     Graph &Graph::operator=(const Graph &rhs) {
@@ -41,6 +49,13 @@ namespace Bcg {
             halfedges.num_deleted = rhs.halfedges.num_deleted;
             edges.num_deleted = rhs.edges.num_deleted;
         }
+        assert(positions);
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(e_direction);
 
         return *this;
     }
@@ -71,6 +86,13 @@ namespace Bcg {
             halfedges.num_deleted = rhs.halfedges.num_deleted;
             edges.num_deleted = rhs.edges.num_deleted;
         }
+        assert(positions);
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(e_direction);
 
         return *this;
     }
@@ -90,6 +112,14 @@ namespace Bcg {
         v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
         e_direction = edges.edge_property<Halfedge>("e:direction");
+
+        assert(positions);
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(e_direction);
     }
 
     void Graph::free_memory() {

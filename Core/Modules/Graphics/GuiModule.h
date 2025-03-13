@@ -104,6 +104,8 @@ namespace Bcg::Graphics {
         void Execute() const override{
             Task::Execute();
         }
+
+        bool active = true;
     };
 }
 

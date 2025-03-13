@@ -17,6 +17,8 @@ namespace Bcg {
         h_deleted = halfedge_property<bool>("h:deleted", false);
         e_deleted = edge_property<bool>("e:deleted", false);
         f_deleted = face_property<bool>("f:deleted", false);
+
+        e_direction = edge_property<Halfedge>("e:direction");
     }
 
     Mesh &Mesh::operator=(const Mesh &rhs) {
@@ -37,6 +39,8 @@ namespace Bcg {
             h_deleted = halfedge_property<bool>("h:deleted");
             e_deleted = edge_property<bool>("e:deleted");
             f_deleted = face_property<bool>("f:deleted");
+
+            e_direction = edge_property<Halfedge>("e:direction");
 
             // how many elements are deleted?
             vertices.num_deleted = rhs.vertices.num_deleted;
@@ -64,6 +68,8 @@ namespace Bcg {
             e_deleted = edge_property<bool>("e:deleted", false);
             f_deleted = face_property<bool>("f:deleted", false);
 
+            e_direction = edge_property<Halfedge>("e:direction");
+
             // copy properties from other mesh
             positions.vector() = rhs.positions.vector();
             v_connectivity.vector() = rhs.v_connectivity.vector();
@@ -73,6 +79,8 @@ namespace Bcg {
             v_deleted.vector() = rhs.v_deleted.vector();
             e_deleted.vector() = rhs.e_deleted.vector();
             f_deleted.vector() = rhs.f_deleted.vector();
+
+            e_direction.vector() = rhs.e_direction.vector();
 
             // resize (needed by property containers)
             vertices.resize(rhs.vertices.size());
@@ -107,6 +115,7 @@ namespace Bcg {
         e_deleted = edge_property<bool>("e:deleted", false);
         h_deleted = halfedge_property<bool>("h:deleted", false);
         f_deleted = face_property<bool>("f:deleted", false);
+        e_direction = edge_property<Halfedge>("e:direction");
 
         // set initial status (as in constructor)
         vertices.num_deleted = 0;

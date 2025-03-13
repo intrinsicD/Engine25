@@ -11,12 +11,14 @@
 #include "PoolHandle.h"
 #include "MainLoop.h"
 #include "GuiModule.h"
+#include "GuiMesh.h"
 #include "imgui.h"
 
 namespace Bcg {
     using MeshAssetPool = Pool<Mesh>;
     using MeshAssetInstancePool = Pool<Mesh>;
     using MeshAssetCache = std::unordered_map<std::string, PoolHandle<Mesh>>;
+    static CommandBuffer active_gui;
 
     MeshAssetModule::MeshAssetModule() : Module("MeshAssetModule", "0.1") {
 
@@ -57,6 +59,17 @@ namespace Bcg {
                     auto &mesh_asset_cache = Engine::get_context().get<MeshAssetCache>();
                     for (auto &item : mesh_asset_cache) {
                         if (ImGui::BeginMenu(item.first.c_str())) {
+                            if(ImGui::MenuItem("Select")){
+                                active_gui.Clear();
+                                active_gui.AddCommand(std::make_shared<Graphics::AddGuiWidget>([&](){
+
+                                    //TODO think of a better way to manage the gui windows...
+                                    if(ImGui::Begin(item.first.c_str())){
+                                        Graphics::Gui::ShowGui("Mesh", item.second);
+                                    }
+                                    ImGui::End();
+                                }));
+                            }
                             if(ImGui::MenuItem("Create new entity")){
 
                             }
@@ -70,6 +83,9 @@ namespace Bcg {
         });
 
         loop.render_gui.Next().AddCommand(menu_entry);
+        for(auto &cmd : active_gui.Commands()){
+            loop.render_gui.Next().AddCommand(cmd);
+        }
     }
 
     void MeshAssetModule::on_shutdown(const Events::Shutdown &event) {
