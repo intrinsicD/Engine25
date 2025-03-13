@@ -205,8 +205,7 @@ namespace Bcg {
 
     class MeshIoManager {
     public:
-        MeshIoManager(std::string filename): m_filename(filename) {
-        }
+        explicit MeshIoManager(std::string filename);
 
         void add_io(std::shared_ptr<MeshIo> io);
 

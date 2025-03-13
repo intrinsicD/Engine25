@@ -30,6 +30,7 @@ namespace Bcg {
 
             v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
             h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
+            e_direction = edges.edge_property<Halfedge>("e:direction");
 
             v_deleted = vertices.vertex_property<bool>("v:deleted");
             h_deleted = halfedges.halfedge_property<bool>("h:deleted");
@@ -59,6 +60,7 @@ namespace Bcg {
 
             v_connectivity.vector() = rhs.v_connectivity.vector();
             h_connectivity.vector() = rhs.h_connectivity.vector();
+            e_direction.vector() = rhs.e_direction.vector();
 
             v_deleted.vector() = rhs.v_deleted.vector();
             h_deleted.vector() = rhs.h_deleted.vector();
@@ -87,6 +89,7 @@ namespace Bcg {
         positions = vertices.vertex_property<Vector<Real, 3> >("v:position", Vector<Real, 3>::Zero());
         v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
+        e_direction = edges.edge_property<Halfedge>("e:direction");
     }
 
     void Graph::free_memory() {

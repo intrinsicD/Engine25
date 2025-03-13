@@ -98,7 +98,7 @@ namespace Bcg {
 
         //! Access the i'th element. No range check is performed!
         reference operator[](size_t idx) {
-            assert(idx < m_data.size());
+            assert(idx < m_data.size()); //TODO this fails frequently... and i dont know why!?
             return m_data[idx];
         }
 

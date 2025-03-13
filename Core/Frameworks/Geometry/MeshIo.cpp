@@ -14,6 +14,7 @@
 #include <sstream>
 #include <iostream>
 #include <filesystem>
+#include <memory>
 #include <fmt/core.h>
 
 // Define a custom hash function for Vector<Real, 3>
@@ -901,6 +902,13 @@ namespace Bcg {
 
     bool MeshIoPLY::can_load_file() {
         return std::filesystem::path(m_filename).extension() == ".ply";
+    }
+
+    MeshIoManager::MeshIoManager(std::string filename): m_filename(filename) {
+        add_io(std::make_shared<MeshIoOFF>(filename));
+        add_io(std::make_shared<MeshIoOBJ>(filename));
+        add_io(std::make_shared<MeshIoSTL>(filename));
+        add_io(std::make_shared<MeshIoPLY>(filename));
     }
 
 

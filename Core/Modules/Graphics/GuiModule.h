@@ -83,6 +83,28 @@ namespace Bcg::Graphics {
 
         void Execute() const override;
     };
+
+    class AddGuiMenuEntry : public Task {
+    public:
+        explicit AddGuiMenuEntry(std::function<void()> task) : Task(std::move(task)) {
+
+        }
+
+        void Execute() const override{
+            Task::Execute();
+        }
+    };
+
+    class AddGuiWidget : public Task {
+    public:
+        explicit AddGuiWidget(std::function<void()> task) : Task(std::move(task)) {
+
+        }
+
+        void Execute() const override{
+            Task::Execute();
+        }
+    };
 }
 
 #endif //ENGINE25_GUIMODULE_H

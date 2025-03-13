@@ -7,9 +7,11 @@
 #include <MeshIo.h>
 
 #include "Engine.h"
-#include "Logger.h"
 #include "Pool.h"
 #include "PoolHandle.h"
+#include "MainLoop.h"
+#include "GuiModule.h"
+#include "imgui.h"
 
 namespace Bcg {
     using MeshAssetPool = Pool<Mesh>;
@@ -24,6 +26,7 @@ namespace Bcg {
         Engine::get_dispatcher().sink<Events::Initialize>().connect<&MeshAssetModule::on_initialize>(this);
         Engine::get_dispatcher().sink<Events::Shutdown>().connect<&MeshAssetModule::on_shutdown>(this);
         Engine::get_dispatcher().sink<Events::Drop>().connect<&MeshAssetModule::on_drop_file>(this);
+        Engine::get_dispatcher().sink<Events::Synchronize>().connect<&MeshAssetModule::on_synchronize>(this);
         Module::connect_events();
     }
 
@@ -47,6 +50,23 @@ namespace Bcg {
 
     void MeshAssetModule::on_synchronize(const Events::Synchronize &event) {
         Module::on_synchronize(event);
+        auto &loop = Engine::get_context().get<MainLoop>();
+        auto menu_entry = std::make_shared<Graphics::AddGuiMenuEntry>([](){
+            if (ImGui::BeginMenu("Meshes")) {
+                if(ImGui::BeginMenu("Cache")){
+                    auto &mesh_asset_cache = Engine::get_context().get<MeshAssetCache>();
+                    for (auto &item : mesh_asset_cache) {
+                        if (ImGui::MenuItem(item.first.c_str())) {
+
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+        });
+
+        loop.render_gui.Next().AddCommand(menu_entry);
     }
 
     void MeshAssetModule::on_shutdown(const Events::Shutdown &event) {
@@ -68,8 +88,6 @@ namespace Bcg {
                 assert(mesh_handle.GetIndex() < mesh_asset_pool.get_objects().size());
                 mesh_asset_cache[filepath] = mesh_handle;
             }
-
         }
-
     }
 }
