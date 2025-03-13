@@ -56,8 +56,11 @@ namespace Bcg {
                 if(ImGui::BeginMenu("Cache")){
                     auto &mesh_asset_cache = Engine::get_context().get<MeshAssetCache>();
                     for (auto &item : mesh_asset_cache) {
-                        if (ImGui::MenuItem(item.first.c_str())) {
+                        if (ImGui::BeginMenu(item.first.c_str())) {
+                            if(ImGui::MenuItem("Create new entity")){
 
+                            }
+                            ImGui::EndMenu();
                         }
                     }
                     ImGui::EndMenu();

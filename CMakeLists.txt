@@ -10,7 +10,12 @@ set(MY_SOURCE_DIR_PATH "${CMAKE_SOURCE_DIR}")
 add_compile_definitions(SOURCE_DIR_PATH=\"${MY_SOURCE_DIR_PATH}\")
 
 # Define the Engine25 executable
-add_library(Engine25)
+add_library(Engine25
+        Core/Modules/Graphics/SceneModule.cpp
+        Core/Frameworks/Graphics/Gui/GuiAABB.h
+        Core/Frameworks/Graphics/Gui/GuiAABB.cpp
+        Core/Frameworks/Graphics/Gui/GuiVector.h
+        Core/Frameworks/Graphics/Gui/GuiVector.cpp)
 
 add_executable(Engine25Main)
 
