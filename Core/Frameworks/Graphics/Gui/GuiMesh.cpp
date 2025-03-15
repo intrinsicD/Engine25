@@ -11,10 +11,11 @@ namespace Bcg::Graphics::Gui {
         if (label) {
             ImGui::Text("%s", label);
         }
-        ImGui::Text("Number of vertices: %zu", mesh.vertices.size());
-        ImGui::Text("Number of halfedges: %zu", mesh.halfedges.size());
-        ImGui::Text("Number of edges: %zu", mesh.edges.size());
-        ImGui::Text("Number of faces: %zu", mesh.faces.size());
+        size_t n_vertices = mesh.vertices.n_vertices();
+        ImGui::Text("Number of vertices: %zu", mesh.vertices.n_vertices());
+        ImGui::Text("Number of halfedges: %zu", mesh.halfedges.n_halfedges());
+        ImGui::Text("Number of edges: %zu", mesh.edges.n_edges());
+        ImGui::Text("Number of faces: %zu", mesh.faces.n_faces());
         if (ImGui::CollapsingHeader("Vertices")) {
             ShowGui(nullptr, mesh.vertices);
         }

@@ -5,7 +5,7 @@
 #include "PointCloud.h"
 
 namespace Bcg {
-    PointCloud::PointCloud() : vertices() {
+    PointCloud::PointCloud() : Vertices() {
         // link properties to containers
         positions = vertices.vertex_property<Vector<Real, 3>>("v:position");
         v_deleted = vertices.vertex_property<bool>("v:deleted", false);

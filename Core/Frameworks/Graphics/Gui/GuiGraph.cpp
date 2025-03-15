@@ -11,9 +11,9 @@ namespace Bcg::Graphics::Gui {
         if (label) {
             ImGui::Text("%s", label);
         }
-        ImGui::Text("Number of vertices: %zu", graph.vertices.size());
-        ImGui::Text("Number of halfedges: %zu", graph.halfedges.size());
-        ImGui::Text("Number of edges: %zu", graph.edges.size());
+        ImGui::Text("Number of vertices: %zu", graph.vertices.n_vertices());
+        ImGui::Text("Number of halfedges: %zu", graph.halfedges.n_halfedges());
+        ImGui::Text("Number of edges: %zu", graph.edges.n_edges());
         if (ImGui::CollapsingHeader("Vertices")) {
             ShowGui(nullptr, graph.vertices);
         }

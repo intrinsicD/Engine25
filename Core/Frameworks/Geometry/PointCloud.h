@@ -16,7 +16,6 @@ namespace Bcg {
     public:
         VertexProperty<Vector<Real, 3> > positions; ///< Position property for each vertex.
         VertexProperty<bool> v_deleted; ///< Deletion flag for vertices.
-        VertexContainer vertices; ///< Container for managing vertex data.
 
         /**
          * @brief Default constructor. Initializes properties and containers.

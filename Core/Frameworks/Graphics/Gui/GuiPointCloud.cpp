@@ -11,7 +11,7 @@ namespace Bcg::Graphics::Gui{
         if(label){
             ImGui::Text("%s", label);
         }
-        ImGui::Text("Number of points: %zu", pc.vertices.size());
+        ImGui::Text("Number of points: %zu", pc.vertices.n_vertices());
         ImGui::Text("Number of dimensions: %zu", pc.positions.dims());
         if(ImGui::CollapsingHeader("Vertices")){
             ShowGui(nullptr, pc.vertices);
