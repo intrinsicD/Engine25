@@ -21,6 +21,8 @@ target_link_libraries(Engine25 PUBLIC nlohmann_json::nlohmann_json)
 add_subdirectory(slang)
 target_link_libraries(Engine25 PUBLIC slang gfx glfw)]]
 
+add_subdirectory(torch)
+
 add_subdirectory(googletest)
 
 

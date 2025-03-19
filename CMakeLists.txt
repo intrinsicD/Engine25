@@ -1,21 +1,19 @@
 cmake_minimum_required(VERSION 3.30)
-project(Engine25)
+project(Engine25 LANGUAGES C CXX CUDA)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+set(CMAKE_CUDA_ARCHITECTURES 89) # Use native if you're compiling yourself for yourself
 
 # Add source directory path as a definition
 set(MY_SOURCE_DIR_PATH "${CMAKE_SOURCE_DIR}")
 add_compile_definitions(SOURCE_DIR_PATH=\"${MY_SOURCE_DIR_PATH}\")
 
 # Define the Engine25 executable
-add_library(Engine25
-        Core/Modules/Graphics/SceneModule.cpp
-        Core/Frameworks/Graphics/Gui/GuiAABB.h
-        Core/Frameworks/Graphics/Gui/GuiAABB.cpp
-        Core/Frameworks/Graphics/Gui/GuiVector.h
-        Core/Frameworks/Graphics/Gui/GuiVector.cpp)
+add_library(Engine25)
 
 add_executable(Engine25Main)
 
