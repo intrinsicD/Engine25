@@ -8,21 +8,21 @@
 #include "GraphicsTypes.h"
 #include "Math.h"
 
-namespace Bcg::Graphics{
-    struct ViewParameters{
+namespace Bcg::Graphics {
+    struct ViewParameters {
         Vector<Real, 3> eye;
         Vector<Real, 3> center;
         Vector<Real, 3> up;
     };
 
-    struct PerspectiveParameters{
+    struct PerspectiveParameters {
         Real fovy_degrees;
         Real aspect;
         Real zNear;
         Real zFar;
     };
 
-    struct OrthographicParameters{
+    struct OrthographicParameters {
         Real left;
         Real right;
         Real bottom;
@@ -31,12 +31,12 @@ namespace Bcg::Graphics{
         Real zFar;
     };
 
-    struct Camera{
+    struct Camera {
         Matrix<Real, 4, 4> view;
         Matrix<Real, 4, 4> proj;
     };
 
-    struct CameraHandle{
+    struct CameraHandle {
         Uint32 id = -1;
     };
 
@@ -51,6 +51,32 @@ namespace Bcg::Graphics{
     void SetOrthographicParameters(Camera &camera, const OrthographicParameters &params);
 
     OrthographicParameters GetOrthographicParameters(const Camera &camera);
+
+    OrthographicParameters ApproxConvertFrom(const PerspectiveParameters &params, float depth_z) {
+        float half_height = depth_z * tanf(ToRadians(params.fovy_degrees) / 2.0f);
+        float half_width = half_height * params.aspect;
+
+        OrthographicParameters result;
+        result.left = -half_width;
+        result.right = half_width;
+        result.bottom = -half_height;
+        result.top = half_height;
+        result.zNear = params.zNear;
+        result.zFar = params.zFar;
+        return result;
+    }
+
+    PerspectiveParameters ApproxConvertFrom(const OrthographicParameters &params, float depth_z) {
+        float fov = 2.0f * atanf(params.top / depth_z);
+        float aspect = (params.right - params.left) / (params.top - params.bottom);
+
+        PerspectiveParameters result;
+        result.fovy_degrees = ToDegrees(fov);
+        result.aspect = aspect;
+        result.zNear = params.zNear;
+        result.zFar = params.zFar;
+        return result;
+    }
 
     bool IsPerspective(const CameraHandle &handle);
 

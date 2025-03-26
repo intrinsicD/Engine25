@@ -39,6 +39,16 @@ namespace Bcg {
         }
         return output;
     }
+
+    template<typename T>
+    T ToRadians(T degrees) {
+        return degrees * std::numbers::pi_v<T> / 180.0;
+    }
+
+    template<typename T>
+    T ToDegrees(T radians) {
+        return radians * 180.0 / std::numbers::pi_v<T>;
+    }
 }
 
 #endif //MATH_H

@@ -29,8 +29,6 @@ namespace Bcg {
 
         LOG_INFO(fmt::format("{}::Init: version {}", name, version));
 
-        auto &taskGraph = get_context().emplace<TaskGraph>();
-        auto &renderGraph = get_context().emplace<Graphics::RenderGraph>();
         auto &loop = get_context().emplace<MainLoop>();
         auto &renderer = get_context().emplace<Graphics::RenderingModule>();
         auto &glfw = get_context().emplace<Graphics::GLFWModule>();
@@ -80,13 +78,5 @@ namespace Bcg {
 
     Dispatcher &Engine::get_dispatcher() {
         return dispatcher;
-    }
-
-    TaskGraph &Engine::get_task_graph() {
-        return get_context().get<TaskGraph>();
-    }
-
-    Graphics::RenderGraph &Engine::get_render_graph() {
-        return get_context().get<Graphics::RenderGraph>();
     }
 }

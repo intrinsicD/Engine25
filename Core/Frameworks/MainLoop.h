@@ -11,7 +11,6 @@ namespace Bcg {
     class MainLoop {
     public:
         void Run();
-        void Run2();
 
         void Stop();
 
