@@ -5,6 +5,7 @@ target_sources(Engine25 PRIVATE
         MainLoop.cpp
         Keyboard.cpp
         JobSystem.cpp
+        CudaUtils.cpp
 )
 
 add_subdirectory(Geometry)
