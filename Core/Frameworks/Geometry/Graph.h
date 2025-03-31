@@ -24,7 +24,7 @@ namespace Bcg {
 
         // Constructor: initialize with a starting vertex.
         GraphDFSIterator(const GraphType *graph, const Vertex &start)
-            : graph_(graph), visited_(graph ? graph->n_vertices() : 0, false) {
+                : graph_(graph), visited_(graph ? graph->n_vertices() : 0, false) {
             if (graph_ && graph_->is_valid(start)) {
                 stack_.push(start);
                 visited_[start.idx()] = true;
@@ -107,7 +107,7 @@ namespace Bcg {
 
         // Constructor: initialize with a starting vertex.
         GraphBFSIterator(const GraphType *graph, const Vertex &start)
-            : graph_(graph), visited_(graph ? graph->n_vertices() : 0, false) {
+                : graph_(graph), visited_(graph ? graph->n_vertices() : 0, false) {
             if (graph_ && graph_->is_valid(start)) {
                 queue_.push(start);
                 visited_[start.idx()] = true;
@@ -178,7 +178,7 @@ namespace Bcg {
     class GraphDFSRange {
     public:
         GraphDFSRange(const GraphType *graph, const Vertex &start)
-            : graph_(graph), start_(start) {
+                : graph_(graph), start_(start) {
         }
 
         GraphDFSIterator<GraphType> begin() const {
@@ -198,7 +198,7 @@ namespace Bcg {
     class GraphBFSRange {
     public:
         GraphBFSRange(const GraphType *graph, const Vertex &start)
-            : graph_(graph), start_(start) {
+                : graph_(graph), start_(start) {
         }
 
         GraphBFSIterator<GraphType> begin() const {
@@ -218,35 +218,36 @@ namespace Bcg {
      * @brief A Graph class representing a halfedge-based data structure, inheriting from PointCloud.
      * This class provides mechanisms to store, manipulate, and traverse vertices, edges, and halfedges.
      */
-    class Graph : public PointCloud {
+    class Graph {
     public:
         using VertexAroundVertexCirculator = VertexAroundVertexCirculatorBase<Graph>;
         using HalfedgeAroundVertexCirculator = HalfedgeAroundVertexCirculatorBase<Graph>;
         using EdgeAroundVertexCirculator = EdgeAroundVertexCirculatorBase<Graph>;
 
-        using PointCloud::mark_deleted;
-        using PointCloud::is_valid;
+        VertexContainer vertices;       ///< Container for managing vertex data.
+        HalfedgeContainer halfedges;    ///< Container for managing halfedge data.
+        EdgeContainer edges;            ///< Container for managing edge data.
 
-        HalfedgeContainer halfedges;
-        EdgeContainer edges;
+        VertexProperty<bool> v_deleted; ///< Deletion flag for vertices.
+        VertexProperty<VertexConnectivity> v_connectivity; ///< Connectivity information for vertices.
 
-        VertexProperty<VertexConnectivity> v_connectivity;
+        HalfedgeProperty<bool> h_deleted; ///< Deletion flag for halfedges.
+        HalfedgeProperty<HalfedgeConnectivity> h_connectivity; ///< Connectivity information for halfedges.
 
-        HalfedgeProperty<bool> h_deleted;
-        HalfedgeProperty<HalfedgeConnectivity> h_connectivity;
-
-        EdgeProperty<bool> e_deleted;
-        EdgeProperty<Halfedge> e_direction;
+        EdgeProperty<bool> e_deleted;   ///< Deletion flag for edges.
+        EdgeProperty<Halfedge> e_direction; ///< Direction of the edge (halfedge) in the graph.
 
         /**
          * @brief Default constructor for Graph, initializes vertex, edge, and halfedge properties.
          * */
         Graph();
 
+        Graph(VertexContainer vertices, HalfedgeContainer halfedges, EdgeContainer edges);
+
         /**
          * @brief Virtual destructor for extensibility.
          * */
-        ~Graph() override = default;
+        virtual ~Graph() = default;
 
         /**
          * @brief Copy constructor.
@@ -271,12 +272,12 @@ namespace Bcg {
         /**
          * @brief Clear all properties and free memory.
          * */
-        void clear() override;
+        virtual void clear();
 
         /**
          * @brief Releases unused memory.
          */
-        void free_memory() override;
+        virtual void free_memory();
 
         /**
          * @brief Reserve memory for vertices, edges, and faces.
@@ -285,18 +286,18 @@ namespace Bcg {
          * @param nfaces Number of faces to reserve.
          * @param ntets Number of tets to reserve.
          * */
-        void reserve(size_t nvertices, size_t nedges);
+        virtual void reserve(size_t nvertices, size_t nedges);
 
         /**
          * @brief Removes deleted vertices, edges, and faces and compacts the data.
          * */
-        void garbage_collection() override;
+        virtual void garbage_collection();
 
         /**
          * @brief Check if the Graph has any deleted vertices, edges, or faces.
          * @return True if the Graph has any deleted elements, false otherwise.
          * */
-        [[nodiscard]] bool has_garbage() const override {
+        [[nodiscard]] bool has_garbage() const {
             return vertices.has_garbage() ||
                    halfedges.has_garbage() ||
                    edges.has_garbage();
@@ -305,6 +306,109 @@ namespace Bcg {
         // -------------------------------------------------------------------------------------------------------------
         // Vertex Methods
         // -------------------------------------------------------------------------------------------------------------
+
+        /**
+         * @brief Returns the total number of undeleted vertices.
+         * @return Number of undeleted vertices.
+         */
+        [[nodiscard]] size_t n_vertices() const { return vertices.n_vertices(); }
+
+        /**
+         * @brief Checks if the PointCloud is empty.
+         * @return True if empty, false otherwise.
+         */
+        [[nodiscard]] bool is_empty() const { return n_vertices() == 0; }
+
+        /**
+         * @brief Checks if a vertex is deleted.
+         * @param v Vertex to check.
+         * @return True if deleted, false otherwise.
+         */
+        [[nodiscard]] bool is_deleted(const Vertex &v) const { return vertices.is_deleted(v); }
+
+        /**
+         * @brief Checks if a vertex is valid.
+         * @param v Vertex to check.
+         * @return True if valid, false otherwise.
+         */
+        [[nodiscard]] bool is_valid(const Vertex &v) const { return vertices.is_valid(v); }
+
+
+        /**
+         * @brief Adds a property to vertices.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @param t Default value for the property.
+         * @return The added property.
+         */
+        template<class T>
+        VertexProperty<T> add_vertex_property(const std::string &name,
+                                              const T t = T()) {
+            return VertexProperty<T>(vertices.add<T>(name, t));
+        }
+
+        /**
+         * @brief Retrieves a vertex property by name.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @return The property if it exists.
+         */
+        template<class T>
+        VertexProperty<T> get_vertex_property(const std::string &name) const {
+            return VertexProperty<T>(vertices.get<T>(name));
+        }
+
+        /**
+         * @brief Retrieves or adds a vertex property.
+         * @tparam T Type of the property.
+         * @param name Name of the property.
+         * @param t Default value for the property.
+         * @return The property.
+         */
+        template<class T>
+        VertexProperty<T> vertex_property(const std::string &name, const T t = T()) {
+            return VertexProperty<T>(vertices.get_or_add<T>(name, t));
+        }
+
+        /**
+         * @brief Removes a vertex property.
+         * @tparam T Type of the property.
+         * @param p Property to remove.
+         */
+        template<class T>
+        void remove_vertex_property(VertexProperty<T> &p) {
+            vertices.remove(p);
+        }
+
+        /**
+         * @brief Checks if a vertex property exists.
+         * @param name Name of the property.
+         * @return True if the property exists, false otherwise.
+         */
+        [[nodiscard]] bool has_vertex_property(const std::string &name) const {
+            return vertices.exists(name);
+        }
+
+        /**
+         * @brief Creates a new vertex.
+         * @return The newly created vertex.
+         */
+        Vertex new_vertex() {
+            vertices.push_back();
+            return Vertex(vertices.size() - 1);
+        }
+
+        /**
+        * @brief Marks a vertex as deleted.
+        * @param v Vertex to mark as deleted.
+        */
+        void mark_deleted(const Vertex &v);
+
+        /**
+         * @brief Deletes a vertex.
+         * @param v Vertex to delete.
+         */
+        virtual void delete_vertex(const Vertex &v);
 
         /**
          * @brief Check if a vertex is isolated.
@@ -321,12 +425,6 @@ namespace Bcg {
         [[nodiscard]] virtual bool is_boundary(const Vertex &v) const {
             return is_boundary(get_opposite(get_halfedge(v)));
         }
-
-        /**
-         * @brief Delete a vertex.
-         * @param v Vertex to delete.
-         * */
-        void delete_vertex(const Vertex &v) override;
 
         /**
          * @brief Retrieve the halfedge of a vertex.
@@ -677,14 +775,6 @@ namespace Bcg {
         /**
          *  @brief Splits an edge by inserting a vertex.
          *  @param e Edge to split.
-         *  @param p Position of the vertex to insert.
-         *  @return The new Halfedge pointing to the inserted vertex from the target vertex of the edge.
-         */
-        Halfedge split(const Edge &e, const Vector<Real, 3> &p) { return split(e, add_vertex(p)); }
-
-        /**
-         *  @brief Splits an edge by inserting a vertex.
-         *  @param e Edge to split.
          *  @param v Vertex to insert.
          *  @return The new Halfedge pointing to the inserted vertex from the target vertex of the edge.
          */
@@ -797,6 +887,17 @@ namespace Bcg {
 
         //TODO: provide dfs and bfs iterators and range based for loops similar to tree class
     };
+
+    /**
+     *  @brief Splits an edge by inserting a vertex.
+     *  @param e Edge to split.
+     *  @param p Position of the vertex to insert.
+     *  @return The new Halfedge pointing to the inserted vertex from the target vertex of the edge.
+     */
+    template<typename T, int N>
+    Halfedge split(Graph &graph, VertexProperty<Vector<T, N>> &positions, const Edge &e, const Vector<T, N> &p) {
+        return graph.split(e, add_vertex(graph.vertices, positions, p));
+    }
 }
 
 #endif //ENGINE25_GRAPH_H

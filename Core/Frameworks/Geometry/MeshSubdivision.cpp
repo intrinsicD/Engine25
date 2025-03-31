@@ -126,7 +126,7 @@ namespace Bcg::Subdivision {
         for (auto e: mesh.edges) {
             // feature edge?
             if (efeature_ && efeature_[e]) {
-                auto h = mesh.insert_vertex(e, epoint[e]);
+                auto h = insert_vertex(mesh, points_, e, epoint[e]);
                 auto v = mesh.get_vertex(h);
                 auto e0 = mesh.get_edge(h);
                 auto e1 = mesh.get_edge(mesh.get_next(h));
@@ -138,7 +138,7 @@ namespace Bcg::Subdivision {
 
             // normal edge
             else {
-                mesh.insert_vertex(e, epoint[e]);
+                insert_vertex(mesh, points_, e, epoint[e]);
             }
         }
 
@@ -148,7 +148,7 @@ namespace Bcg::Subdivision {
             mesh.insert_edge(h0, mesh.get_next(mesh.get_next(h0)));
 
             auto h1 = mesh.get_next(h0);
-            mesh.insert_vertex(mesh.get_edge(h1), fpoint[f]);
+            insert_vertex(mesh, points_, mesh.get_edge(h1), fpoint[f]);
 
             auto h = mesh.get_next(mesh.get_next(mesh.get_next(h1)));
             while (h != h0) {
@@ -277,7 +277,7 @@ namespace Bcg::Subdivision {
         for (auto e: mesh.edges) {
             // feature edge?
             if (efeature_ && efeature_[e]) {
-                auto h = mesh.insert_vertex(e, epoint[e]);
+                auto h = insert_vertex(mesh, points_, e, epoint[e]);
                 auto v = mesh.get_vertex(h);
                 auto e0 = mesh.get_edge(h);
                 auto e1 = mesh.get_edge(mesh.get_next(h));
@@ -289,7 +289,7 @@ namespace Bcg::Subdivision {
 
             // normal edge
             else {
-                mesh.insert_vertex(e, epoint[e]);
+                insert_vertex(mesh, points_, e, epoint[e]);
             }
         }
 
@@ -314,7 +314,7 @@ namespace Bcg::Subdivision {
 
         // split each edge evenly into two parts
         for (auto e: mesh.edges) {
-            mesh.insert_vertex(e, EdgeMidpoint(mesh, e));
+            insert_vertex(mesh, points_, e, EdgeMidpoint(mesh, e));
         }
 
         // subdivide faces without repositioning
@@ -340,7 +340,7 @@ namespace Bcg::Subdivision {
                 //NOTE: It's important to calculate the centroid before inserting the new edge
                 auto cen = FaceCenter(mesh, f);
                 h1 = mesh.insert_edge(h0, h1);
-                mesh.insert_vertex(mesh.get_edge(h1), cen);
+                insert_vertex(mesh, points_, mesh.get_edge(h1), cen);
 
                 auto h =
                         mesh.get_next(mesh.get_next(mesh.get_next(h1)));
@@ -425,9 +425,10 @@ namespace Bcg::Subdivision {
     }
 
     void Linear(Mesh &mesh) {
+        auto points_ = mesh.vertex_property<Vector<Real, 3> >("v:position");
         // linear subdivision of edges
         for (auto e: mesh.edges) {
-            mesh.insert_vertex(e, EdgeMidpoint(mesh, e));
+            insert_vertex(mesh, points_, e, EdgeMidpoint(mesh, e));
         }
 
         // subdivide faces
@@ -455,7 +456,7 @@ namespace Bcg::Subdivision {
                 // NOTE: It's important to calculate the centroid before inserting the new edge
                 auto cen = FaceCenter(mesh, f);
                 h1 = mesh.insert_edge(h0, h1);
-                mesh.insert_vertex(mesh.get_edge(h1), cen);
+                insert_vertex(mesh, points_, mesh.get_edge(h1), cen);
 
                 auto h = mesh.get_next(mesh.get_next(mesh.get_next(h1)));
                 while (h != h0) {

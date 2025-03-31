@@ -7,9 +7,8 @@
 #include <stack>
 
 namespace Bcg {
-    Graph::Graph() : PointCloud() {
+    Graph::Graph() {
         // link properties to containers
-        positions = vertices.vertex_property<Vector<Real, 3> >("v:position");
         v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
         v_deleted = vertices.vertex_property<bool>("v:deleted", false);
@@ -17,13 +16,34 @@ namespace Bcg {
         e_deleted = edges.edge_property<bool>("e:deleted", false);
         e_direction = edges.edge_property<Halfedge>("e:direction");
 
-        assert(positions);
         assert(v_connectivity);
         assert(h_connectivity);
         assert(v_deleted);
         assert(h_deleted);
         assert(e_deleted);
         assert(e_direction);
+    }
+
+    Graph::Graph(VertexContainer vertices, HalfedgeContainer halfedges, EdgeContainer edges) : vertices(vertices),
+                                                                                               halfedges(halfedges),
+                                                                                               edges(edges) {
+        // link properties to containers
+        v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
+        h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
+
+        e_direction = edges.edge_property<Halfedge>("e:direction");
+
+        v_deleted = vertices.vertex_property<bool>("v:deleted", false);
+        h_deleted = halfedges.halfedge_property<bool>("h:deleted", false);
+        e_deleted = edges.edge_property<bool>("e:deleted", false);
+
+
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(e_direction);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
     }
 
     Graph &Graph::operator=(const Graph &rhs) {
@@ -34,22 +54,21 @@ namespace Bcg {
             edges = rhs.edges;
 
             // link properties from copied containers
-            positions = vertices.vertex_property<Vector<Real, 3> >("v:position");
+            v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
+            h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
 
-            v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
-            h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
-            e_direction = edges.edge_property<Halfedge>("e:direction");
+            e_direction = edge_property<Halfedge>("e:direction");
 
-            v_deleted = vertices.vertex_property<bool>("v:deleted");
-            h_deleted = halfedges.halfedge_property<bool>("h:deleted");
-            e_deleted = edges.edge_property<bool>("e:deleted");
+            v_deleted = vertex_property<bool>("v:deleted");
+            h_deleted = halfedge_property<bool>("h:deleted");
+            e_deleted = edge_property<bool>("e:deleted");
 
             // how many elements are deleted?
             vertices.num_deleted = rhs.vertices.num_deleted;
             halfedges.num_deleted = rhs.halfedges.num_deleted;
             edges.num_deleted = rhs.edges.num_deleted;
         }
-        assert(positions);
+
         assert(v_connectivity);
         assert(h_connectivity);
         assert(v_deleted);
@@ -71,10 +90,14 @@ namespace Bcg {
             edges.resize(rhs.edges.size());
 
             // copy properties from other mesh
-            positions.vector() = rhs.positions.vector();
+            if (rhs.has_vertex_property("v:position")) {
+                // copy properties from other mesh
+                vertices.link("v:position", rhs.vertices.get_base("v:position")->clone());
+            }
 
             v_connectivity.vector() = rhs.v_connectivity.vector();
             h_connectivity.vector() = rhs.h_connectivity.vector();
+
             e_direction.vector() = rhs.e_direction.vector();
 
             v_deleted.vector() = rhs.v_deleted.vector();
@@ -86,7 +109,7 @@ namespace Bcg {
             halfedges.num_deleted = rhs.halfedges.num_deleted;
             edges.num_deleted = rhs.edges.num_deleted;
         }
-        assert(positions);
+
         assert(v_connectivity);
         assert(h_connectivity);
         assert(v_deleted);
@@ -108,12 +131,15 @@ namespace Bcg {
         h_deleted = halfedges.halfedge_property<bool>("h:deleted", false);
         e_deleted = edges.edge_property<bool>("e:deleted", false);
 
-        positions = vertices.vertex_property<Vector<Real, 3> >("v:position", Vector<Real, 3>::Zero());
         v_connectivity = vertices.vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedges.halfedge_property<HalfedgeConnectivity>("h:connectivity");
+
         e_direction = edges.edge_property<Halfedge>("e:direction");
 
-        assert(positions);
+        vertices.num_deleted = 0;
+        halfedges.num_deleted = 0;
+        edges.num_deleted = 0;
+
         assert(v_connectivity);
         assert(h_connectivity);
         assert(v_deleted);
@@ -129,7 +155,7 @@ namespace Bcg {
     }
 
     void Graph::reserve(size_t nvertices, size_t nedges) {
-        PointCloud::reserve(nvertices);
+        vertices.reserve(nvertices);
         halfedges.reserve(2 * nedges);
         edges.reserve(nedges);
     }
@@ -244,7 +270,8 @@ namespace Bcg {
             delete_edge(e);
         }
 
-        PointCloud::mark_deleted(v);
+        v_deleted[v] = true;
+        ++vertices.num_deleted;
     }
 
     size_t Graph::get_valence(const Vertex &v) const {
@@ -287,7 +314,7 @@ namespace Bcg {
     }
 
     Halfedge Graph::find_halfedge(const Vertex &v0, const Vertex &v1) const {
-        assert(PointCloud::is_valid(v0) && PointCloud::is_valid(v1));
+        assert(is_valid(v0) && is_valid(v1));
 
         Halfedge h = get_halfedge(v0);
         const Halfedge hh = h;
@@ -323,7 +350,7 @@ namespace Bcg {
 
         set_vertex(h, v1);
         set_vertex(o, v0);
-        if(e_direction){
+        if (e_direction) {
             e_direction[get_edge(h)] = h;
         }
         return h;

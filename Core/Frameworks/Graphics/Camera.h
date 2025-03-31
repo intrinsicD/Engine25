@@ -7,6 +7,8 @@
 
 #include "GraphicsTypes.h"
 #include "Math.h"
+#include "Pool.h"
+#include "PoolHandle.h"
 
 namespace Bcg::Graphics {
     struct ViewParameters {

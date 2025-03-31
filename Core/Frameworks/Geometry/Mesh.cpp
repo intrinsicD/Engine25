@@ -7,8 +7,7 @@
 #include "Logger.h"
 
 namespace Bcg {
-    Mesh::Mesh() : Graph() {
-        positions = vertex_property<Vector<Real, 3> >("v:position");
+    Mesh::Mesh()  {
         v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
         f_connectivity = face_property<FaceConnectivity>("f:connectivity");
@@ -19,6 +18,39 @@ namespace Bcg {
         f_deleted = face_property<bool>("f:deleted", false);
 
         e_direction = edge_property<Halfedge>("e:direction");
+
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(f_connectivity);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(f_deleted);
+        assert(e_direction);
+    }
+
+    Mesh::Mesh(VertexContainer vertices, HalfedgeContainer halfedges, EdgeContainer edges, FaceContainer faces)
+            : vertices(vertices), halfedges(halfedges), edges(edges), faces(faces) {
+
+        v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
+        h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
+        f_connectivity = face_property<FaceConnectivity>("f:connectivity");
+
+        e_direction = edge_property<Halfedge>("e:direction");
+
+        v_deleted = vertex_property<bool>("v:deleted", false);
+        h_deleted = halfedge_property<bool>("h:deleted", false);
+        e_deleted = edge_property<bool>("e:deleted", false);
+        f_deleted = face_property<bool>("f:deleted", false);
+
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(f_connectivity);
+        assert(e_direction);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(f_deleted);
     }
 
     Mesh &Mesh::operator=(const Mesh &rhs) {
@@ -30,57 +62,40 @@ namespace Bcg {
             faces = rhs.faces;
 
             // property handles contain pointers, have to be reassigned
-            positions = vertex_property<Vector<Real, 3> >("v:position");
             v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
             h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
             f_connectivity = face_property<FaceConnectivity>("f:connectivity");
+
+            e_direction = edge_property<Halfedge>("e:direction");
 
             v_deleted = vertex_property<bool>("v:deleted");
             h_deleted = halfedge_property<bool>("h:deleted");
             e_deleted = edge_property<bool>("e:deleted");
             f_deleted = face_property<bool>("f:deleted");
 
-            e_direction = edge_property<Halfedge>("e:direction");
-
             // how many elements are deleted?
             vertices.num_deleted = rhs.vertices.num_deleted;
+            halfedges.num_deleted = rhs.halfedges.num_deleted;
             edges.num_deleted = rhs.edges.num_deleted;
             faces.num_deleted = rhs.faces.num_deleted;
+
         }
+
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(f_connectivity);
+        assert(e_direction);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(f_deleted);
         return *this;
     }
 
     Mesh &Mesh::assign(const Mesh &rhs) {
         if (this != &rhs) {
             // clear properties
-            vertices.clear();
-            halfedges.clear();
-            edges.clear();
-            faces.clear();
-
-            // allocate standard properties
-            positions = vertex_property<Vector<Real, 3> >("v:position");
-            v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
-            h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
-            f_connectivity = face_property<FaceConnectivity>("f:connectivity");
-
-            v_deleted = vertex_property<bool>("v:deleted", false);
-            e_deleted = edge_property<bool>("e:deleted", false);
-            f_deleted = face_property<bool>("f:deleted", false);
-
-            e_direction = edge_property<Halfedge>("e:direction");
-
-            // copy properties from other mesh
-            positions.vector() = rhs.positions.vector();
-            v_connectivity.vector() = rhs.v_connectivity.vector();
-            h_connectivity.vector() = rhs.h_connectivity.vector();
-            f_connectivity.vector() = rhs.f_connectivity.vector();
-
-            v_deleted.vector() = rhs.v_deleted.vector();
-            e_deleted.vector() = rhs.e_deleted.vector();
-            f_deleted.vector() = rhs.f_deleted.vector();
-
-            e_direction.vector() = rhs.e_direction.vector();
+            clear();
 
             // resize (needed by property containers)
             vertices.resize(rhs.vertices.size());
@@ -88,33 +103,58 @@ namespace Bcg {
             edges.resize(rhs.edges.size());
             faces.resize(rhs.faces.size());
 
+            // copy properties from other mesh
+            if (rhs.has_vertex_property("v:position")) {
+                // copy properties from other mesh
+                vertices.link("v:position", rhs.vertices.get_base("v:position")->clone());
+            }
+
+            v_connectivity.vector() = rhs.v_connectivity.vector();
+            h_connectivity.vector() = rhs.h_connectivity.vector();
+            f_connectivity.vector() = rhs.f_connectivity.vector();
+
+            e_direction.vector() = rhs.e_direction.vector();
+
+            v_deleted.vector() = rhs.v_deleted.vector();
+            e_deleted.vector() = rhs.e_deleted.vector();
+            f_deleted.vector() = rhs.f_deleted.vector();
+
             // how many elements are deleted?
             vertices.num_deleted = rhs.vertices.num_deleted;
+            halfedges.num_deleted = rhs.halfedges.num_deleted;
             edges.num_deleted = rhs.edges.num_deleted;
             faces.num_deleted = rhs.faces.num_deleted;
+
         }
+
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(f_connectivity);
+        assert(e_direction);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(f_deleted);
         return *this;
     }
 
     void Mesh::clear() {
-        // remove all properties
         vertices.clear();
         halfedges.clear();
         edges.clear();
         faces.clear();
 
-        // really free their memory
         free_memory();
 
-        // add the standard properties back
-        positions = vertex_property<Vector<Real, 3> >("v:position");
-        v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
-        h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
-        f_connectivity = face_property<FaceConnectivity>("f:connectivity");
         v_deleted = vertex_property<bool>("v:deleted", false);
         e_deleted = edge_property<bool>("e:deleted", false);
         h_deleted = halfedge_property<bool>("h:deleted", false);
         f_deleted = face_property<bool>("f:deleted", false);
+
+        v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
+        h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
+        f_connectivity = face_property<FaceConnectivity>("f:connectivity");
+
         e_direction = edge_property<Halfedge>("e:direction");
 
         // set initial status (as in constructor)
@@ -122,6 +162,15 @@ namespace Bcg {
         edges.num_deleted = 0;
         halfedges.num_deleted = 0;
         faces.num_deleted = 0;
+
+        assert(v_connectivity);
+        assert(h_connectivity);
+        assert(f_connectivity);
+        assert(e_direction);
+        assert(v_deleted);
+        assert(h_deleted);
+        assert(e_deleted);
+        assert(f_deleted);
     }
 
     void Mesh::free_memory() {
@@ -132,7 +181,9 @@ namespace Bcg {
     }
 
     void Mesh::reserve(size_t nvertices, size_t nedges, size_t nfaces) {
-        Graph::reserve(nvertices, nedges);
+        vertices.reserve(nvertices);
+        halfedges.reserve(2 * nedges);
+        edges.reserve(nedges);
         faces.reserve(nfaces);
     }
 
@@ -241,7 +292,7 @@ namespace Bcg {
         for (size_t i = 0; i < nV; ++i) {
             auto v = Vertex(i);
             if (!is_isolated(v))
-                Graph::set_halfedge(v, hmap[Graph::get_halfedge(v)]);
+                set_halfedge(v, hmap[get_halfedge(v)]);
         }
 
         // update halfedge connectivity
@@ -314,7 +365,7 @@ namespace Bcg {
 
 
     void Mesh::delete_vertex(const Vertex &v) {
-        if (PointCloud::is_deleted(v)) {
+        if (is_deleted(v)) {
             return;
         }
 
@@ -337,13 +388,13 @@ namespace Bcg {
     }
 
     void Mesh::adjust_outgoing_halfedge(const Vertex &v) {
-        Halfedge h = Graph::get_halfedge(v);
+        Halfedge h = get_halfedge(v);
         const Halfedge hh = h;
 
         if (h.is_valid()) {
             do {
                 if (is_boundary(h)) {
-                    Graph::set_halfedge(v, h);
+                    set_halfedge(v, h);
                     return;
                 }
                 h = rotate_cw(h);
@@ -391,9 +442,9 @@ namespace Bcg {
         set_face(o1, fo);
 
         // adjust vertex connectivity
-        Graph::set_halfedge(v2, o1);
+        set_halfedge(v2, o1);
         adjust_outgoing_halfedge(v2);
-        Graph::set_halfedge(v, h1);
+        set_halfedge(v, h1);
         adjust_outgoing_halfedge(v);
 
         // adjust face connectivity
@@ -541,14 +592,14 @@ namespace Bcg {
         }
 
         // vertex -> halfedge
-        if (Graph::get_halfedge(vh) == o) {
-            Graph::set_halfedge(vh, hn);
+        if (get_halfedge(vh) == o) {
+            set_halfedge(vh, hn);
         }
         adjust_outgoing_halfedge(vh);
-        Graph::set_halfedge(vo, Halfedge());
+        set_halfedge(vo, Halfedge());
 
-        PointCloud::mark_deleted(vo);
-        Graph::mark_deleted(get_edge(h));
+        mark_deleted(vo);
+        mark_deleted(get_edge(h));
 
         assert(has_garbage());
     }
@@ -576,9 +627,9 @@ namespace Bcg {
         set_face(h1, fo);
 
         // vertex -> halfedge
-        Graph::set_halfedge(v0, h1);
+        set_halfedge(v0, h1);
         adjust_outgoing_halfedge(v0);
-        Graph::set_halfedge(v1, o1);
+        set_halfedge(v1, o1);
         adjust_outgoing_halfedge(v1);
 
         // face -> halfedge
@@ -591,7 +642,7 @@ namespace Bcg {
             mark_deleted(fh);
         }
 
-        Graph::mark_deleted(get_edge(h0));
+        mark_deleted(get_edge(h0));
 
         assert(has_garbage());
     }
@@ -631,7 +682,7 @@ namespace Bcg {
     }
 
     void Mesh::delete_edge(const Edge &e) {
-        if (Graph::is_deleted(e)) {
+        if (is_deleted(e)) {
             return;
         }
 
@@ -667,9 +718,9 @@ namespace Bcg {
 
         // adjust vertex->halfedge
         if (get_halfedge(v0) == h1)
-            Graph::set_halfedge(v0, h0_next);
+            set_halfedge(v0, h0_next);
         if (get_halfedge(v1) == h0)
-            Graph::set_halfedge(v1, h1_next);
+            set_halfedge(v1, h1_next);
 
         // adjust halfedge->face
         for (auto h: get_halfedges(f0)) {
@@ -687,7 +738,7 @@ namespace Bcg {
 
         // delete face f0 and edge e
         mark_deleted(f0);
-        Graph::mark_deleted(e);
+        mark_deleted(e);
 
         return true;
     }
@@ -699,7 +750,7 @@ namespace Bcg {
 
     bool Mesh::is_flip_ok(const Edge &e) const {
         // boundary edges cannot be flipped
-        if (Graph::is_boundary(e))
+        if (is_boundary(e))
             return false;
 
         // check if the flipped edge is already present in the mesh
@@ -757,10 +808,10 @@ namespace Bcg {
         set_halfedge(fa, a0);
         set_halfedge(fb, b0);
 
-        if (Graph::get_halfedge(va0) == b0)
-            Graph::set_halfedge(va0, a1);
-        if (Graph::get_halfedge(vb0) == a0)
-            Graph::set_halfedge(vb0, b1);
+        if (get_halfedge(va0) == b0)
+            set_halfedge(va0, a1);
+        if (get_halfedge(vb0) == a0)
+            set_halfedge(vb0, b1);
     }
 
 
@@ -776,7 +827,7 @@ namespace Bcg {
         Face f0 = get_face(h0);
         Face f3 = get_face(o0);
 
-        Graph::set_halfedge(v, h0);
+        set_halfedge(v, h0);
         set_vertex(o0, v);
 
         if (!is_boundary(h0)) {
@@ -844,11 +895,11 @@ namespace Bcg {
         } else {
             set_next(e1, get_next(o0));
             set_next(o0, e1);
-            Graph::set_halfedge(v, e1);
+            set_halfedge(v, e1);
         }
 
         if (get_halfedge(v2) == h0)
-            Graph::set_halfedge(v2, t1);
+            set_halfedge(v2, t1);
 
         return t1;
     }
@@ -900,7 +951,7 @@ namespace Bcg {
             if (!is_boundary(f_vertices[i])) {
                 std::ostringstream oss;
                 oss << "Mesh::add_face: Complex vertex at index " << f_vertices[i].idx() << ". ";
-                oss << "Vertex connectivity: halfedge = " << Graph::get_halfedge(f_vertices[i]).idx();
+                oss << "Vertex connectivity: halfedge = " << get_halfedge(f_vertices[i]).idx();
                 LOG_ERROR(oss.str());
                 throw std::logic_error(oss.str());
             }
@@ -911,7 +962,7 @@ namespace Bcg {
             if (!is_new[i] && !is_boundary(halfedges[i])) {
                 std::ostringstream oss;
                 oss << "Mesh::add_face: Complex edge between vertices "
-                        << f_vertices[i].idx() << " and " << f_vertices[ii].idx() << ". ";
+                    << f_vertices[i].idx() << " and " << f_vertices[ii].idx() << ". ";
                 oss << "Found halfedge: " << halfedges[i].idx() << ", which is not a boundary.";
                 LOG_ERROR(oss.str());
                 throw std::logic_error(oss.str());
@@ -945,11 +996,12 @@ namespace Bcg {
                         oss << "Mesh::add_face: Patch re-linking failed.\n";
                         oss << "inner_prev: " << inner_prev.idx() << ", inner_next: " << inner_next.idx() << "\n";
                         oss << "outer_prev: " << outer_prev.idx() << ", outer_next: " << outer_next.idx() << "\n";
-                        oss << "boundary_prev: " << boundary_prev.idx() << ", boundary_next: " << boundary_next.idx() <<
-                                "\n";
+                        oss << "boundary_prev: " << boundary_prev.idx() << ", boundary_next: "
+                            << boundary_next.idx() <<
+                            "\n";
                         // Optionally, add more info, for example:
                         oss << "Face connectivity: inner_prev->face: " << get_face(inner_prev).idx()
-                                << ", inner_next->face: " << get_face(inner_next).idx() << "\n";
+                            << ", inner_next->face: " << get_face(inner_next).idx() << "\n";
                         // Log and/or throw an exception
                         LOG_ERROR(oss.str());
                         throw std::logic_error(oss.str());
@@ -999,21 +1051,21 @@ namespace Bcg {
                     case 1: // prev is new, next is old
                         boundary_prev = get_prev(inner_next);
                         next_cache.emplace_back(boundary_prev, outer_next);
-                        Graph::set_halfedge(v, outer_next);
+                        set_halfedge(v, outer_next);
                         break;
 
                     case 2: // next is new, prev is old
                         boundary_next = get_next(inner_prev);
                         next_cache.emplace_back(outer_prev, boundary_next);
-                        Graph::set_halfedge(v, boundary_next);
+                        set_halfedge(v, boundary_next);
                         break;
 
                     case 3: // both are new
-                        if (!Graph::get_halfedge(v).is_valid()) {
-                            Graph::set_halfedge(v, outer_next);
+                        if (!get_halfedge(v).is_valid()) {
+                            set_halfedge(v, outer_next);
                             next_cache.emplace_back(outer_prev, outer_next);
                         } else {
-                            boundary_next = Graph::get_halfedge(v);
+                            boundary_next = get_halfedge(v);
                             boundary_prev = get_prev(boundary_next);
                             next_cache.emplace_back(boundary_prev, outer_next);
                             next_cache.emplace_back(outer_prev, boundary_next);
@@ -1024,7 +1076,7 @@ namespace Bcg {
                 // set inner link
                 next_cache.emplace_back(inner_prev, inner_next);
             } else
-                needs_adjust[ii] = (Graph::get_halfedge(v) == inner_next);
+                needs_adjust[ii] = (get_halfedge(v) == inner_next);
 
             // set face handle
             set_face(halfedges[i], f);
@@ -1107,22 +1159,22 @@ namespace Bcg {
                 set_next(prev1, next0);
 
                 // mark edge deleted
-                Graph::mark_deleted(*delit);
+                mark_deleted(*delit);
 
                 // update v0
-                if (Graph::get_halfedge(v0) == h1) {
+                if (get_halfedge(v0) == h1) {
                     if (next0 == h1) {
-                        PointCloud::mark_deleted(v0);
+                        mark_deleted(v0);
                     } else
-                        Graph::set_halfedge(v0, next0);
+                        set_halfedge(v0, next0);
                 }
 
                 // update v1
-                if (Graph::get_halfedge(v1) == h0) {
+                if (get_halfedge(v1) == h0) {
                     if (next1 == h0) {
-                        PointCloud::mark_deleted(v1);
+                        mark_deleted(v1);
                     } else
-                        Graph::set_halfedge(v1, next1);
+                        set_halfedge(v1, next1);
                 }
             }
         }
@@ -1182,37 +1234,37 @@ namespace Bcg {
 
         set_face(hold, f);
 
-        Graph::set_halfedge(v, hold);
+        set_halfedge(v, hold);
     }
 
     void Mesh::triangulate(const Face &f) {
         Halfedge h = get_halfedge(f);
-        Vertex v0 = Graph::get_vertex(get_opposite(h));
-        Halfedge nh = Graph::get_next(h);
+        Vertex v0 = get_vertex(get_opposite(h));
+        Halfedge nh = get_next(h);
 
-        while (Graph::get_vertex(Graph::get_next(nh)) != v0) {
-            Halfedge nnh(Graph::get_next(nh));
+        while (get_vertex(get_next(nh)) != v0) {
+            Halfedge nnh(get_next(nh));
 
             Face new_f = new_face();
             set_halfedge(new_f, h);
 
-            Halfedge new_h = Graph::new_edge(Graph::get_vertex(nh), v0);
+            Halfedge new_h = new_edge(get_vertex(nh), v0);
 
-            Graph::set_next(h, nh);
-            Graph::set_next(nh, new_h);
-            Graph::set_next(new_h, h);
+            set_next(h, nh);
+            set_next(nh, new_h);
+            set_next(new_h, h);
 
             set_face(h, new_f);
             set_face(nh, new_f);
             set_face(new_h, new_f);
 
-            h = Graph::get_opposite(new_h);
+            h = get_opposite(new_h);
             nh = nnh;
         }
         set_halfedge(f, h); //the last face takes the handle _fh
 
-        Graph::set_next(h, nh);
-        Graph::set_next(Graph::get_next(nh), h);
+        set_next(h, nh);
+        set_next(get_next(nh), h);
 
         set_face(h, f);
     }

@@ -44,6 +44,8 @@ namespace Bcg {
 
         [[nodiscard]] virtual size_t dims() const = 0;
 
+        [[nodiscard]] virtual void clear() = 0;
+
     private:
         friend class PropertyContainer;
     };
@@ -115,13 +117,17 @@ namespace Bcg {
 
         [[nodiscard]] size_t dims() const override { return GetDimensions(m_value); }
 
-    private:
+        [[nodiscard]] void clear() override {
+            resize(0);
+        }
+
         [[nodiscard]] BasePropertyArray *clone() const override {
             auto *p = new PropertyArray<T>(m_name, m_value);
             p->m_data = m_data;
             return p;
         }
 
+    private:
         std::string m_name;
         VectorType m_data;
         ValueType m_value;
@@ -182,6 +188,8 @@ namespace Bcg {
             return m_parray->vector();
         }
 
+        [[nodiscard]] BasePropertyArray *base() { return m_parray; }
+
         [[nodiscard]] const BasePropertyArray *base() const { return m_parray; }
 
         [[nodiscard]] const size_t size() const { return m_parray->size(); }
@@ -240,6 +248,17 @@ namespace Bcg {
                 }
             }
             return names;
+        }
+
+        void link(const std::string &name, BasePropertyArray *parray) {
+            // throw exception if a property with this name already exists
+            if (m_parrays.contains(name)) {
+                LOG_WARN(fmt::format("[PropertyContainer] A property with name \"{}\" already exists.", name));
+                return;
+            }
+
+            // otherwise add the property
+            m_parrays[name] = parray;
         }
 
         // add a property with name \p name and default value \p t
