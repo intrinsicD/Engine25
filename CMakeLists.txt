@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-set(CMAKE_CUDA_ARCHITECTURES 89) # Use native if you're compiling yourself for yourself
+set(CMAKE_CUDA_ARCHITECTURES native) # Use native if you're compiling yourself for yourself
 
 # Add source directory path as a definition
 set(MY_SOURCE_DIR_PATH "${CMAKE_SOURCE_DIR}")
