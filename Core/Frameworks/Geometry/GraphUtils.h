@@ -8,6 +8,103 @@
 #include "Graph.h"
 
 namespace Bcg {
+    //------------------------------------------------------------------------------------------------------------------
+    // Vertex Methods
+    //------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * @brief Computes the center of a vertex in the graph.
+     *
+     * This function calculates the centroid of the neighboring vertices of the given vertex
+     * in the graph. The centroid is the arithmetic mean of the positions of the neighboring vertices.
+     *
+     * @tparam T The type of the coordinates (e.g., float, double).
+     * @tparam N The number of dimensions.
+     * @param graph The graph containing the vertices.
+     * @param positions The vector of positions of the vertices.
+     * @param v The vertex for which to compute the center.
+     * @return The center point of the neighboring vertices.
+     */
+    template<typename T, int N>
+    Vector<T, N> Center(const Graph &graph, const VertexProperty<Vector<Real, 3> > &positions, const Vertex &v) {
+        Vector<double, N> center = Vector<double, N>::Zero();
+        double count = 0.0;
+
+        if (!graph.is_isolated(v)) {
+            for (const auto vv: graph.get_vertices(v)) {
+                center += positions[vv].template cast<double>();
+                ++count;
+            }
+        }
+        return (center / count).template cast<T>();
+    }
+
+    /**
+     * @brief Computes the weighted center of a vertex in the graph.
+     *
+     * This function calculates the weighted centroid of the neighboring vertices of the given vertex
+     * in the graph. The weights are inversely proportional to the distance between the vertices.
+     *
+     * @tparam T The type of the coordinates (e.g., float, double).
+     * @tparam N The number of dimensions.
+     * @param graph The graph containing the vertices.
+     * @param positions The vector of positions of the vertices.
+     * @param v The vertex for which to compute the weighted center.
+     * @return The weighted center point of the neighboring vertices.
+     */
+    template<typename T, int N>
+    Vector<T, N>
+    WeightedCenter(const Graph &graph, const VertexProperty<Vector<Real, 3> > &positions, const Vertex &v) {
+        Vector<double, N> center = Vector<double, N>::Zero();
+
+        if (!graph.is_isolated(v)) {
+            double sum_weights(0.0);
+            for (const auto vv: graph.get_vertices(v)) {
+                double weight = 1.0 / (positions[vv] - positions[v]).norm();
+                center += weight * positions[vv].template cast<double>();
+                sum_weights += weight;
+            }
+            center /= sum_weights;
+        }
+        return center.template cast<T>();
+    }
+
+    /**
+     * @brief Computes the weighted center of a vertex in the graph using edge weights.
+     *
+     * This function calculates the weighted centroid of the neighboring vertices of the given vertex
+     * in the graph. The weights are provided by the edge weights.
+     *
+     * @tparam T The type of the coordinates (e.g., float, double).
+     * @tparam N The number of dimensions.
+     * @param graph The graph containing the vertices.
+     * @param positions The vector of positions of the vertices.
+     * @param edge_weights The weights of the edges.
+     * @param v The vertex for which to compute the weighted center.
+     * @return The weighted center point of the neighboring vertices.
+     */
+    template<typename T, int N>
+    Vector<T, N>
+    WeightedCenter(const Graph &graph, const VertexProperty<Vector<Real, 3> > &positions, const EdgeProperty<Real> &edge_weights, const Vertex &v) {
+        Vector<double, N> center = Vector<double, N>::Zero();
+
+        if (!graph.is_isolated(v)) {
+            double sum_weights(0.0);
+            for (const auto h: graph.get_halfedges(v)) {
+                double weight = edge_weights[graph.get_edge(h)];
+                auto vv = graph.get_vertex(h);
+                center += weight * positions[vv].template cast<double>();
+                sum_weights += weight;
+            }
+            center /= sum_weights;
+        }
+        return center.template cast<T>();
+    }
+
+    //------------------------------------------------------------------------------
+    // Edge Methods
+    //------------------------------------------------------------------------------
+
     /**
      * @brief Retrieves the edges of the graph.
      * @param graph The graph from which to retrieve edges.
@@ -21,90 +118,16 @@ namespace Bcg {
      * @param positions The positions of the vertices in the graph.
      * @return An EdgeProperty containing the lengths of the edges.
      */
-    EdgeProperty<Real> EdgeLengths(Graph &graph, const VertexProperty<Vector<Real, 3> > &positions);
+     template<typename T, int N>
+    EdgeProperty<Real> EdgeLengths(Graph &graph, const VertexProperty<Vector<T, N> > &positions) {
+        auto lengths = graph.edge_property<Real>("e:length");
+        for (const Edge &e: graph.edges) {
+            auto v0 = graph.get_vertex(e, 0);
+            auto v1 = graph.get_vertex(e, 1);
 
-    /**
-     * @brief Computes the vector representation of an edge given two vertices.
-     * @tparam T The type of the vector components.
-     * @tparam N The dimension of the vector.
-     * @param v0 The first vertex of the edge.
-     * @param v1 The second vertex of the edge.
-     * @param pos The positions of the vertices.
-     * @return The vector representation of the edge.
-     */
-    template<typename T, int N>
-    Vector<T, N> EdgeVector(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) {
-        return pos[v1] - pos[v0];
-    }
-
-    /**
-     * @brief Computes the vector representation of an edge given the graph and an edge.
-     * @tparam T The type of the vector components.
-     * @tparam N The dimension of the vector.
-     * @param graph The graph containing the edge.
-     * @param e The edge.
-     * @param pos The positions of the vertices.
-     * @return The vector representation of the edge.
-     */
-    template<typename T, int N>
-    Vector<T, N> EdgeVector(const Graph &graph, const Edge &e, const VertexProperty<Vector<T, N> > &pos) {
-        return EdgeVector(graph.get_vertex(e, 0), graph.get_vertex(e, 1), pos);
-    }
-
-    /**
-     * @brief Computes the vector representation of an edge given the graph and a halfedge.
-     * @tparam T The type of the vector components.
-     * @tparam N The dimension of the vector.
-     * @param graph The graph containing the halfedge.
-     * @param h The halfedge.
-     * @param pos The positions of the vertices.
-     * @return The vector representation of the edge.
-     */
-    template<typename T, int N>
-    Vector<T, N> EdgeVector(const Graph &graph, const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) {
-        return EdgeVector(graph.get_edge(h), pos);
-    }
-
-    /**
-     * @brief Computes the length of an edge given two vertices.
-     * @tparam T The type of the vector components.
-     * @tparam N The dimension of the vector.
-     * @param v0 The first vertex of the edge.
-     * @param v1 The second vertex of the edge.
-     * @param pos The positions of the vertices.
-     * @return The length of the edge.
-     */
-    template<typename T, int N>
-    Real Length(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) {
-        return EdgeVector(v0, v1, pos).norm();
-    }
-
-    /**
-     * @brief Computes the length of an edge given the graph and an edge.
-     * @tparam T The type of the vector components.
-     * @tparam N The dimension of the vector.
-     * @param graph The graph containing the edge.
-     * @param e The edge.
-     * @param pos The positions of the vertices.
-     * @return The length of the edge.
-     */
-    template<typename T, int N>
-    Real Length(const Graph &graph, const Edge &e, const VertexProperty<Vector<T, N> > &pos) {
-        return EdgeVector(graph, e, pos).norm();
-    }
-
-    /**
-     * @brief Computes the length of an edge given the graph and a halfedge.
-     * @tparam T The type of the vector components.
-     * @tparam N The dimension of the vector.
-     * @param graph The graph containing the halfedge.
-     * @param h The halfedge.
-     * @param pos The positions of the vertices.
-     * @return The length of the edge.
-     */
-    template<typename T, int N>
-    Real Length(const Graph &graph, const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) {
-        return EdgeVector(graph, h, pos).norm();
+            lengths[e] = (positions[v1].template cast<double>() - positions[v0].template cast<double>()).norm();
+        }
+        return lengths;
     }
 
     /**
@@ -117,8 +140,8 @@ namespace Bcg {
      * @return The center of the edge.
      */
     template<typename T, int N>
-    Vector<T, N> Center(const Vertex &v0, const Vertex &v1, const VertexProperty<Vector<T, N> > &pos) {
-        return (pos[v0] + pos[v1]) / 2;
+    Vector<T, N> EdgeCenter( const VertexProperty<Vector<T, N> > &positions, const Vertex &v0, const Vertex &v1) {
+        return (positions[v0].template cast<double>() + positions[v1].template cast<double>()) / 2;
     }
 
     /**
@@ -131,8 +154,8 @@ namespace Bcg {
      * @return The center of the edge.
      */
     template<typename T, int N>
-    Vector<T, N> Center(const Graph &graph, const Edge &e, const VertexProperty<Vector<T, N> > &pos) {
-        return Center(graph.get_vertex(e, 0), graph.get_vertex(e, 1), pos);
+    Vector<T, N> EdgeCenter(const Graph &graph, const VertexProperty<Vector<T, N> > &positions, const Edge &e) {
+        return EdgeCenter(positions, graph.get_vertex(e, 0), graph.get_vertex(e, 1));
     }
 
     /**
@@ -145,8 +168,8 @@ namespace Bcg {
      * @return The center of the edge.
      */
     template<typename T, int N>
-    Vector<T, N> Center(const Graph &graph, const Halfedge &h, const VertexProperty<Vector<T, N> > &pos) {
-        return Center(graph.get_edge(h), pos);
+    Vector<T, N> EdgeCenter(const Graph &graph,  const VertexProperty<Vector<T, N> > &positions, const Halfedge &h) {
+        return EdgeCenter(graph, positions, graph.get_edge(h));
     }
 
     //------------------------------------------------------------------------------
@@ -157,8 +180,8 @@ namespace Bcg {
                                                     const Vertex &sink, bool reverse = false);
 
     std::vector<Halfedge> BacktracePathSinkToSource(const Graph &graph,
-                                           const Matrix<Halfedge, -1, -1> &vertex_vertex_predecessors,
-                                           const Vertex &source, const Vertex &sink, bool reverse = false);
+                                                    const Matrix<Halfedge, -1, -1> &vertex_vertex_predecessors,
+                                                    const Vertex &source, const Vertex &sink, bool reverse = false);
 
     //------------------------------------------------------------------------------
     // Cycle Detection and Topological Ordering

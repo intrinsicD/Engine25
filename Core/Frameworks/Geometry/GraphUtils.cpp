@@ -17,15 +17,6 @@ namespace Bcg {
         return indices;
     }
 
-    EdgeProperty<Real> EdgeLengths(Graph &graph, const VertexProperty<Vector<Real, 3> > &positions) {
-        auto lengths = graph.edge_property<Real>("e:length");
-        for (const Edge &e: graph.edges) {
-            lengths[e] = Length(graph, e, positions);
-        }
-        return lengths;
-    }
-
-
     std::vector<Halfedge> BacktracePathSinkToSource(const Graph &graph, VertexProperty<Halfedge> vertex_predecessors,
                                                     const Vertex &sink, bool reverse) {
         std::vector<Halfedge> path;

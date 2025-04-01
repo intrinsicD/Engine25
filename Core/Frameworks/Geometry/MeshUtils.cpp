@@ -3,7 +3,6 @@
 //
 
 #include "MeshUtils.h"
-#include "TriangleUtils.h"
 #include "Eigen/Geometry"
 #include <iostream>
 
@@ -162,43 +161,30 @@ namespace Bcg {
         return std::abs(volume);
     }
 
-
-    [[nodiscard]] Real SurfaceArea(const Mesh &mesh, const VertexProperty<Vector<Real, 3>> &positions) {
-        double area = 0;
-        for (const auto &f: mesh.faces) {
-            area += FaceArea(mesh, positions, f);
-        }
-        return area;
-    }
-
-
-    template<typename T, int N>
-    [[nodiscard]] Vector<T, N> Centroid(const Mesh &mesh, const VertexProperty<Vector<T, N>> &positions) {
-        Vector<double, N> center = Vector<double, N>::Zero();
-        for (const auto &v: mesh.vertices) {
-            center += positions[v].template cast<double>();
-        }
-        return (center / mesh.vertices.size()).template cast<T>();
-    }
-
     //------------------------------------------------------------------------------------------------------------------
     // Face Methods
     //------------------------------------------------------------------------------------------------------------------
 
 
     Real FaceArea(const Mesh &mesh, const VertexProperty<Vector<Real, 3>> &positions, const Face &f) {
-        auto fv = mesh.get_vertices(f);
-        Vertex p0 = *fv;
-        ++fv;
+        auto fh = mesh.get_halfedges(f);
+        Vertex p0 = mesh.get_vertex(mesh.get_opposite(*fh));
+        Vertex p1 = mesh.get_vertex(*fh);
+        ++fh;
         double area = 0.0;
-        for (const auto &v: fv) {
-            Vector<double, 3> d = positions[v].template cast<double>() - positions[p0].template cast<double>();
-            Vector<double, 3> e =
-                    positions[fv.get_next()].template cast<double>() - positions[p0].template cast<double>();
-            area += d.cross(e).norm();
+
+        for (const auto &hn: fh) {
+            Vertex p2 = mesh.get_vertex(hn);
+
+            double a = (positions[p1] - positions[p0]).template cast<double>().norm();
+            double b = (positions[p2] - positions[p0]).template cast<double>().norm();
+            double c = (positions[p1] - positions[p2]).template cast<double>().norm();
+
+            area += TriangleAreaHeron(a, b, c);
+
+            p1 = p2;
         }
-        return area / 2.0;
-        //return static_cast<Real>(PolygonalFaceAreaVector<double>(mesh, f).norm());
+        return area;
     }
 
     [[nodiscard]] Vector<Real, 3>
@@ -261,44 +247,6 @@ namespace Bcg {
     // Edge Methods
     //------------------------------------------------------------------------------------------------------------------
 
-    [[nodiscard]] Real EdgeCotan(const Mesh &mesh, const VertexProperty<Vector<Real, 3>> &positions, const Edge &e) {
-        double weight = 0.0;
-
-        const auto h0 = mesh.get_halfedge(e, 0);
-        const auto h1 = mesh.get_halfedge(e, 1);
-
-        const Vector<double, 3> p0 = positions[mesh.get_vertex(h0)].cast<double>();
-        const Vector<double, 3> p1 = positions[mesh.get_vertex(h1)].cast<double>();
-
-        if (!mesh.is_boundary(h0)) {
-            const Vector<double, 3> p2 = positions[mesh.get_vertex(mesh.get_next(h0))].cast<double>();
-            const Vector<double, 3> d0 = p0 - p2;
-            const Vector<double, 3> d1 = p1 - p2;
-            const double area = d0.cross(d1).norm(); //triangle area * 2
-            if (area > std::numeric_limits<double>::min()) {
-                const double cot = d0.dot(d1) / area;
-                // weight += clamp_cot(cot);
-                weight += cot;
-            }
-        }
-
-        if (!mesh.is_boundary(h1)) {
-            const Vector<double, 3> p2 = positions[mesh.get_vertex(mesh.get_next(h1))].cast<double>();
-            const Vector<double, 3> d0 = p0 - p2;
-            const Vector<double, 3> d1 = p1 - p2;
-            const double area = d0.cross(d1).norm(); //triangle area * 2
-            if (area > std::numeric_limits<double>::min()) {
-                const double cot = d0.dot(d1) / area;
-                // weight += clamp_cot(cot);
-                weight += cot;
-            }
-        }
-
-        assert(!std::isnan(weight));
-        assert(!std::isinf(weight));
-
-        return weight;
-    }
 
     //------------------------------------------------------------------------------------------------------------------
     // Vertex Methods
@@ -326,82 +274,11 @@ namespace Bcg {
         return a.dot(b) / std::max(double(a.cross(b).norm()), 1e-8);
     }
 
-    template<typename T>
-    T ClampCotan(T v) {
-        constexpr T bound = 19.1;
-        return (v < -bound ? -bound : (v > bound ? bound : v));
-    }
 
-    [[nodiscard]] Real
-    VertexVoronoiMixedArea(const Mesh &mesh, const VertexProperty<Vector<Real, 3>> &positions, const Vertex &v) {
-        double area = 0.0;
-        constexpr double epsilon = std::numeric_limits<double>::epsilon();
 
-        if (!mesh.is_isolated(v)) {
-            const Vector<double, 3> p = positions[v].cast<double>();
 
-            for (const auto &h: mesh.get_halfedges(v)) {
-                const Halfedge h0 = h;
-                const Halfedge h1 = mesh.get_next(h0);
 
-                if (mesh.is_boundary(h0)) {
-                    continue;
-                }
 
-                // three vertex positions
-                const Vector<double, 3> q = positions[mesh.get_vertex(h0)].cast<double>();
-                const Vector<double, 3> r = positions[mesh.get_vertex(h1)].cast<double>();
-
-                // edge vectors
-                const Vector<double, 3> pq = q - p;
-                const Vector<double, 3> qr = r - q;
-                const Vector<double, 3> pr = r - p;
-
-                // compute and check triangle area
-                //const double triArea = PolygonalFaceAreaVector<double>(mesh, mesh.get_face(h)).norm();
-                const double twiceTriArea = pq.cross(
-                        pr).norm(); // its twice the triangle area to avoid computation here and in the following...
-                if (twiceTriArea <= epsilon) {
-                    continue;
-                }
-                //assert(triArea > 0.0 && std::abs(triArea - triArea_check) < epsilon);
-                // dot products for each corner (of its two emanating edge vectors)
-                const double dotp = pq.dot(pr);
-                const double dotq = -pq.dot(qr);
-                const double dotr = qr.dot(pr);
-
-                if (dotp < 0.0) {
-                    // angle at p is obtuse
-                    area += twiceTriArea / 4.0; // corresponds to triArea / 2.0
-                } else if (dotq < 0.0 || dotr < 0.0) {
-                    // angle at q or r obtuse
-                    area += twiceTriArea / 8.0; // corresponds to triArea / 4.0
-                } else {
-                    // no obtuse angles
-                    // cot(angle) = cos(angle)/sin(angle) = dot(A,B)/norm(cross(A,B))
-                    const double cotq = dotq / twiceTriArea;
-                    const double cotr = dotr / twiceTriArea;
-
-                    // clamp cot(angle) by clamping angle to [1,179]
-                    area += (pr.squaredNorm() * ClampCotan(cotq) + pq.squaredNorm() * ClampCotan(cotr)) / 8.0;
-                }
-            }
-        }
-        return area;
-    }
-
-    [[nodiscard]] Real
-    VertexBarycentricArea(const Mesh &mesh, const VertexProperty<Vector<Real, 3>> &positions, const Vertex &v) {
-        double area = 0;
-        if (!mesh.is_isolated(v)) {
-            for (const auto &f: mesh.get_faces(v)) {
-                //area += PolygonalFaceAreaVector<double>(mesh, f).norm();
-                area += FaceArea(mesh, positions, f);
-            }
-            area /= 3.0;
-        }
-        return area;
-    }
 
     [[nodiscard]] Vector<Real, 3>
     VertexStarGradient(const Mesh &mesh, const VertexProperty<Vector<Real, 3>> &positions, const Vertex &v,
