@@ -5,7 +5,7 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "Graph.h"
+#include "GeometricProperties.h"
 
 namespace Bcg {
     /**

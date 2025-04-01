@@ -952,7 +952,21 @@ namespace Bcg {
         [[nodiscard]] std::vector<std::string> vertex_properties() const {
             return properties();
         }
+
+        Vertex new_vertex() {
+            push_back();
+            return Vertex(size() - 1);
+        }
     };
+
+    template<typename T, int N>
+    Vertex add_vertex(VertexContainer &vertices, VertexProperty<Vector<T, N>> &positions, const Vector<T, N> &p) {
+        auto v = vertices.new_vertex();
+        if (v.is_valid()) {
+            positions[v] = p;
+        }
+        return v;
+    }
 
     class HalfedgeContainer : public PropertyContainer {
     public:
@@ -1032,6 +1046,11 @@ namespace Bcg {
 
         [[nodiscard]] std::vector<std::string> halfedgeproperties() const {
             return properties();
+        }
+
+        Halfedge new_halfedge() {
+            push_back();
+            return Halfedge(size() - 1);
         }
     };
 
@@ -1113,6 +1132,11 @@ namespace Bcg {
         [[nodiscard]] std::vector<std::string> edge_properties() const {
             return properties();
         }
+
+        Edge new_edge() {
+            push_back();
+            return Edge(size() - 1);
+        }
     };
 
     class FaceContainer : public PropertyContainer {
@@ -1193,6 +1217,11 @@ namespace Bcg {
         [[nodiscard]] std::vector<std::string> face_properties() const {
             return properties();
         }
+
+        Face new_face() {
+            push_back();
+            return Face(size() - 1);
+        }
     };
 
     class TetContainer : public PropertyContainer {
@@ -1268,6 +1297,11 @@ namespace Bcg {
 
         [[nodiscard]] std::vector<std::string> tet_properties() const {
             return properties();
+        }
+
+        Tet new_tet() {
+            push_back();
+            return Tet(size() - 1);
         }
     };
 
@@ -1350,6 +1384,11 @@ namespace Bcg {
         [[nodiscard]] std::vector<std::string> voxel_properties() const {
             return properties();
         }
+
+        Voxel new_voxel() {
+            push_back();
+            return Voxel(size() - 1);
+        }
     };
 
 
@@ -1430,6 +1469,11 @@ namespace Bcg {
 
         [[nodiscard]] std::vector<std::string> node_properties() const {
             return properties();
+        }
+
+        Node new_node() {
+            push_back();
+            return Node(size() - 1);
         }
     };
 }

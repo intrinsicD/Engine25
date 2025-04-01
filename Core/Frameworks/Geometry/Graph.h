@@ -5,7 +5,7 @@
 #ifndef ENGINE25_GRAPH_H
 #define ENGINE25_GRAPH_H
 
-#include "PointCloud.h"
+#include "GeometricProperties.h"
 #include <stack>
 #include <queue>
 

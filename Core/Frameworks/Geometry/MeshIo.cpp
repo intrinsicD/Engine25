@@ -54,9 +54,11 @@ namespace Bcg {
         mesh.halfedges.reserve(2 * num_edges_upper_bound);
         mesh.edges.reserve(num_edges_upper_bound);
 
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+
         // Read vertices
         for (const auto &v: mesh.vertices) {
-            file.read(reinterpret_cast<char *>(&mesh.positions[v]), sizeof(Vector<Real, 3>));
+            file.read(reinterpret_cast<char *>(&positions[v]), sizeof(Vector<Real, 3>));
             if (normals) {
                 file.read(reinterpret_cast<char *>(&normals[v]), sizeof(Vector<Real, 3>));
             }
@@ -94,9 +96,11 @@ namespace Bcg {
         mesh.halfedges.reserve(2 * num_edges_upper_bound);
         mesh.edges.reserve(num_edges_upper_bound);
 
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+
         // Read vertices
         for (const auto &v: mesh.vertices) {
-            Vector<Real, 3> &pos = mesh.positions[v];
+            Vector<Real, 3> &pos = positions[v];
             file >> pos[0] >> pos[1] >> pos[2];
 
             if (normals) {
@@ -322,8 +326,8 @@ namespace Bcg {
         bool ok = false;
         bool file_already_exists = std::filesystem::exists(m_filename);
         auto last_write_time = file_already_exists
-                                   ? std::filesystem::last_write_time(m_filename)
-                                   : std::filesystem::file_time_type{};
+                               ? std::filesystem::last_write_time(m_filename)
+                               : std::filesystem::file_time_type{};
 
         std::ofstream out(m_filename, flags.as_binary ? (std::ios::out | std::ios::binary) : std::ios::out);
         if (!out.is_open()) {
@@ -367,6 +371,8 @@ namespace Bcg {
         bool has_tex_coords = false;
         bool has_normals = false;
 
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+
         Vertex v;
         // Parse line by line
         while (std::getline(file, line)) {
@@ -383,7 +389,7 @@ namespace Bcg {
             iss >> prefix;
 
             if (prefix == "v" && iss >> x >> y >> z) {
-                v = mesh.add_vertex(Vector<Real, 3>(x, y, z));
+                v = add_vertex(mesh.vertices, positions, Vector<Real, 3>(x, y, z));
             } else if (prefix == "vn" && iss >> x >> y >> z) {
                 has_normals = true;
                 normals[v] = Vector<Real, 3>(x, y, z);
@@ -444,7 +450,7 @@ namespace Bcg {
 
         out << "# OBJ export from BCG\n";
 
-        auto positions = mesh.positions;
+        auto positions = mesh.get_vertex_property<Vector<Real, 3>>("v:position");
         for (const auto &v: mesh.vertices) {
             out << fmt::format("v {:.10f} {:.10f} {:.10f}\n", positions[v][0], positions[v][1], positions[v][2]);
         }
@@ -503,6 +509,8 @@ namespace Bcg {
         uint32_t num_triangles = 0;
         file.read(reinterpret_cast<char *>(&num_triangles), sizeof(num_triangles));
 
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+
         for (uint32_t t = 0; t < num_triangles; ++t) {
             // Skip triangle normal
             file.seekg(12, std::ios::cur);
@@ -514,7 +522,7 @@ namespace Bcg {
                 Vector<Real, 3> point = {p[0], p[1], p[2]};
                 auto [it, inserted] = vertex_map.try_emplace(point, Vertex());
                 if (inserted) {
-                    v = mesh.add_vertex(point);
+                    v = add_vertex(mesh.vertices, positions, point);
                     it->second = v;
                 }
                 vertices[i] = it->second;
@@ -544,6 +552,8 @@ namespace Bcg {
         };
         std::unordered_map<Vector<Real, 3>, Vertex> vertex_map;
 
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+
         std::string line;
         while (std::getline(file, line)) {
             // Trim leading whitespace
@@ -570,7 +580,7 @@ namespace Bcg {
                     Vector<Real, 3> point = {p[0], p[1], p[2]};
                     auto [it, inserted] = vertex_map.try_emplace(point, Vertex());
                     if (inserted) {
-                        v = mesh.add_vertex(point);
+                        v = add_vertex(mesh.vertices, positions, point);
                         it->second = v;
                     }
                     vertices[i] = it->second;
@@ -640,7 +650,7 @@ namespace Bcg {
         }
 
         // Retrieve vertex positions
-        auto positions = mesh.positions;
+        auto positions = mesh.get_vertex_property<Vector<Real, 3>>("v:position");
         if (!positions) {
             std::cerr << "write_stl: no vertex positions available!\n";
             return false;
@@ -682,9 +692,9 @@ namespace Bcg {
     bool readBinaryPly(std::ifstream &file, Mesh &mesh, size_t vertexCount, size_t faceCount) {
         // Read vertex data
         mesh.vertices.resize(vertexCount);
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
         for (size_t i = 0; i < vertexCount; ++i) {
-            file.read(reinterpret_cast<char *>(&mesh.positions[Vertex(i)]),
-                      sizeof(decltype(mesh.positions[Vertex(i)])));
+            file.read(reinterpret_cast<char *>(&positions[Vertex(i)]), sizeof(decltype(positions[Vertex(i)])));
         }
 
         // Read face data
@@ -704,10 +714,12 @@ namespace Bcg {
     bool readAsciiPly(std::ifstream &file, Mesh &mesh, size_t vertexCount, size_t faceCount) {
         // Read vertex data
         mesh.vertices.reserve(vertexCount);
+
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
         for (size_t i = 0; i < vertexCount; ++i) {
             Vector<Real, 3> pos;
             file >> pos[0] >> pos[1] >> pos[2];
-            mesh.add_vertex(pos);
+            add_vertex(mesh.vertices, positions, pos);
         }
 
         // Read face data
@@ -832,9 +844,11 @@ namespace Bcg {
         file << "property list uchar int vertex_indices\n";
         file << "end_header\n";
 
+        auto positions = mesh.get_vertex_property<Vector<Real, 3> >("v:position");
+
         // Write vertex data
         for (size_t i = 0; i < mesh.vertices.size(); ++i) {
-            const auto &pos = mesh.positions[Vertex(i)];
+            const auto &pos = positions[Vertex(i)];
             if (isBinary) {
                 file.write(reinterpret_cast<const char *>(&pos[0]), sizeof(float));
                 file.write(reinterpret_cast<const char *>(&pos[1]), sizeof(float));
@@ -867,9 +881,9 @@ namespace Bcg {
                     file.write(reinterpret_cast<const char *>(&a), sizeof(unsigned char));
                 } else {
                     file << " " << static_cast<int>(color[0] * 255) << " "
-                            << static_cast<int>(color[1] * 255) << " "
-                            << static_cast<int>(color[2] * 255) << " "
-                            << static_cast<int>(color[3] * 255);
+                         << static_cast<int>(color[1] * 255) << " "
+                         << static_cast<int>(color[2] * 255) << " "
+                         << static_cast<int>(color[3] * 255);
                 }
             }
 
@@ -904,7 +918,7 @@ namespace Bcg {
         return std::filesystem::path(m_filename).extension() == ".ply";
     }
 
-    MeshIoManager::MeshIoManager(std::string filename): m_filename(filename) {
+    MeshIoManager::MeshIoManager(std::string filename) : m_filename(filename) {
         add_io(std::make_shared<MeshIoOFF>(filename));
         add_io(std::make_shared<MeshIoOBJ>(filename));
         add_io(std::make_shared<MeshIoSTL>(filename));
@@ -917,7 +931,7 @@ namespace Bcg {
     }
 
     std::shared_ptr<MeshIo> MeshIoManager::get_io(const std::string &filename) {
-        for (const auto &io : m_ios) {
+        for (const auto &io: m_ios) {
             if (io->can_load_file()) {
                 return io;
             }
@@ -926,7 +940,7 @@ namespace Bcg {
     }
 
     bool MeshIoManager::read(Mesh &mesh) {
-        assert(mesh.positions);
+        mesh.vertex_property<Vector<Real, 3>>("v:position");
         assert(mesh.v_connectivity);
         assert(mesh.h_connectivity);
         assert(mesh.f_connectivity);
@@ -935,7 +949,7 @@ namespace Bcg {
         assert(mesh.e_deleted);
         assert(mesh.f_deleted);
         assert(mesh.e_direction);
-        for (const auto &io : m_ios) {
+        for (const auto &io: m_ios) {
             if (io->can_load_file()) {
                 if (io->read(mesh)) {
                     return true;
@@ -947,7 +961,7 @@ namespace Bcg {
     }
 
     bool MeshIoManager::write(const Mesh &mesh, const MeshIo::WriteFlags &flags) {
-        for (const auto &io : m_ios) {
+        for (const auto &io: m_ios) {
             if (io->can_load_file()) {
                 if (io->write(mesh, flags)) {
                     return true;
@@ -958,7 +972,7 @@ namespace Bcg {
     }
 
     bool MeshIoManager::can_load_file() {
-        for (const auto &io : m_ios) {
+        for (const auto &io: m_ios) {
             if (io->can_load_file()) {
                 return true;
             }

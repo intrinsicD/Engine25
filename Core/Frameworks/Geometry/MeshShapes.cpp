@@ -9,25 +9,23 @@
 
 namespace Bcg {
     void ProjectToUnitSphere(Mesh &mesh) {
-        /*for (auto v: mesh.vertices) {
-            mesh.positions[v].normalize();
-        }*/
-        Eigen::Map<Eigen::Matrix<Real, Eigen::Dynamic, 3, Eigen::RowMajor> > positions(
-            mesh.positions[Vertex(0)].data(), mesh.positions.size(), 3);
-        positions.rowwise().normalize();
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+        Eigen::Map<Eigen::Matrix<Real, Eigen::Dynamic, 3, Eigen::RowMajor> > P(
+            positions[Vertex(0)].data(), positions.size(), 3);
+        P.rowwise().normalize();
     }
 
 
     Mesh VertexOneRing() {
         Mesh mesh;
-
-        auto v0 = mesh.add_vertex(Vector<Real, 3>(0.4499998093, 0.5196152329, 0.0000000000));
-        auto v1 = mesh.add_vertex(Vector<Real, 3>(0.2999998033, 0.5196152329, 0.0000000000));
-        auto v2 = mesh.add_vertex(Vector<Real, 3>(0.5249998569, 0.3897114396, 0.0000000000));
-        auto v3 = mesh.add_vertex(Vector<Real, 3>(0.3749998510, 0.3897114396, 0.0000000000));
-        auto v4 = mesh.add_vertex(Vector<Real, 3>(0.2249998450, 0.3897114396, 0.0000000000));
-        auto v5 = mesh.add_vertex(Vector<Real, 3>(0.4499999285, 0.2598076165, 0.0000000000));
-        auto v6 = mesh.add_vertex(Vector<Real, 3>(0.2999999225, 0.2598076165, 0.0000000000));
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+        auto v0 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.4499998093, 0.5196152329, 0.0000000000));
+        auto v1 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2999998033, 0.5196152329, 0.0000000000));
+        auto v2 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5249998569, 0.3897114396, 0.0000000000));
+        auto v3 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.3749998510, 0.3897114396, 0.0000000000));
+        auto v4 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2249998450, 0.3897114396, 0.0000000000));
+        auto v5 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.4499999285, 0.2598076165, 0.0000000000));
+        auto v6 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2999999225, 0.2598076165, 0.0000000000));
 
         mesh.add_triangle(v3, v0, v1);
         mesh.add_triangle(v3, v2, v0);
@@ -41,17 +39,17 @@ namespace Bcg {
 
     Mesh EdgeOneRing() {
         Mesh mesh;
-
-        auto v0 = mesh.add_vertex(Vector<Real, 3>(0.5999997854, 0.5196152329, 0.0000000000));
-        auto v1 = mesh.add_vertex(Vector<Real, 3>(0.4499998093, 0.5196152329, 0.0000000000));
-        auto v2 = mesh.add_vertex(Vector<Real, 3>(0.2999998033, 0.5196152329, 0.0000000000));
-        auto v3 = mesh.add_vertex(Vector<Real, 3>(0.6749998331, 0.3897114396, 0.0000000000));
-        auto v4 = mesh.add_vertex(Vector<Real, 3>(0.5249998569, 0.3897114396, 0.0000000000));
-        auto v5 = mesh.add_vertex(Vector<Real, 3>(0.3749998510, 0.3897114396, 0.0000000000));
-        auto v6 = mesh.add_vertex(Vector<Real, 3>(0.2249998450, 0.3897114396, 0.0000000000));
-        auto v7 = mesh.add_vertex(Vector<Real, 3>(0.5999999046, 0.2598076165, 0.0000000000));
-        auto v8 = mesh.add_vertex(Vector<Real, 3>(0.4499999285, 0.2598076165, 0.0000000000));
-        auto v9 = mesh.add_vertex(Vector<Real, 3>(0.2999999225, 0.2598076165, 0.0000000000));
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+        auto v0 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5999997854, 0.5196152329, 0.0000000000));
+        auto v1 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.4499998093, 0.5196152329, 0.0000000000));
+        auto v2 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2999998033, 0.5196152329, 0.0000000000));
+        auto v3 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.6749998331, 0.3897114396, 0.0000000000));
+        auto v4 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5249998569, 0.3897114396, 0.0000000000));
+        auto v5 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.3749998510, 0.3897114396, 0.0000000000));
+        auto v6 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2249998450, 0.3897114396, 0.0000000000));
+        auto v7 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5999999046, 0.2598076165, 0.0000000000));
+        auto v8 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.4499999285, 0.2598076165, 0.0000000000));
+        auto v9 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2999999225, 0.2598076165, 0.0000000000));
 
         mesh.add_triangle(v4, v0, v1);
         mesh.add_triangle(v4, v3, v0);
@@ -83,21 +81,21 @@ namespace Bcg {
 
     Mesh LShape() {
         Mesh mesh;
-
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
         std::vector<Vertex> vertices;
 
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.5, 0.0, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(1.0, 0.0, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(1.0, 0.5, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.5, 0.5, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.5, 1.0, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.5, 1.5, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.5, 2.0, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.0, 2.0, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.0, 1.5, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.0, 1.0, 0.0)));
-        vertices.push_back(mesh.add_vertex(Vector<Real, 3>(0.0, 0.5, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.0, 0.0, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5, 0.0, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(1.0, 0.0, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(1.0, 0.5, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5, 0.5, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5, 1.0, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5, 1.5, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5, 2.0, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.0, 2.0, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.0, 1.5, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.0, 1.0, 0.0)));
+        vertices.push_back(add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.0, 0.5, 0.0)));
 
         mesh.add_face(vertices);
 
@@ -117,22 +115,24 @@ namespace Bcg {
 
     Mesh TextureSeamsMesh() {
         Mesh mesh;
-        auto v0 = mesh.add_vertex(Vector<Real, 3>(0.5999997854, 0.5196152329, 0.0000000000));
-        auto v1 = mesh.add_vertex(Vector<Real, 3>(0.4499998093, 0.5196152329, -0.001000000));
-        auto v2 = mesh.add_vertex(Vector<Real, 3>(0.2999998033, 0.5196152329, 0.0000000000));
-        auto v3 = mesh.add_vertex(Vector<Real, 3>(0.6749998331, 0.3897114396, -0.001000000));
-        auto v4 = mesh.add_vertex(Vector<Real, 3>(0.5249998569, 0.3897114396, 0.0000000000));
-        auto v5 = mesh.add_vertex(Vector<Real, 3>(0.3749998510, 0.3897114396, 0.0000000000));
-        auto v6 = mesh.add_vertex(Vector<Real, 3>(0.2249998450, 0.3897114396, 0.0000000000));
-        auto v7 = mesh.add_vertex(Vector<Real, 3>(0.5999999046, 0.2598076165, 0.0000000000));
-        auto v8 = mesh.add_vertex(Vector<Real, 3>(0.4499999285, 0.2598076165, 0.0000000000));
-        auto v9 = mesh.add_vertex(Vector<Real, 3>(0.2999999225, 0.2598076165, 0.0000000000));
-        auto v10 = mesh.add_vertex(Vector<Real, 3>(0.749999285, 0.2598076165, 0.0000000000));
-        auto v11 = mesh.add_vertex(Vector<Real, 3>(0.8249998331, 0.3897114396, 0.0000000000));
-        auto v12 = mesh.add_vertex(Vector<Real, 3>(0.749999285, 0.5196152329, 0.0000000000));
-        auto v13 = mesh.add_vertex(Vector<Real, 3>(0.6749998331, 0.6496152329, 0.0000000000));
-        auto v14 = mesh.add_vertex(Vector<Real, 3>(0.5249998569, 0.6496152329, 0.0000000000));
-        auto v15 = mesh.add_vertex(Vector<Real, 3>(0.3749998510, 0.6496152329, 0.0000000000));
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+
+        auto v0 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5999997854, 0.5196152329, 0.0000000000));
+        auto v1 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.4499998093, 0.5196152329, -0.001000000));
+        auto v2 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2999998033, 0.5196152329, 0.0000000000));
+        auto v3 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.6749998331, 0.3897114396, -0.001000000));
+        auto v4 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5249998569, 0.3897114396, 0.0000000000));
+        auto v5 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.3749998510, 0.3897114396, 0.0000000000));
+        auto v6 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2249998450, 0.3897114396, 0.0000000000));
+        auto v7 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5999999046, 0.2598076165, 0.0000000000));
+        auto v8 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.4499999285, 0.2598076165, 0.0000000000));
+        auto v9 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.2999999225, 0.2598076165, 0.0000000000));
+        auto v10 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.749999285, 0.2598076165, 0.0000000000));
+        auto v11 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.8249998331, 0.3897114396, 0.0000000000));
+        auto v12 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.749999285, 0.5196152329, 0.0000000000));
+        auto v13 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.6749998331, 0.6496152329, 0.0000000000));
+        auto v14 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.5249998569, 0.6496152329, 0.0000000000));
+        auto v15 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.3749998510, 0.6496152329, 0.0000000000));
 
         mesh.add_triangle(v4, v0, v1);
         mesh.add_triangle(v4, v3, v0);
@@ -158,7 +158,7 @@ namespace Bcg {
         auto texcoords = mesh.halfedge_property<Vector<Real, 2> >("h:tex");
 
         for (auto v: mesh.vertices) {
-            const Vector<Real, 3> &p = mesh.positions[v];
+            const Vector<Real, 3> &p = positions[v];
             for (auto h: mesh.get_halfedges(v)) {
                 if (mesh.is_boundary(mesh.get_opposite(h))) {
                     continue;
@@ -184,15 +184,17 @@ namespace Bcg {
 
     Mesh Tetrahedron() {
         Mesh mesh;
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
+
         float a = 1.0f / 3.0f;
         float b = sqrt(8.0f / 9.0f);
         float c = sqrt(2.0f / 9.0f);
         float d = sqrt(2.0f / 3.0f);
 
-        auto v0 = mesh.add_vertex(Vector<Real, 3>(0, 0, 1));
-        auto v1 = mesh.add_vertex(Vector<Real, 3>(-c, d, -a));
-        auto v2 = mesh.add_vertex(Vector<Real, 3>(-c, -d, -a));
-        auto v3 = mesh.add_vertex(Vector<Real, 3>(b, 0, -a));
+        auto v0 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0, 0, 1));
+        auto v1 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-c, d, -a));
+        auto v2 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-c, -d, -a));
+        auto v3 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(b, 0, -a));
 
         mesh.add_triangle(v0, v1, v2);
         mesh.add_triangle(v0, v2, v3);
@@ -204,16 +206,17 @@ namespace Bcg {
 
     Mesh Hexahedron() {
         Mesh mesh;
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
 
         float a = 1.0f / sqrt(3.0f);
-        auto v0 = mesh.add_vertex(Vector<Real, 3>(-a, -a, -a));
-        auto v1 = mesh.add_vertex(Vector<Real, 3>(a, -a, -a));
-        auto v2 = mesh.add_vertex(Vector<Real, 3>(a, a, -a));
-        auto v3 = mesh.add_vertex(Vector<Real, 3>(-a, a, -a));
-        auto v4 = mesh.add_vertex(Vector<Real, 3>(-a, -a, a));
-        auto v5 = mesh.add_vertex(Vector<Real, 3>(a, -a, a));
-        auto v6 = mesh.add_vertex(Vector<Real, 3>(a, a, a));
-        auto v7 = mesh.add_vertex(Vector<Real, 3>(-a, a, a));
+        auto v0 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-a, -a, -a));
+        auto v1 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(a, -a, -a));
+        auto v2 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(a, a, -a));
+        auto v3 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-a, a, -a));
+        auto v4 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-a, -a, a));
+        auto v5 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(a, -a, a));
+        auto v6 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(a, a, a));
+        auto v7 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-a, a, a));
 
         mesh.add_quad(v3, v2, v1, v0);
         mesh.add_quad(v2, v6, v5, v1);
@@ -239,23 +242,24 @@ namespace Bcg {
 
     Mesh Icosahedron() {
         Mesh mesh;
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
 
         float phi = (1.0f + sqrt(5.0f)) * 0.5f; // golden ratio
         float a = 1.0f;
         float b = 1.0f / phi;
 
-        auto v1 = mesh.add_vertex(Vector<Real, 3>(0, b, -a));
-        auto v2 = mesh.add_vertex(Vector<Real, 3>(b, a, 0));
-        auto v3 = mesh.add_vertex(Vector<Real, 3>(-b, a, 0));
-        auto v4 = mesh.add_vertex(Vector<Real, 3>(0, b, a));
-        auto v5 = mesh.add_vertex(Vector<Real, 3>(0, -b, a));
-        auto v6 = mesh.add_vertex(Vector<Real, 3>(-a, 0, b));
-        auto v7 = mesh.add_vertex(Vector<Real, 3>(0, -b, -a));
-        auto v8 = mesh.add_vertex(Vector<Real, 3>(a, 0, -b));
-        auto v9 = mesh.add_vertex(Vector<Real, 3>(a, 0, b));
-        auto v10 = mesh.add_vertex(Vector<Real, 3>(-a, 0, -b));
-        auto v11 = mesh.add_vertex(Vector<Real, 3>(b, -a, 0));
-        auto v12 = mesh.add_vertex(Vector<Real, 3>(-b, -a, 0));
+        auto v1 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0, b, -a));
+        auto v2 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(b, a, 0));
+        auto v3 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-b, a, 0));
+        auto v4 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0, b, a));
+        auto v5 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0, -b, a));
+        auto v6 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-a, 0, b));
+        auto v7 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0, -b, -a));
+        auto v8 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(a, 0, -b));
+        auto v9 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(a, 0, b));
+        auto v10 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-a, 0, -b));
+        auto v11 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(b, -a, 0));
+        auto v12 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(-b, -a, 0));
 
         ProjectToUnitSphere(mesh);
 
@@ -305,10 +309,11 @@ namespace Bcg {
     Mesh UVSphere(const Vector<Real, 3> &center, Real radius, size_t n_slices,
                   size_t n_stacks) {
         Mesh mesh;
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
 
         // add top vertex
         const auto top = Vector<Real, 3>(center[0], center[1] + radius, center[2]);
-        const auto v0 = mesh.add_vertex(top);
+        const auto v0 = add_vertex(mesh.vertices, positions, top);
 
         // generate vertices per stack / slice
         for (size_t i = 0; i < n_stacks - 1; i++) {
@@ -319,13 +324,13 @@ namespace Bcg {
                 const auto x = center[0] + radius * std::sin(phi) * std::cos(theta);
                 const auto y = center[1] + radius * std::cos(phi);
                 const auto z = center[2] + radius * std::sin(phi) * std::sin(theta);
-                mesh.add_vertex(Vector<Real, 3>(x, y, z));
+                add_vertex(mesh.vertices, positions, Vector<Real, 3>(x, y, z));
             }
         }
 
         // add bottom vertex
         const auto bottom = Vector<Real, 3>(center[0], center[1] - radius, center[2]);
-        const auto v1 = mesh.add_vertex(bottom);
+        const auto v1 = add_vertex(mesh.vertices, positions, bottom);
 
         // add top / bottom triangles
         for (size_t i = 0; i < n_slices; ++i) {
@@ -358,12 +363,13 @@ namespace Bcg {
         assert(resolution >= 1);
 
         Mesh mesh;
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
 
         // generate vertices
         Vector<Real, 3> p(0, 0, 0);
         for (size_t i = 0; i < resolution + 1; i++) {
             for (size_t j = 0; j < resolution + 1; j++) {
-                mesh.add_vertex(p);
+                add_vertex(mesh.vertices, positions, p);
                 p[1] += 1.0 / resolution;
             }
             p[1] = 0;
@@ -388,6 +394,7 @@ namespace Bcg {
         assert(n_subdivisions >= 3);
 
         Mesh mesh;
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
 
         // add vertices subdividing a circle
         std::vector<Vertex> base_vertices;
@@ -396,12 +403,12 @@ namespace Bcg {
             Real r = ratio * (std::numbers::pi * 2.0);
             Real x = std::cos(r) * radius;
             Real y = std::sin(r) * radius;
-            auto v = mesh.add_vertex(Vector<Real, 3>(x, y, 0.0));
+            auto v = add_vertex(mesh.vertices, positions, Vector<Real, 3>(x, y, 0.0));
             base_vertices.push_back(v);
         }
 
         // add the tip of the cone
-        auto v0 = mesh.add_vertex(Vector<Real, 3>(0.0, 0.0, height));
+        auto v0 = add_vertex(mesh.vertices, positions, Vector<Real, 3>(0.0, 0.0, height));
 
         // generate triangular faces
         for (size_t i = 0; i < n_subdivisions; i++) {
@@ -422,6 +429,7 @@ namespace Bcg {
         assert(n_subdivisions >= 3);
 
         Mesh mesh;
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
 
         // generate vertices
         std::vector<Vertex> bottom_vertices;
@@ -431,9 +439,9 @@ namespace Bcg {
             Real r = ratio * (std::numbers::pi * 2.0);
             Real x = std::cos(r) * radius;
             Real y = std::sin(r) * radius;
-            Vertex v = mesh.add_vertex(Vector<Real, 3>(x, y, 0.0));
+            Vertex v = add_vertex(mesh.vertices, positions, Vector<Real, 3>(x, y, 0.0));
             bottom_vertices.push_back(v);
-            v = mesh.add_vertex(Vector<Real, 3>(x, y, height));
+            v = add_vertex(mesh.vertices, positions, Vector<Real, 3>(x, y, height));
             top_vertices.push_back(v);
         }
 
@@ -464,6 +472,7 @@ namespace Bcg {
         assert(tubular_resolution >= 3);
 
         Mesh mesh;
+        auto positions = mesh.vertex_property<Vector<Real, 3> >("v:position");
 
         // generate vertices
         for (size_t i = 0; i < radial_resolution; i++) {
@@ -473,7 +482,7 @@ namespace Bcg {
                 Real x = (radius + thickness * std::cos(v)) * std::cos(u);
                 Real y = (radius + thickness * std::cos(v)) * std::sin(u);
                 Real z = thickness * std::sin(v);
-                mesh.add_vertex(Vector<Real, 3>(x, y, z));
+                add_vertex(mesh.vertices, positions, Vector<Real, 3>(x, y, z));
             }
         }
 

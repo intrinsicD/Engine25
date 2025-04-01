@@ -167,15 +167,6 @@ namespace Bcg {
         }
 
         /**
-         * @brief Creates a new vertex.
-         * @return The newly created vertex.
-         */
-        Vertex new_vertex() {
-            vertices.push_back();
-            return Vertex(vertices.size() - 1);
-        }
-
-        /**
         * @brief Marks a vertex as deleted.
         * @param v Vertex to mark as deleted.
         */
@@ -187,16 +178,6 @@ namespace Bcg {
          */
         virtual void delete_vertex(const Vertex &v);
     };
-
-    template<typename T, int N>
-    Vertex add_vertex(VertexContainer &vertices, VertexProperty<Vector<T, N>> &positions, const Vector<T, N> &p) {
-        vertices.push_back();
-        auto v = Vertex(vertices.size() - 1);;
-        if (v.is_valid()) {
-            positions[v] = p;
-        }
-        return v;
-    }
 }
 
 #endif //ENGINE25_POINTCLOUD_H

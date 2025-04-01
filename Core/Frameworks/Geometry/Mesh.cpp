@@ -7,7 +7,7 @@
 #include "Logger.h"
 
 namespace Bcg {
-    Mesh::Mesh()  {
+    Mesh::Mesh() {
         v_connectivity = vertex_property<VertexConnectivity>("v:connectivity");
         h_connectivity = halfedge_property<HalfedgeConnectivity>("h:connectivity");
         f_connectivity = face_property<FaceConnectivity>("f:connectivity");
@@ -363,6 +363,13 @@ namespace Bcg {
         return n < 2;
     }
 
+    void Mesh::mark_deleted(const Vertex &v) {
+        if (v_deleted[v])
+            return;
+
+        v_deleted[v] = true;
+        ++vertices.num_deleted;
+    }
 
     void Mesh::delete_vertex(const Vertex &v) {
         if (is_deleted(v)) {
@@ -743,9 +750,68 @@ namespace Bcg {
         return true;
     }
 
+    void Mesh::mark_deleted(const Halfedge &h){
+        if(h_deleted[h])
+            return;
+
+        h_deleted[h] = true;
+        ++halfedges.num_deleted;
+    }
+
+    Halfedge Mesh::find_halfedge(const Vertex &start, const Vertex &end) const {
+        assert(is_valid(start) && is_valid(end));
+
+        Halfedge h = get_halfedge(start);
+        const Halfedge hh = h;
+
+        if (h.is_valid()) {
+            do {
+                if (get_vertex(h) == end)
+                    return h;
+                h = rotate_cw(h);
+            } while (h != hh);
+        }
+
+        return {};
+    }
+
     Edge Mesh::find_edge(const Vertex &start, const Vertex &end) const {
         Halfedge h = find_halfedge(start, end);
         return h.is_valid() ? get_edge(h) : Edge();
+    }
+
+    Halfedge Mesh::new_edge(const Vertex &start, const Vertex &end) {
+        assert(start != end);
+
+        edges.push_back();
+        auto h0 = halfedges.new_halfedge();
+        auto h1 = halfedges.new_halfedge();
+
+        set_vertex(h0, end);
+        set_vertex(h1, start);
+
+        return h0;
+    }
+
+    Halfedge Mesh::add_edge(const Vertex &v0, const Vertex &v1) {
+        auto h = find_halfedge(v0, v1);
+
+        if (h.is_valid()) {
+            return h;
+        }
+        h = new_edge(v0, v1);
+
+        auto oh = get_opposite(h);
+        auto out_v1 = get_halfedge(v1);
+        auto prev_v1 = get_prev(out_v1);
+        set_next(h, out_v1);
+        set_next(prev_v1, oh);
+
+        auto out_v0 = get_halfedge(v0);
+        auto prev_v0 = get_prev(out_v0);
+        set_next(oh, out_v0);
+        set_next(prev_v0, h);
+        return h;
     }
 
     bool Mesh::is_flip_ok(const Edge &e) const {
@@ -904,6 +970,14 @@ namespace Bcg {
         return t1;
     }
 
+    void Mesh::mark_deleted(const Edge &e) {
+        if (e_deleted[e]) {
+            return;
+        }
+
+        e_deleted[e] = true;
+        ++edges.num_deleted;
+    }
     // Face Methods
 
     Face Mesh::add_triangle(const Vertex &v0, const Vertex &v1, const Vertex &v2) {
