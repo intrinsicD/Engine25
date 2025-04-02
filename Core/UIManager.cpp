@@ -108,6 +108,33 @@ namespace Bcg{
         }
     }
 
+    inline float ComputeDpi(int width_pixels, int height_pixels, float width_mm, float height_mm) {
+        // Convert millimeters to inches (1 inch = 25.4 mm)
+        float dpi_x = (width_pixels * 25.4f) / width_mm;
+        float dpi_y = (height_pixels * 25.4f) / height_mm;
+        // Average the horizontal and vertical DPI
+        return (dpi_x + dpi_y) * 0.5f;
+    }
+
+    float UIManager::getDpi() {
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        if (!monitor) {
+            return 1.0f;
+        }
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        if (!mode) {
+            return 1.0f;
+        }
+        int width_mm = 0, height_mm = 0;
+        glfwGetMonitorPhysicalSize(monitor, &width_mm, &height_mm);
+        if (width_mm == 0 || height_mm == 0) {
+            return 1.0f;
+        }
+
+        float dpi =  ComputeDpi(mode->width, mode->height, static_cast<float>(width_mm), static_cast<float>(height_mm));
+        return dpi / 96.0f;
+    }
+
     bool UIManager::loadFont(const std::string &font_path, float font_size){
         if(!fs::exists(font_path)){
             LOG_ERROR(fmt::format("UIManager: Font file {} does not exist", font_path));

@@ -82,7 +82,7 @@ namespace Bcg {
 
         m_renderer->initialize(m_window);
         m_input_manager->initialize(m_window);
-        m_ui_manager->initialize(m_window, 2.0f);
+        m_ui_manager->initialize(m_window, m_ui_manager->getDpi());
 
         CurrentContext context;
         context.scene = &m_scene;

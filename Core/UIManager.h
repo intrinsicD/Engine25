@@ -30,6 +30,8 @@ namespace Bcg{
 
         void renderModuleUI(entt::dispatcher &dispatcher);    // Example placeholder
 
+        float getDpi();
+
         bool loadFont(const std::string &fontPath, float fontSize);
 
     private:
