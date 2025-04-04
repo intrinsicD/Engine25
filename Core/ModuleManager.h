@@ -18,7 +18,7 @@ namespace Bcg{
 
         void registerModule(std::unique_ptr<IModule> module);
 
-        void initializeModules(CurrentContext &context);
+        void initializeModules(ApplicationContext *context);
 
         void shutdownModules();
 

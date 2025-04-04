@@ -6,31 +6,28 @@
 #define ENGINE25_IMODULE_H
 
 #include "Events/EngineEvents.h"
-#include "IRenderer.h"
-#include "UIManager.h"
-#include "InputManager.h"
+#include "ApplicationContext.h"
 
-namespace Bcg{
-    struct CurrentContext{
-        entt::registry *scene;
-        entt::dispatcher *dispatcher;
-
-        IRenderer *renderer;
-        UIManager *ui_manager;
-        InputManager *input_manager;
-    };
-
-    class IModule{
+namespace Bcg {
+    class IModule {
     public:
-        IModule() = default;
+        IModule(const char *name, const char *version) : m_name(name), m_version(version) {};
 
         virtual ~IModule() = default;
 
-        virtual const char *getName() const = 0;
+        [[nodiscard]] const char *getName() const {
+            return m_name;
+        }
 
-        virtual const char *getVersion() const = 0;
+        [[nodiscard]] const char *getVersion() const {
+            return m_version;
+        }
 
-        virtual bool initialize(CurrentContext &context) = 0;
+        [[nodiscard]] bool isInitialized() const {
+            return m_app_context != nullptr;
+        }
+
+        virtual bool initialize(ApplicationContext *context) = 0;
 
         virtual void shutdown() = 0;
 
@@ -40,8 +37,20 @@ namespace Bcg{
 
         virtual void renderUI() = 0;
 
-    private:
-        CurrentContext m_context;
+        virtual void connectDispatcher() = 0;
+
+        virtual void disconnectDispatcher() = 0;
+
+    protected:
+        const char *m_name = "Module";
+        const char *m_version = "0.0.1";
+
+        bool setContext(ApplicationContext *context) {
+            m_app_context = context;
+            return m_app_context!= nullptr;
+        }
+
+        ApplicationContext *m_app_context = nullptr;
     };
 }
 

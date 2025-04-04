@@ -10,19 +10,36 @@
 namespace Bcg{
     class OpenglRenderer : public IRenderer{
     public:
-        OpenglRenderer() = default;
+        OpenglRenderer();
 
         ~OpenglRenderer() override = default;
 
-        void initialize(GLFWwindow *window) override;
+        bool initialize(ApplicationContext *context) override;
 
         void shutdown() override;
 
-        void render(entt::registry &scene) override;
+        void render() override;
 
-        void setClearColor(float r, float g, float b, float a) override;
+        void beginFrame() override;
+
+        void endFrame() override;
+
     private:
-        GLFWwindow *m_window = nullptr;
+        void update(float delta_time) override{
+
+        }
+
+        void renderUI() override{
+
+        }
+
+        void connectDispatcher() override{
+
+        }
+
+        void disconnectDispatcher() override{
+
+        }
     };
 }
 

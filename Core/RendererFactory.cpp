@@ -7,13 +7,14 @@
 #include "OpenglRenderer.h"
 
 namespace Bcg::RendererFactory {
-    std::unique_ptr<IRenderer> CreateRenderer(BackendDescriptor &desc) {
-        LOG_INFO(fmt::format("RendererFactory: Attempting to create renderer of type '{}'",
-                             RendererTypeToString(desc.type)));
+    std::unique_ptr<IRenderer> CreateRenderer(BackendDesc &backendDesc) {
+        LOG_INFO(fmt::format("RendererFactory: Attempting to create renderer of type '{}'", backendDesc.type));
 
-        if (desc.type == RendererType::OpenGL) {
+        if (backendDesc.type == "OpenGL") {
+            LOG_INFO("RendererFactory: OpenGL renderer created!");
             return std::make_unique<OpenglRenderer>();
-        } else if (desc.type == RendererType::Vulkan) {
+        } else if (backendDesc.type == "Vulkan") {
+            LOG_TODO("RendererFactory: Vulkan renderer is not implemented yet!");
             // else if (type == "vulkan" || type == "Vulkan") {
             //     return std::make_unique<VulkanRenderer>(); // Example
         }

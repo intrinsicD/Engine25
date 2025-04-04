@@ -13,14 +13,12 @@
     "max_threads": 4
   },
   "renderer": {
-    "type": "opengl",
+    "type": "OpenGL",
     "vsync": true,
     "opengl": {
       "major_version": 4,
       "minor_version": 6,
-      "profile": "core",
-      "debug_context": true,
-      "debug_output": true
+      "profile": "core"
     },
     "vulkan": {
       "validation_layers": true,

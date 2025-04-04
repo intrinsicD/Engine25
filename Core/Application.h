@@ -11,11 +11,14 @@
 #include "IRenderer.h"
 #include "UIManager.h"
 #include "ModuleManager.h"
-#include "InputManager.h"
+#include "ApplicationContext.h"
+#include "Platform.h"
 
 struct GLFWwindow;
 
 namespace Bcg {
+
+
     class Application {
     public:
 
@@ -34,8 +37,11 @@ namespace Bcg {
 
         void shutdown();
 
+        ApplicationContext *getContext();
+
         const char *m_name = "Application";
         const char *m_version = "0.0.1";
+        ApplicationContext m_app_context;
 
         GLFWwindow *m_window = nullptr;
         int m_width;
@@ -45,7 +51,8 @@ namespace Bcg {
         std::unique_ptr<UIManager> m_ui_manager;
         std::unique_ptr<IRenderer> m_renderer;
         std::unique_ptr<ModuleManager> m_module_manager;
-        std::unique_ptr<InputManager> m_input_manager;
+        std::unique_ptr<Platform> m_platform;
+
         entt::dispatcher m_dispatcher;
         entt::registry m_scene;
     };

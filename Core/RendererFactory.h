@@ -6,11 +6,10 @@
 #define ENGINE25_RENDERERFACTORY_H
 
 #include "IRenderer.h"
-#include "BackendDescriptor.h"
 
 namespace Bcg{
     namespace RendererFactory {
-        std::unique_ptr<IRenderer> CreateRenderer(BackendDescriptor &desc);
+        std::unique_ptr<IRenderer> CreateRenderer(BackendDesc &backendDesc);
     }
 }
 

@@ -7,25 +7,25 @@
 
 #include <string>
 #include "entt/signal/fwd.hpp"
+#include "IModule.h"
 
 struct GLFWwindow;
 
 namespace Bcg{
-    class UIManager{
+    class UIManager : public IModule{
     public:
-        UIManager() = default;
+        UIManager();
 
-        ~UIManager() = default;
+        ~UIManager() override = default;
 
-        void initialize(GLFWwindow *m_window, float dpi);
+        bool initialize(ApplicationContext *context) override;
 
-        void shutdown();
+        void shutdown() override;
 
         void beginFrame();
 
         void endFrame();
 
-        // Add methods later to register UI rendering callbacks from modules
         void renderMainMenuBar(entt::dispatcher &dispatcher); // Example
 
         void renderModuleUI(entt::dispatcher &dispatcher);    // Example placeholder
@@ -35,7 +35,26 @@ namespace Bcg{
         bool loadFont(const std::string &fontPath, float fontSize);
 
     private:
-        bool m_initialized = false;
+        void update(float) override{
+
+        }
+
+        void render() override{
+
+        }
+
+        void renderUI() override{
+
+        }
+
+        void connectDispatcher() override{
+
+        }
+
+        void disconnectDispatcher() override{
+
+        }
+
         bool m_demo_window = false;
         bool m_demo_menu = true;
     };

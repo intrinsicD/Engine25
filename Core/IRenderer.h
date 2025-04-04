@@ -5,26 +5,50 @@
 #ifndef ENGINE25_IRENDERER_H
 #define ENGINE25_IRENDERER_H
 
-#include "entt/entity/fwd.hpp"
+#include <unordered_map>
+#include "IModule.h"
+#include "Frameworks/Graphics/GraphicsApi2.h"
 
-struct GLFWwindow;
+namespace Bcg {
+    struct FrameData {
+        // Synchronization
+        Graphics::FenceHandle       inFlightFence           = {Graphics::InvalidId64};
+        Graphics::SemaphoreHandle   imageAvailableSemaphore   = {Graphics::InvalidId64};
+        Graphics::SemaphoreHandle   renderFinishedSemaphore = {Graphics::InvalidId64};
 
-namespace Bcg{
-    class IRenderer{
+        // Command Buffer (assuming one primary buffer per frame)
+        Graphics::CommandBufferHandle commandBuffer         = {Graphics::InvalidId32};
+
+        // Optional: Command Pool per frame (if resetting pools is preferred)
+        // Graphics::CommandPoolHandle commandPool           = {Graphics::InvalidId32};
+    };
+
+    class IRenderer : public IModule {
     public:
-        IRenderer() = default;
+        IRenderer(const char *name, const char *version) : IModule(name, version) {}
 
-        virtual ~IRenderer() = default;
+        ~IRenderer() override = default;
 
-        virtual void initialize(GLFWwindow *window) = 0;
+        bool initialize(ApplicationContext *context) override;
 
-        virtual void shutdown() = 0;
+        void shutdown() override;
 
-        virtual void render(entt::registry &scene) = 0;
+        void render() override;
 
-        virtual void setClearColor(float r, float g, float b, float a) = 0;
-    private:
+        FrameData &getCurrentFrameData() const;
 
+    protected:
+        virtual void recreateSwapchain() = 0;
+
+        bool m_needsResize = false;
+
+        int MAX_FRAMES_IN_FLIGHT = 2;
+        int m_currentFrame = 0;
+
+        FrameData m_frameData[2];
+        Graphics::Device *m_device;
+        Graphics::SwapchainHandle m_swapchain;
+        Graphics::FramebufferHandle m_framebuffers[];
     };
 }
 

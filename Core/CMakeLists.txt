@@ -1,7 +1,6 @@
 target_include_directories(Engine25 PUBLIC .)
 target_sources(Engine25 PRIVATE
         Application.cpp
-        InputManager.cpp
         ModuleManager.cpp
         OpenglRenderer.cpp
         UIManager.cpp
@@ -9,6 +8,8 @@ target_sources(Engine25 PRIVATE
         Logger.cpp
         ConfigFile.cpp
         CudaUtils.cpp
+        Platform.cpp
+        IRenderer.cpp
 )
 
 #[[

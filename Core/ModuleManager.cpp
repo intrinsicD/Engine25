@@ -20,7 +20,7 @@ namespace Bcg{
         m_modules.emplace_back(std::move(module));
     }
 
-    void ModuleManager::initializeModules(CurrentContext &context) {
+    void ModuleManager::initializeModules(ApplicationContext *context) {
         if (m_initialized) {
             LOG_WARN(fmt::format("ModuleManager: Modules already initialized."));
             return;
