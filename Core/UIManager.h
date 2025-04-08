@@ -26,18 +26,18 @@ namespace Bcg{
 
         void endFrame();
 
-        void renderMainMenuBar(entt::dispatcher &dispatcher); // Example
+        void renderMainMenuBar(); // Example
 
-        void renderModuleUI(entt::dispatcher &dispatcher);    // Example placeholder
+        void renderModuleUI();    // Example placeholder
 
         float getDpi();
 
         bool loadFont(const std::string &fontPath, float fontSize);
 
-    private:
         void update(float) override{
 
         }
+    private:
 
         void render() override{
 

@@ -18,9 +18,13 @@ add_library(Engine25)
 add_executable(Engine25Main)
 
 # Define options for backends
-option(USE_VULKAN "Enable Vulkan backend" OFF)
-option(USE_OPENGL "Enable OpenGL backend" ON)
+option(USE_VULKAN "Enable Vulkan backend" ON)
+option(USE_OPENGL "Enable OpenGL backend" OFF)
 option(USE_DIRECTX "Enable DirectX backend" OFF)
+
+message(STATUS "USE_VULKAN = ${USE_VULKAN}")
+message(STATUS "USE_OPENGL = ${USE_OPENGL}")
+message(STATUS "USE_DIRECTX = ${USE_DIRECTX}")
 
 # Ensure only one backend is selected
 if(USE_VULKAN AND (USE_OPENGL OR USE_DIRECTX))
@@ -33,6 +37,8 @@ endif()
 # Define backend-specific macros
 if(USE_VULKAN)
     target_compile_definitions(Engine25 PUBLIC USE_VULKAN)
+    find_package(Vulkan REQUIRED)
+    target_link_libraries(Engine25 PUBLIC Vulkan::Vulkan)
     message(STATUS "Using Vulkan backend")
 elseif(USE_OPENGL)
     target_compile_definitions(Engine25 PUBLIC USE_OPENGL)

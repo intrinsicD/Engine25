@@ -18,6 +18,7 @@ namespace Bcg {
             Warn,
             Error,
             Fatal,
+            Trace
         };
         
         static Logger &get_instance();
@@ -44,6 +45,7 @@ namespace Bcg {
     using WarnLogFunction = void (*)(Bcg::Logger::Level, const std::string &);
     using ErrorLogFunction = void (*)(Bcg::Logger::Level, const std::string &);
     using FatalLogFunction = void (*)(Bcg::Logger::Level, const std::string &);
+    using TraceLogFunction = void (*)(Bcg::Logger::Level, const std::string &);
 
     inline void RealLog(Logger::Level level, const std::string &msg) {
         Bcg::Logger::get_instance().log(level, msg);
@@ -59,6 +61,7 @@ namespace Bcg {
     inline ErrorLogFunction g_currentErrorLogFunc = RealLog;
     inline FatalLogFunction g_currentFatalLogFunc = RealLog;
     inline FrameLogFunction g_currentFrameLogFunc = NoOpLog;
+    inline TraceLogFunction g_currentTraceLogFunc = NoOpLog;
 
 #define LOG_TODO(msg) (RealLog(Logger::Level::TODO, msg))
 #define LOG_INFO(msg) (g_currentInfoLogFunc(Logger::Level::Info, (msg)))
@@ -66,6 +69,7 @@ namespace Bcg {
 #define LOG_ERROR(msg) (g_currentErrorLogFunc(Logger::Level::Error, (msg)))
 #define LOG_FATAL(msg) (g_currentFatalLogFunc(Logger::Level::Fatal, (msg)))
 #define LOG_FRAME(msg) (g_currentFrameLogFunc(Logger::Level::Info, (msg)))
+#define LOG_TRACE(msg) (g_currentTraceLogFunc(Logger::Level::Trace, (msg)))
 
     inline void EnableInfoLogging(bool enable) {
         g_currentInfoLogFunc = enable ? RealLog : NoOpLog;

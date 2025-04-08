@@ -8,10 +8,11 @@
 #include <memory>
 #include "entt/entity/registry.hpp"
 #include "entt/signal/dispatcher.hpp"
-#include "IRenderer.h"
+#include "VulkanRenderer.h"
 #include "UIManager.h"
 #include "ModuleManager.h"
 #include "ApplicationContext.h"
+#include "SlangShaderModule.h"
 #include "Platform.h"
 
 struct GLFWwindow;
@@ -24,7 +25,7 @@ namespace Bcg {
 
         explicit Application(int width = 1280, int height = 720, const char *name = nullptr);
 
-        virtual ~Application() = default;
+        virtual ~Application();
 
         void initialize();
 
@@ -49,9 +50,10 @@ namespace Bcg {
         float m_lastFrameTime = 0.0f;
 
         std::unique_ptr<UIManager> m_ui_manager;
-        std::unique_ptr<IRenderer> m_renderer;
+        std::unique_ptr<VulkanRenderer> m_renderer;
         std::unique_ptr<ModuleManager> m_module_manager;
         std::unique_ptr<Platform> m_platform;
+        std::unique_ptr<SlangShaderModule> m_shader_module;
 
         entt::dispatcher m_dispatcher;
         entt::registry m_scene;

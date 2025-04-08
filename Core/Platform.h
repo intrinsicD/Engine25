@@ -7,7 +7,6 @@
 
 #include <functional>
 #include "IModule.h"
-#include "IRenderer.h"
 
 namespace Bcg {
 
@@ -35,6 +34,8 @@ namespace Bcg {
         bool shouldClose() const;
 
         double getTime() const;
+
+        void swapBuffers();
 
         ResizeCallback m_resizeCallback = nullptr;
         KeyCallback m_keyCallback = nullptr;

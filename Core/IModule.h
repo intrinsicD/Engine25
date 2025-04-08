@@ -5,52 +5,57 @@
 #ifndef ENGINE25_IMODULE_H
 #define ENGINE25_IMODULE_H
 
-#include "Events/EngineEvents.h"
-#include "ApplicationContext.h"
+#include "ApplicationContext.h" // Include context definition
 
 namespace Bcg {
     class IModule {
     public:
-        IModule(const char *name, const char *version) : m_name(name), m_version(version) {};
+        // Constructor taking mandatory name/version
+        IModule(const char *name, const char *version) : m_name(name), m_version(version), m_initialized(false) {}
 
-        virtual ~IModule() = default;
+        virtual ~IModule() = default; // Ensure virtual destructor
 
-        [[nodiscard]] const char *getName() const {
-            return m_name;
+        [[nodiscard]] const char *getName() const { return m_name; }
+
+        [[nodiscard]] const char *getVersion() const { return m_version; }
+
+        [[nodiscard]] bool isInitialized() const { return m_initialized; }
+
+        // Core lifecycle methods
+        virtual bool initialize(ApplicationContext *context) {
+            if (!context) return false;
+            m_app_context = context;
+            m_initialized = true; // Base class sets initialized flag
+            return true;
         }
 
-        [[nodiscard]] const char *getVersion() const {
-            return m_version;
+        virtual void shutdown() {
+            m_initialized = false; // Clear flag on shutdown
+            m_app_context = nullptr; // Clear context pointer
         }
 
-        [[nodiscard]] bool isInitialized() const {
-            return m_app_context != nullptr;
-        }
+        // Optional lifecycle methods (can be overridden if needed)
+        virtual void update(float /*deltaTime*/) { /* Default no-op */ };
 
-        virtual bool initialize(ApplicationContext *context) = 0;
+        virtual void render() { /* Default no-op */ };
 
-        virtual void shutdown() = 0;
+        virtual void renderUI() { /* Default no-op */ };
 
-        virtual void update(float deltaTime) = 0;
+        // Optional event connection (can be overridden if needed)
+        virtual void connectDispatcher() { /* Default no-op */ };
 
-        virtual void render() = 0;
-
-        virtual void renderUI() = 0;
-
-        virtual void connectDispatcher() = 0;
-
-        virtual void disconnectDispatcher() = 0;
+        virtual void disconnectDispatcher() { /* Default no-op */ };
 
     protected:
-        const char *m_name = "Module";
-        const char *m_version = "0.0.1";
+        // No need for setContext, initialization handles it.
+        ApplicationContext *getApplicationContext() { return m_app_context; }
 
-        bool setContext(ApplicationContext *context) {
-            m_app_context = context;
-            return m_app_context!= nullptr;
-        }
+        const ApplicationContext *getApplicationContext() const { return m_app_context; }
 
-        ApplicationContext *m_app_context = nullptr;
+        const char *m_name;
+        const char *m_version;
+        bool m_initialized;
+        ApplicationContext *m_app_context = nullptr; // Store context pointer
     };
 }
 

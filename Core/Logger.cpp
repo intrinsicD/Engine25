@@ -31,6 +31,8 @@ namespace Bcg {
                 return fmt::format("{}", fmt::styled("ERROR", fmt::fg(fmt::color::red)));
             case Logger::Level::Fatal:
                 return fmt::format("{}", fmt::styled("FATAL", fmt::fg(fmt::color::blue)));
+            case Logger::Level::Trace:
+                return fmt::format("{}", fmt::styled("TRACE", fmt::fg(fmt::color::white)));
             default:
                 return fmt::format("{}", fmt::styled("UNKNOWN", fmt::fg(fmt::color::pink)));
         }

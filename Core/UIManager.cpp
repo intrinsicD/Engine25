@@ -28,37 +28,35 @@ namespace Bcg {
             return false;
         }
 
-        if(setContext(context)) {
-            if (!context->windowPtr) {
-                LOG_ERROR("UIManager: Context window is null");
-                return false;
-            }
+        m_app_context = context;
 
-            IMGUI_CHECKVERSION();
-            ImGui::CreateContext();
-
-            auto &io = ImGui::GetIO();
-            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-            io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-            io.IniFilename = nullptr;
-
-            ImGui::StyleColorsDark();
-            ImGui_ImplGlfw_InitForOpenGL(context->windowPtr, true);
-            ImGui_ImplOpenGL3_Init();
-
-            std::string fontPath = Config::get_string("font.path");
-            std::string defaultFont = Config::get_string("font.default_font");
-            float fontSize = Config::get_float("font.size");
-            fs::path path = fs::path(SOURCE_DIR_PATH) / fontPath / defaultFont;
-
-            auto dpi = getDpi();
-            if (loadFont(path, fontSize * dpi)) {
-                ImGui::GetStyle().ScaleAllSizes(dpi);
-            }
-        }else{
-            LOG_ERROR("UIManager: Context is null");
+        if (!context->windowPtr) {
+            LOG_ERROR("UIManager: Context window is null");
             return false;
         }
+
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+
+        auto &io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+        io.IniFilename = nullptr;
+
+        ImGui::StyleColorsDark();
+        ImGui_ImplGlfw_InitForOpenGL(context->windowPtr, true);
+        ImGui_ImplOpenGL3_Init();
+
+        std::string fontPath = Config::get_string("font.path");
+        std::string defaultFont = Config::get_string("font.default_font");
+        float fontSize = Config::get_float("font.size");
+        fs::path path = fs::path(SOURCE_DIR_PATH) / fontPath / defaultFont;
+
+        auto dpi = getDpi();
+        if (loadFont(path, fontSize * dpi)) {
+            ImGui::GetStyle().ScaleAllSizes(dpi);
+        }
+
 
         LOG_INFO("UIManager: Initialized");
         return true;
@@ -109,9 +107,9 @@ namespace Bcg {
     }
 
     // Add methods later to register UI rendering callbacks from modules
-    void UIManager::renderMainMenuBar(entt::dispatcher &dispatcher) {
+    void UIManager::renderMainMenuBar() {
         if (!isInitialized()) return;
-        dispatcher.trigger<Events::Gui::RenderMenu>();
+        m_app_context->dispatcher->trigger<Events::Gui::RenderMenu>();
 
         if (m_demo_menu) {
             if (ImGui::BeginMenu("Demo")) {
@@ -121,9 +119,9 @@ namespace Bcg {
         }
     }
 
-    void UIManager::renderModuleUI(entt::dispatcher &dispatcher) {
+    void UIManager::renderModuleUI() {
         if (!isInitialized()) return;
-        dispatcher.trigger<Events::Gui::RenderGui>();
+        m_app_context->dispatcher->trigger<Events::Gui::RenderGui>();
 
         if (m_demo_window) {
             ImGui::ShowDemoWindow(&m_demo_window);

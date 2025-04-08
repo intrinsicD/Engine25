@@ -13,11 +13,13 @@ struct GLFWwindow;
 namespace Bcg {
     class UIManager;
 
-    class IRenderer;
+    class VulkanRenderer;
 
     class ModuleManager;
 
     class Platform;
+
+    class SlangShaderModule;
 
     struct BackendDesc {
         std::string type = "OpenGL";
@@ -68,10 +70,11 @@ namespace Bcg {
         MouseDesc mouse;
         KeyboardDesc keyboard;
 
-        UIManager *uiMmanager;
-        ModuleManager *moduleMmanager;
-        IRenderer *renderer;
+        UIManager *uiManager;
+        ModuleManager *moduleManager;
+        VulkanRenderer *renderer;
         Platform *platform;
+        SlangShaderModule *shaderModule;
 
         entt::dispatcher *dispatcher;
         entt::registry *scene;

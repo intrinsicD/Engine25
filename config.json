@@ -12,12 +12,12 @@
   "jobs": {
     "max_threads": 4
   },
-  "renderer": {
-    "type": "OpenGL",
+  "backend": {
+    "type": "Vulkan",
     "vsync": true,
     "opengl": {
-      "major_version": 4,
-      "minor_version": 6,
+      "majorVersion": 4,
+      "minorVersion": 6,
       "profile": "core"
     },
     "vulkan": {
